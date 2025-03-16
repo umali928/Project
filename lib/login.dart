@@ -57,19 +57,7 @@ class LoginScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              // const SizedBox(height: 12),
-              // TextField(
-              //   obscureText: true,
-              //   decoration: InputDecoration(
-              //     labelText: 'Password',
-              //     filled: true,
-              //     fillColor: Colors.grey[200],
-              //     border: OutlineInputBorder(
-              //       borderRadius: BorderRadius.circular(10.0),
-              //       borderSide: BorderSide.none,
-              //     ),
-              //   ),
-              // ),
+              //PasswordField(),
                const SizedBox(height: 12),
                 PasswordField(),
               const SizedBox(height: 8),
@@ -144,14 +132,6 @@ class LoginScreen extends StatelessWidget {
                    width: 40,
                    height: 40,
                   ),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.facebook, size: 40, color: Colors.blue),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.apple, size: 40),
                   ),
                 ],
               ),

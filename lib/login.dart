@@ -31,17 +31,17 @@ class LoginScreen extends StatelessWidget {
               Text(
                 'Login',
                 style: GoogleFonts.roboto(
-                  fontSize: 40,
+                  fontSize: 50,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF651D32),
                 ),
               ),
               const SizedBox(height: 6),
               Text(
-                'Welcome back to\nLSPU-Mart',
+                'Welcome to LSPU-Mart',
                 textAlign: TextAlign.center,
                 style: GoogleFonts.roboto(
-                  fontSize: 18,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -118,6 +118,7 @@ class LoginScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
+              
               TextButton(
                 onPressed: () {},
                 child: Text(
@@ -138,7 +139,11 @@ class LoginScreen extends StatelessWidget {
                 children: [
                   IconButton(
                     onPressed: () {},
-                    icon: const Icon(Icons.g_mobiledata, size: 40),
+                   icon: Image.asset(
+                  'assets/googleicon.png',
+                   width: 40,
+                   height: 40,
+                  ),
                   ),
                   IconButton(
                     onPressed: () {},

@@ -146,14 +146,14 @@ class _SignUpFormState extends State<SignUpForm> {
                 onPressed: () {},
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF651D32),
-                  minimumSize: Size(double.infinity, 50),
+                  minimumSize: Size(double.infinity, 60),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
                 child: Text(
                   'Sign up',
-                  style: GoogleFonts.roboto(fontSize: 18, color: Colors.white),
+                  style: GoogleFonts.roboto(fontSize: 20, color: Colors.white,fontWeight: FontWeight.bold),
                 ),
               ),
               SizedBox(height: 10),

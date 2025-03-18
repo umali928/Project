@@ -34,38 +34,52 @@ class LoginScreen extends StatelessWidget {
                 children: [
                   Text(
                     'Login',
-                    style: GoogleFonts.roboto(
-                      fontSize: 50,
+                    style: GoogleFonts.poppins(
+                      fontSize: 45,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF651D32),
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 26),
                   Text(
                     'Welcome to LSPU-Mart',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.poppins(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 44),
+                  // Enlarged Email TextField
                   SizedBox(
                     width: textFieldWidth,
-                    child: TextField(
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        filled: true,
-                        fillColor: Colors.grey[200],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10.0),
-                          borderSide: BorderSide.none,
+                    // ignore: sized_box_for_whitespace
+                    child: Container(
+                      height: 60, // Set a fixed height
+                      child: TextField(
+                        decoration: InputDecoration(
+                          labelText: 'Email',
+                          filled: true,
+                          fillColor: Colors.grey[200],
+                          contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 15), // Increase padding
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                            borderSide: BorderSide.none,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  SizedBox(width: textFieldWidth, child: PasswordField()),
+                  const SizedBox(height: 32),
+                  // Enlarged Password TextField
+                  SizedBox(
+                    width: textFieldWidth,
+                    // ignore: sized_box_for_whitespace
+                    child: Container(
+                      height: 60, // Set a fixed height
+                      child: PasswordField(),
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Align(
                     alignment: Alignment.centerRight,
@@ -73,7 +87,7 @@ class LoginScreen extends StatelessWidget {
                       onPressed: () {},
                       child: Text(
                         'Forgot your password?',
-                        style: GoogleFonts.roboto(
+                        style: GoogleFonts.poppins(
                           color: Color(0xFF651D32),
                           fontWeight: FontWeight.bold,
                         ),
@@ -88,15 +102,15 @@ class LoginScreen extends StatelessWidget {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF651D32),
                         foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 50),
+                        minimumSize: const Size(double.infinity, 60),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                       ),
                       child: Text(
                         'Login',
-                        style: GoogleFonts.roboto(
-                          fontSize: 20,
+                        style: GoogleFonts.poppins(
+                          fontSize: 25,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -107,13 +121,13 @@ class LoginScreen extends StatelessWidget {
                     onPressed: () {},
                     child: Text(
                       'Create new account',
-                      style: GoogleFonts.roboto(color: Colors.grey),
+                      style: GoogleFonts.poppins(color: const Color.fromARGB(255, 0, 0, 0),fontWeight: FontWeight.bold,),
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Or continue with',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.poppins(
                       color: Color(0xFF651D32),
                       fontWeight: FontWeight.bold,
                     ),
@@ -164,6 +178,7 @@ class _PasswordFieldState extends State<PasswordField> {
         labelText: 'Password',
         filled: true,
         fillColor: Colors.grey[200],
+        contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 15), // Increase padding
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
           borderSide: BorderSide.none,

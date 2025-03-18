@@ -50,27 +50,27 @@ class _SignUpFormState extends State<SignUpForm> {
           alignment: Alignment.center, // Center title
           child: Text(
             'Create Account',
-            style: GoogleFonts.roboto(
+            style: GoogleFonts.poppins(
               fontSize: 35,
               fontWeight: FontWeight.bold,
               color: Color(0xFF651D32),
             ),
           ),
         ),
-        SizedBox(height: 15), // Increased spacing
+        SizedBox(height: 25), // Increased spacing
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10.0), // Adjust position
           child: Text(
             'Create an account so you can explore all of the products!',
             textAlign: TextAlign.center,
-            style: GoogleFonts.roboto(
+            style: GoogleFonts.poppins(
               fontSize: 18,
               color: Colors.black87,
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
-        SizedBox(height: 65), // Increased spacing
+        SizedBox(height: 45), // Increased spacing
         ConstrainedBox(
           constraints: BoxConstraints(maxWidth: 400),
           child: Column(
@@ -87,7 +87,7 @@ class _SignUpFormState extends State<SignUpForm> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.black, width: 2),
+                      borderSide: BorderSide(color: Color(0xFF651D32), width: 2),
                     ),
                     filled: true,
                     fillColor: Colors.grey[200],
@@ -109,7 +109,7 @@ class _SignUpFormState extends State<SignUpForm> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.black, width: 2),
+                      borderSide: BorderSide(color: Color(0xFF651D32), width: 2),
                     ),
                     filled: true,
                     fillColor: Colors.grey[200],
@@ -143,7 +143,7 @@ class _SignUpFormState extends State<SignUpForm> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.black, width: 2),
+                      borderSide: BorderSide(color: Color(0xFF651D32), width: 2),
                     ),
                     filled: true,
                     fillColor: Colors.grey[200],
@@ -171,14 +171,14 @@ class _SignUpFormState extends State<SignUpForm> {
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF651D32),
-                    minimumSize: Size(250, 50), // Adjust button size
+                    minimumSize: Size(double.infinity, 60), // Adjust button size
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   child: Text(
                     'Sign up',
-                    style: GoogleFonts.roboto(
+                    style: GoogleFonts.poppins(
                       fontSize: 20, 
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -191,14 +191,14 @@ class _SignUpFormState extends State<SignUpForm> {
               Center(
                 child: Text(
                   'Already have an account',
-                  style: GoogleFonts.roboto(fontSize: 14, color: Color(0xFF651D32),fontWeight: FontWeight.bold),
+                  style: GoogleFonts.poppins(fontSize: 14, color: Color(0xFF651D32),fontWeight: FontWeight.bold),
                 ),
               ),
               SizedBox(height: 30),
               Center(
                 child: Text(
                   'Or continue with',
-                  style: GoogleFonts.roboto(fontSize: 14, color: const Color.fromARGB(251, 0, 0, 0),fontWeight: FontWeight.bold),
+                  style: GoogleFonts.poppins(fontSize: 14, color: const Color.fromARGB(251, 0, 0, 0),fontWeight: FontWeight.bold),
                 ),
               ),
               SizedBox(height: 15),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   runApp(EcommerceApp());
@@ -25,10 +26,15 @@ class HomeScreen extends StatelessWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Delivery address", style: TextStyle(fontSize: 12, color: Colors.grey)),
+            Text("Delivery address",
+                style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
             Row(
               children: [
-                Text("Reserved for Firebase", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+                Text("Reserved for Firebase",
+                    style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black)),
                 Icon(Icons.keyboard_arrow_down, color: Colors.black),
               ],
             ),
@@ -45,61 +51,106 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(height: 10),
-            TextField(
-              decoration: InputDecoration(
-                hintText: "Search here ...",
-                prefixIcon: Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.grey[200],
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            SizedBox(height: 20),
-            SizedBox(
-              height: 120,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  AdBanner(imagePath: "assets/ad1.jpg"),
-                  SizedBox(width: 10),
-                  AdBanner(imagePath: "assets/ad2.jpg"),
-                ],
-              ),
-            ),
-            SizedBox(height: 20),
-            Text("Category", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          double screenWidth = constraints.maxWidth;
+          bool isLargeScreen = screenWidth > 600;
+
+          return Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CategoryItem(icon: Icons.shopping_bag, label: "Apparel"),
-                CategoryItem(icon: Icons.school, label: "School"),
-                CategoryItem(icon: Icons.sports, label: "Sports"),
-                CategoryItem(icon: Icons.electrical_services, label: "Electronic"),
-                CategoryItem(icon: Icons.grid_view, label: "All"),
+                SizedBox(height: 10),
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: "Search here ...",
+                    prefixIcon: Icon(Icons.search),
+                    filled: true,
+                    fillColor: Colors.grey[200],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                SizedBox(height: 20),
+
+                /// Ad Banner
+                SizedBox(
+                  height: isLargeScreen ? 300 : 120,
+                  child: PageView(
+                    controller: PageController(viewportFraction: 0.9),
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 5),
+                        child: AdBanner(
+                            imagePath: "assets/ad1.jpg", width: screenWidth),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 5),
+                        child: AdBanner(
+                            imagePath: "assets/ad2.png", width: screenWidth),
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: 20),
+                Text("Category",
+                    style:
+                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                SizedBox(height: 10),
+
+                if (isLargeScreen)
+                  // Grid layout for large screens
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    crossAxisCount: 5,
+                    childAspectRatio: 1,
+                    children: [
+                      CategoryItem(icon: Icons.checkroom, label: "Clothes"),
+                      CategoryItem(icon: Icons.school, label: "School"),
+                      CategoryItem(icon: Icons.sports, label: "Sports"),
+                      CategoryItem(icon: Icons.fastfood, label: "Foods"),
+                      CategoryItem(icon: Icons.grid_view, label: "All"),
+                    ],
+                  )
+                else
+                  // Horizontal scroll for small screens
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        CategoryItem(icon: Icons.checkroom, label: "Clothes"),
+                        CategoryItem(icon: Icons.school, label: "School"),
+                        CategoryItem(icon: Icons.sports, label: "Sports"),
+                        CategoryItem(icon: Icons.fastfood, label: "Foods"),
+                        CategoryItem(icon: Icons.grid_view, label: "All"),
+                      ]
+                          .map((item) => Padding(
+                                padding: EdgeInsets.only(right: 32),
+                                child: item,
+                              ))
+                          .toList(),
+                    ),
+                  ),
               ],
             ),
-          ],
-        ),
+          );
+        },
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.green,
+        selectedItemColor: Color(0xFF651D32),
         unselectedItemColor: Colors.grey,
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
+        showSelectedLabels: true,
+        showUnselectedLabels: true,
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: "Wishlist"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.favorite_border), label: "Wishlist"),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Account"),
         ],
@@ -111,9 +162,9 @@ class HomeScreen extends StatelessWidget {
 class CategoryItem extends StatelessWidget {
   final IconData icon;
   final String label;
-  
+
   CategoryItem({required this.icon, required this.label});
-  
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -132,13 +183,15 @@ class CategoryItem extends StatelessWidget {
 
 class AdBanner extends StatelessWidget {
   final String imagePath;
+  final double width;
 
-  AdBanner({required this.imagePath});
+  AdBanner({required this.imagePath, required this.width});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 300,
+      width: width * 0.8,
+      height: width > 600 ? 200 : 120,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
         image: DecorationImage(

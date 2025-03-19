@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'wishlist.dart';  // Ensure this matches your file name
+import 'wishlist.dart';  
 
 void main() {
   runApp(MyApp());

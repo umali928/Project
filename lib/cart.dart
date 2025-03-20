@@ -28,7 +28,7 @@ class CartScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.white,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, size: screenWidth * 0.07), // Scaled icon
+          icon: Icon(Icons.arrow_back, size: screenWidth * 0.07),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -36,8 +36,7 @@ class CartScreen extends StatelessWidget {
         title: Text(
           "Your Cart",
           style: GoogleFonts.poppins(
-              fontSize: screenWidth * 0.05,
-              fontWeight: FontWeight.bold), // Scaled text
+              fontSize: screenWidth * 0.05, fontWeight: FontWeight.bold),
         ),
       ),
       body: Column(
@@ -62,8 +61,8 @@ class CartItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
-    double fontSize = screenWidth * 0.04; // Scaled font size
-    double iconSize = screenWidth * 0.06; // Scaled icon size
+    double fontSize = screenWidth * 0.04;
+    double iconSize = screenWidth * 0.06;
 
     return Card(
       color: Colors.white,
@@ -89,18 +88,16 @@ class CartItem extends StatelessWidget {
                       style: TextStyle(
                           fontSize: fontSize * 0.8, color: Colors.grey)),
                   Text("₱1999.99",
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.roboto(
                           fontSize: fontSize, fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
             Row(
               children: [
-                IconButton(
-                    icon: Icon(Icons.remove, size: iconSize), onPressed: () {}),
+                IconButton(icon: Icon(Icons.remove, size: iconSize), onPressed: () {}),
                 Text("1", style: GoogleFonts.poppins(fontSize: fontSize)),
-                IconButton(
-                    icon: Icon(Icons.add, size: iconSize), onPressed: () {}),
+                IconButton(icon: Icon(Icons.add, size: iconSize), onPressed: () {}),
               ],
             ),
             IconButton(
@@ -118,7 +115,7 @@ class OrderSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double fontSize = screenWidth * 0.04;
-    double iconSize = screenWidth * 0.06; // Scaled icon size
+    double iconSize = screenWidth * 0.06;
 
     return Container(
       padding: EdgeInsets.all(screenWidth * 0.04),
@@ -139,13 +136,13 @@ class OrderSummary extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text("Order Summary",
-              style: GoogleFonts.poppins(
+              style: GoogleFonts.notoSans(
                   fontSize: fontSize, fontWeight: FontWeight.bold)),
           Divider(),
           _buildRow("Items", "3", fontSize),
           _buildRow("Subtotal", "₱54", fontSize),
           _buildRow("Discount", "₱4", fontSize),
-          _buildRow("Delivery Charges", "₱2", fontSize),
+          _buildRow("Delivery Charges", "₱22", fontSize),
           Divider(),
           _buildRow("Total", "₱60", fontSize, bold: true),
           SizedBox(height: screenWidth * 0.04),
@@ -163,8 +160,7 @@ class OrderSummary extends StatelessWidget {
               icon: Icon(Icons.payment, size: iconSize, color: Colors.white),
               label: Text(
                 "Proceed",
-                style: GoogleFonts.poppins(
-                    fontSize: fontSize, color: Colors.white),
+                style: GoogleFonts.poppins(fontSize: fontSize, color: Colors.white),
               ),
             ),
           ),
@@ -173,19 +169,18 @@ class OrderSummary extends StatelessWidget {
     );
   }
 
-  Widget _buildRow(String left, String right, double fontSize,
-      {bool bold = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(left,
-            style: GoogleFonts.poppins(
-                fontSize: fontSize,
-                fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
-        Text(right,
-            style: GoogleFonts.poppins(
-                fontSize: fontSize,
-                fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
+  Widget _buildRow(String left, String right, double fontSize, {bool bold = false}) {
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Text(left,
+          style: GoogleFonts.roboto(
+              fontSize: fontSize,
+              fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
+      Text(right,
+          style: GoogleFonts.roboto(
+              fontSize: fontSize,
+              fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
       ],
     );
   }

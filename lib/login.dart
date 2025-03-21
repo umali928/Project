@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'register.dart'; // Import RegisterScreen
 void main() {
   runApp(const MyApp());
 }
@@ -118,7 +118,12 @@ class LoginScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   TextButton(
-                    onPressed: () {},
+                    onPressed: () {
+                       Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => SignUpScreen()),
+                      );
+                    },
                     child: Text(
                       'Create new account',
                       style: GoogleFonts.poppins(color: const Color.fromARGB(255, 0, 0, 0),fontWeight: FontWeight.bold,),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'login.dart'; // Import LoginPage
 void main() {
   runApp(MyApp());
 }
@@ -70,7 +70,11 @@ class SettingsPage extends StatelessWidget {
                 buildListTile(Icons.privacy_tip, "Privacy Policy"),
                 buildListTile(Icons.person, "Personal Information"),
                 Divider(),
-                buildListTile(Icons.logout, "Log Out", color: Colors.red),
+                buildListTile(Icons.logout, "Log Out", color: Colors.red, onTap: () {
+                  Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                  );
+                }),
               ],
             ),
           ),
@@ -80,14 +84,13 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Widget buildListTile(IconData icon, String title, {Color color = Colors.black}) {
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(title, style: TextStyle(color: color)),
-      onTap: () {},
-      tileColor: Colors.white,
-      contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-    );
-  }
+Widget buildListTile(IconData icon, String title, {Color color = Colors.black, VoidCallback? onTap}) {
+  return ListTile(
+    leading: Icon(icon, color: color),
+    title: Text(title, style: TextStyle(color: color)),
+    onTap: onTap, // Trigger navigation when tapped
+    tileColor: Colors.white,
+    contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+  );
+ }
 }
-

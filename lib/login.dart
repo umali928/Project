@@ -23,45 +23,47 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              double textFieldWidth = constraints.maxWidth > 600 ? 400 : double.infinity;
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Login',
-                    style: GoogleFonts.poppins(
-                      fontSize: 45,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF651D32),
+      backgroundColor: Colors.white,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          double textFieldWidth = constraints.maxWidth > 600 ? 400 : double.infinity;
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: MediaQuery.of(context).size.height,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 50),
+                    Text(
+                      'Login',
+                      style: GoogleFonts.poppins(
+                        fontSize: 45,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF651D32),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 26),
-                  Text(
-                    'Welcome to LSPU-Mart',
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(height: 26),
+                    Text(
+                      'Welcome to LSPU-Mart',
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 44),
-                  // Enlarged Email TextField
-                  SizedBox(
-                    width: textFieldWidth,
-                    // ignore: sized_box_for_whitespace
-                    child: Container(
-                      height: 60, // Set a fixed height
+                    const SizedBox(height: 44),
+                    SizedBox(
+                      width: textFieldWidth,
                       child: TextField(
                         decoration: InputDecoration(
                           labelText: 'Email',
                           filled: true,
                           fillColor: Colors.grey[200],
-                          contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 15), // Increase padding
+                          contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 15),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10.0),
                             borderSide: BorderSide.none,
@@ -69,97 +71,97 @@ class LoginScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                  // Enlarged Password TextField
-                  SizedBox(
-                    width: textFieldWidth,
-                    // ignore: sized_box_for_whitespace
-                    child: Container(
-                      height: 60, // Set a fixed height
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: textFieldWidth,
                       child: PasswordField(),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {},
-                      child: Text(
-                        'Forgot your password?',
-                        style: GoogleFonts.poppins(
-                          color: Color(0xFF651D32),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  SizedBox(
-                    width: textFieldWidth,
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF651D32),
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 60),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: Text(
-                        'Login',
-                        style: GoogleFonts.poppins(
-                          fontSize: 25,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextButton(
-                    onPressed: () {
-                       Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => SignUpScreen()),
-                      );
-                    },
-                    child: Text(
-                      'Create new account',
-                      style: GoogleFonts.poppins(color: const Color.fromARGB(255, 0, 0, 0),fontWeight: FontWeight.bold,),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Or continue with',
-                    style: GoogleFonts.poppins(
-                      color: Color(0xFF651D32),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
                         onPressed: () {},
-                        icon: Image.asset(
-                          'assets/googleicon.png',
-                          width: 40,
-                          height: 40,
+                        child: Text(
+                          'Forgot your password?',
+                          style: GoogleFonts.poppins(
+                            color: Color(0xFF651D32),
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: textFieldWidth,
+                      child: ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF651D32),
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size(double.infinity, 60),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: Text(
+                          'Login',
+                          style: GoogleFonts.poppins(
+                            fontSize: 25,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => SignUpScreen()),
+                        );
+                      },
+                      child: Text(
+                        'Create new account',
+                        style: GoogleFonts.poppins(
+                          color: const Color.fromARGB(255, 0, 0, 0),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Or continue with',
+                      style: GoogleFonts.poppins(
+                        color: Color(0xFF651D32),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          onPressed: () {},
+                          icon: Image.asset(
+                            'assets/googleicon.png',
+                            width: 40,
+                            height: 40,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 50),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 }
+
 
 class PasswordField extends StatefulWidget {
   @override

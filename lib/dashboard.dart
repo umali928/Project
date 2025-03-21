@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'wishlist.dart'; // Import WishlistScreen
+import 'profile.dart';
+import 'cart.dart'; // Import CartScreen
 void main() {
   runApp(EcommerceApp());
 }
@@ -11,7 +13,53 @@ class EcommerceApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: HomeScreen(),
+      home: Dashboard(),
+    );
+  }
+}
+
+class Dashboard extends StatefulWidget {
+  @override
+  _DashboardState createState() => _DashboardState();
+}
+
+class _DashboardState extends State<Dashboard> {
+  int _selectedIndex = 0;
+
+  final List<Widget> _pages = [
+    HomeScreen(),
+    WishlistScreen(),
+   
+    SettingsPage(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        currentIndex: _selectedIndex,
+        selectedItemColor: Color(0xFF651D32),
+        unselectedItemColor: Colors.grey,
+        onTap: _onItemTapped,
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.favorite_border), label: "Wishlist"),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Account"),
+        ],
+      ),
     );
   }
 }
@@ -47,7 +95,12 @@ class HomeScreen extends StatelessWidget {
           ),
           IconButton(
             icon: Icon(LucideIcons.shoppingCart, color: Colors.black),
-            onPressed: () {},
+            onPressed: () {
+               Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => CartScreen()),
+            );
+            },
           ),
         ],
       ),
@@ -103,7 +156,6 @@ class HomeScreen extends StatelessWidget {
                 SizedBox(height: 10),
 
                 if (isLargeScreen)
-                  // Grid layout for large screens
                   GridView.count(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
@@ -118,7 +170,6 @@ class HomeScreen extends StatelessWidget {
                     ],
                   )
                 else
-                  // Horizontal scroll for small screens
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
@@ -140,20 +191,6 @@ class HomeScreen extends StatelessWidget {
             ),
           );
         },
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Color(0xFF651D32),
-        unselectedItemColor: Colors.grey,
-        showSelectedLabels: true,
-        showUnselectedLabels: true,
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.favorite_border), label: "Wishlist"),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Account"),
-        ],
       ),
     );
   }
@@ -202,3 +239,6 @@ class AdBanner extends StatelessWidget {
     );
   }
 }
+
+
+

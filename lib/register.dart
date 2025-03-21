@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'login.dart'; // Import LoginScreen
 void main() {
   runApp(SignUpScreen());
 }
@@ -189,9 +189,21 @@ class _SignUpFormState extends State<SignUpForm> {
               
               SizedBox(height: 20), // Add space before "Already have an account"
               Center(
-                child: Text(
-                  'Already have an account',
-                  style: GoogleFonts.poppins(fontSize: 14, color: Color(0xFF651D32),fontWeight: FontWeight.bold),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => LoginScreen()), // Navigate to LoginScreen
+                    );
+                  },
+                  child: Text(
+                    'Already have an account',
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: Color(0xFF651D32),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
               ),
               SizedBox(height: 30),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'login.dart'; // Import LoginPage
 void main() {
   runApp(MyApp());
 }
@@ -24,13 +24,10 @@ class SettingsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        centerTitle: true,
         title: Text(
           "My Account",
           style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold),
-        ),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
@@ -71,82 +68,29 @@ class SettingsPage extends StatelessWidget {
                 Divider(),
                 buildListTile(Icons.lock, "Change Password"),
                 buildListTile(Icons.privacy_tip, "Privacy Policy"),
+                buildListTile(Icons.person, "Personal Information"),
                 Divider(),
-                buildListTile(Icons.logout, "Log Out", color: Colors.red),
+                buildListTile(Icons.logout, "Log Out", color: Colors.red, onTap: () {
+                  Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                  );
+                }),
               ],
             ),
           ),
           // Footer Section
-          CustomFooter(),
         ],
       ),
     );
   }
 
-  Widget buildListTile(IconData icon, String title, {Color color = Colors.black}) {
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(title, style: TextStyle(color: color)),
-      onTap: () {},
-      tileColor: Colors.white,
-      contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
-    );
-  }
-}
-
-// Custom Footer Widget with Responsive Design
-class CustomFooter extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    double screenHeight = MediaQuery.of(context).size.height;
-    double screenWidth = MediaQuery.of(context).size.width;
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF800000), Color(0xFFB22222)], // Maroon gradient
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            "Version 1.0.0",
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              color: Colors.white70,
-              fontSize: screenWidth * 0.04,
-            ),
-          ),
-          SizedBox(height: screenHeight * 0.005),
-          Text(
-            "Empowering Your Shopping Experience",
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              color: Colors.white70,
-              fontSize: screenWidth * 0.035,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-          SizedBox(height: screenHeight * 0.005),
-          Text(
-            "© 2025 LSPU-Mart. All Rights Reserved.",
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              color: Colors.white70,
-              fontSize: screenWidth * 0.033,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+Widget buildListTile(IconData icon, String title, {Color color = Colors.black, VoidCallback? onTap}) {
+  return ListTile(
+    leading: Icon(icon, color: color),
+    title: Text(title, style: TextStyle(color: color)),
+    onTap: onTap, // Trigger navigation when tapped
+    tileColor: Colors.white,
+    contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
+  );
+ }
 }

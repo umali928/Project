@@ -68,13 +68,13 @@ class SettingsPage extends StatelessWidget {
                 Divider(),
                 buildListTile(Icons.lock, "Change Password"),
                 buildListTile(Icons.privacy_tip, "Privacy Policy"),
+                buildListTile(Icons.person, "Personal Information"),
                 Divider(),
                 buildListTile(Icons.logout, "Log Out", color: Colors.red),
               ],
             ),
           ),
           // Footer Section
-          CustomFooter(),
         ],
       ),
     );
@@ -91,59 +91,3 @@ class SettingsPage extends StatelessWidget {
   }
 }
 
-// Custom Footer Widget with Responsive Design
-class CustomFooter extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    double screenHeight = MediaQuery.of(context).size.height;
-    double screenWidth = MediaQuery.of(context).size.width;
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF800000), Color(0xFFB22222)], // Maroon gradient
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            "Version 1.0.0",
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              color: Colors.white70,
-              fontSize: screenWidth * 0.04,
-            ),
-          ),
-          SizedBox(height: screenHeight * 0.005),
-          Text(
-            "Empowering Your Shopping Experience",
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              color: Colors.white70,
-              fontSize: screenWidth * 0.035,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-          SizedBox(height: screenHeight * 0.005),
-          Text(
-            "© 2025 LSPU-Mart. All Rights Reserved.",
-            textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
-              color: Colors.white70,
-              fontSize: screenWidth * 0.033,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

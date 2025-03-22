@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'wishlist.dart'; // Import WishlistScreen
 import 'profile.dart';
 import 'cart.dart'; // Import CartScreen
+import 'orderHistory.dart'; 
 void main() {
   runApp(EcommerceApp());
 }
@@ -29,7 +30,7 @@ class _DashboardState extends State<Dashboard> {
   final List<Widget> _pages = [
     HomeScreen(),
     WishlistScreen(),
-   
+   OrderHistoryScreen(),
     SettingsPage(),
   ];
 

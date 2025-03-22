@@ -55,7 +55,7 @@ class OrderHistoryScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Order History", style: GoogleFonts.poppins(fontSize: screenWidth * 0.07, fontWeight: FontWeight.bold)),  
+        title: Text("Order History", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),  
         centerTitle: true,
       ),
       body: Padding(

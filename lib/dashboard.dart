@@ -4,7 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'wishlist.dart'; // Import WishlistScreen
 import 'profile.dart';
 import 'cart.dart'; // Import CartScreen
-import 'orderHistory.dart'; 
+import 'orderHistory.dart';
+
 void main() {
   runApp(EcommerceApp());
 }
@@ -30,7 +31,7 @@ class _DashboardState extends State<Dashboard> {
   final List<Widget> _pages = [
     HomeScreen(),
     WishlistScreen(),
-   OrderHistoryScreen(),
+    OrderHistoryScreen(),
     SettingsPage(),
   ];
 
@@ -75,18 +76,12 @@ class HomeScreen extends StatelessWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Delivery address",
-                style: GoogleFonts.poppins(fontSize: 12, color: Colors.grey)),
-            Row(
-              children: [
-                Text("Reserved for Firebase",
-                    style: GoogleFonts.poppins(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black)),
-                Icon(Icons.keyboard_arrow_down, color: Colors.black),
-              ],
-            ),
+            Text("LSPU-MART",
+                style: GoogleFonts.poppins(
+                  fontSize: 23,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                )),
           ],
         ),
         actions: [
@@ -97,10 +92,10 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: Icon(LucideIcons.shoppingCart, color: Colors.black),
             onPressed: () {
-               Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => CartScreen()),
-            );
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => CartScreen()),
+              );
             },
           ),
         ],
@@ -240,6 +235,3 @@ class AdBanner extends StatelessWidget {
     );
   }
 }
-
-
-

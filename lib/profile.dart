@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'login.dart'; // Import LoginPage
+import 'SellerLogin.dart'; // Import SellerLoginScreen
 void main() {
   runApp(MyApp());
 }
@@ -62,7 +63,12 @@ class SettingsPage extends StatelessWidget {
                   textAlign: TextAlign.center,
                 ),
                 SizedBox(height: screenHeight * 0.02),
-                buildListTile(Icons.store, "Login Seller"),
+                buildListTile(Icons.store, "Login Seller", onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => SellerLoginScreen()),
+                  );
+                }),
                 buildListTile(Icons.location_on, "Delivery Address"),
                 buildListTile(Icons.message, "Messages"),
                 Divider(),

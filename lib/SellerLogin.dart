@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'sellerRegister.dart'; // Import SellerRegistrationScreen
 import 'package:google_fonts/google_fonts.dart';
 
 void main() {
@@ -98,9 +99,14 @@ class SellerLoginScreen extends StatelessWidget {
                         children: [
                           const Text('Don’t have an account? '),
                           GestureDetector(
-                            onTap: () {},
-                            child: const Text('Sign Up',
-                                style: TextStyle(color: Colors.blue)),
+                            onTap: () {
+                              Navigator.push(
+                                  context,
+                                    MaterialPageRoute(builder: (context) => SellerRegistrationApp()),
+                              );
+                            },
+                            child: Text('Sign Up',
+                                style: GoogleFonts.poppins(color: Colors.blue)),
                           ),
                         ],
                       ),

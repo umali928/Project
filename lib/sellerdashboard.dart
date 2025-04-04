@@ -30,16 +30,21 @@ class DashboardScreen extends StatelessWidget {
             SizedBox(width: 8),
             Text(
               "Seller-Dashboard",
-              style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black),
+              style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black),
             ),
             Spacer(), // Pushes "LSPUMART" to the right
             Text(
               "LSPUMART",
-              style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+              style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black),
             ),
           ],
         ),
-
         iconTheme: IconThemeData(color: Colors.black),
       ),
       body: Padding(
@@ -48,11 +53,27 @@ class DashboardScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("Home / Dashboard", style: GoogleFonts.poppins(color: Colors.black54)),
+              Text("Home / Dashboard",
+                  style: GoogleFonts.poppins(color: Colors.black54)),
               SizedBox(height: 10),
-              DashboardCard(title: "Total Orders", value: "400", percentChange: "+10%", icon: Icons.shopping_bag, color: Colors.green),
-              DashboardCard(title: "Total Sell", value: "₱4200.5", percentChange: "-5%", icon: Icons.account_balance_wallet, color: Colors.redAccent),
-              DashboardCard(title: "Total Products", value: "452", percentChange: "+23", icon: Icons.category, color: Colors.purple),
+              DashboardCard(
+                  title: "Total Orders",
+                  value: "400",
+                  percentChange: "+10%",
+                  icon: Icons.shopping_bag,
+                  color: Colors.green),
+              DashboardCard(
+                  title: "Total Sell",
+                  value: "₱4200.5",
+                  percentChange: "-5%",
+                  icon: Icons.account_balance_wallet,
+                  color: Colors.redAccent),
+              DashboardCard(
+                  title: "Total Products",
+                  value: "452",
+                  percentChange: "+23",
+                  icon: Icons.category,
+                  color: Colors.purple),
               SizedBox(height: 20),
               OrderSummary(),
               ReviewOrders(),
@@ -64,23 +85,48 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
-
 class NavigationDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: ListView(
-        padding: EdgeInsets.zero,
+      child: Column(
         children: [
           DrawerHeader(
-            decoration: BoxDecoration(color: Color(0xFF651D32)),
-            child: Text('Menu', style: TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.bold)),
+            decoration: BoxDecoration(
+              color: Color(0xFF800000),
+            ),
+            child: Center(
+              child: Text(
+                'Dashboard',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
           ),
-          DrawerItem(icon: Icons.home, text: "Dashboard"),
-          DrawerItem(icon: Icons.person, text: "Profile"),
-          DrawerItem(icon: Icons.settings, text: "Settings"),
-          DrawerItem(icon: Icons.history, text: "History"),
-          DrawerItem(icon: Icons.logout, text: "Signout"),
+          Expanded(
+            child: ListView(
+              padding: EdgeInsets.zero,
+              children: [
+                DrawerItem(icon: Icons.home, text: "Dashboard"),
+                DrawerItem(icon: Icons.home, text: "Add Product"),
+                DrawerItem(icon: Icons.home, text: "Manage Product"),
+                DrawerItem(icon: Icons.home, text: "Manage Orders"),
+                DrawerItem(icon: Icons.home, text: "View Sales"),
+                DrawerItem(icon: Icons.home, text: "Discount & Coupons"),
+                DrawerItem(icon: Icons.home, text: "Message Users"),
+                DrawerItem(icon: Icons.home, text: "Withdraw"),
+                DrawerItem(icon: Icons.person, text: "Profile"),
+                DrawerItem(icon: Icons.settings, text: "Settings"),
+                DrawerItem(icon: Icons.history, text: "History"),
+                Divider(),
+                DrawerItem(icon: Icons.logout, text: "Sign Out", isLogout: true),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -90,18 +136,33 @@ class NavigationDrawer extends StatelessWidget {
 class DrawerItem extends StatelessWidget {
   final IconData icon;
   final String text;
+  final bool isLogout;
 
-  DrawerItem({required this.icon, required this.text});
+  const DrawerItem({
+    required this.icon,
+    required this.text,
+    this.isLogout = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: Colors.black54),
-      title: Text(text, style: GoogleFonts.poppins(fontSize: 16)),
+      leading: Icon(
+        icon,
+        color: isLogout ? Colors.redAccent : Colors.black87,
+      ),
+      title: Text(
+        text,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: isLogout ? Colors.redAccent : Colors.black87,
+        ),
+      ),
       onTap: () {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$text clicked!')));
+        // Implement navigation here
       },
+      hoverColor: Colors.grey[200], // Slight hover effect
     );
   }
 }
@@ -113,7 +174,12 @@ class DashboardCard extends StatelessWidget {
   final IconData icon;
   final Color color;
 
-  DashboardCard({required this.title, required this.value, required this.percentChange, required this.icon, required this.color});
+  DashboardCard(
+      {required this.title,
+      required this.value,
+      required this.percentChange,
+      required this.icon,
+      required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -131,17 +197,25 @@ class DashboardCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.bold)),
+                  Text(title,
+                      style: GoogleFonts.poppins(
+                          fontSize: 14, fontWeight: FontWeight.bold)),
                   SizedBox(height: 5),
-                  Text(value, style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text(value,
+                      style: GoogleFonts.poppins(
+                          fontSize: 24, fontWeight: FontWeight.bold)),
                   SizedBox(height: 5),
                   Row(
                     children: [
                       Icon(Icons.trending_up, size: 14, color: Colors.green),
                       SizedBox(width: 4),
-                      Text(percentChange, style: GoogleFonts.poppins(fontSize: 12, color: Colors.green)),
+                      Text(percentChange,
+                          style: GoogleFonts.poppins(
+                              fontSize: 12, color: Colors.green)),
                       SizedBox(width: 4),
-                      Text("vs last month", style: GoogleFonts.poppins(fontSize: 12, color: Colors.black45)),
+                      Text("vs last month",
+                          style: GoogleFonts.poppins(
+                              fontSize: 12, color: Colors.black45)),
                     ],
                   ),
                 ],
@@ -165,11 +239,25 @@ class OrderSummary extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Order Summary", style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text("Order Summary",
+                style: GoogleFonts.poppins(
+                    fontSize: 18, fontWeight: FontWeight.bold)),
             SizedBox(height: 10),
-            OrderProgress(title: "Pending Orders", percent: 0.4, color: Colors.orange, orders: "160/400 Orders"),
-            OrderProgress(title: "Shipped Orders", percent: 0.3, color: Colors.purple, orders: "120/400 Orders"),
-            OrderProgress(title: "Delivered Orders", percent: 0.3, color: Colors.green, orders: "120/400 Orders"),
+            OrderProgress(
+                title: "Pending Orders",
+                percent: 0.4,
+                color: Colors.orange,
+                orders: "160/400 Orders"),
+            OrderProgress(
+                title: "Shipped Orders",
+                percent: 0.3,
+                color: Colors.purple,
+                orders: "120/400 Orders"),
+            OrderProgress(
+                title: "Delivered Orders",
+                percent: 0.3,
+                color: Colors.green,
+                orders: "120/400 Orders"),
           ],
         ),
       ),
@@ -183,20 +271,31 @@ class OrderProgress extends StatelessWidget {
   final Color color;
   final String orders;
 
-  OrderProgress({required this.title, required this.percent, required this.color, required this.orders});
+  OrderProgress(
+      {required this.title,
+      required this.percent,
+      required this.color,
+      required this.orders});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         ListTile(
-          title: Text(title, style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w500)),
+          title: Text(title,
+              style: GoogleFonts.poppins(
+                  fontSize: 14, fontWeight: FontWeight.w500)),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              LinearProgressIndicator(value: percent, color: color, backgroundColor: Colors.grey[300]),
+              LinearProgressIndicator(
+                  value: percent,
+                  color: color,
+                  backgroundColor: Colors.grey[300]),
               SizedBox(height: 4),
-              Text(orders, style: GoogleFonts.poppins(fontSize: 12, color: Colors.black54)),
+              Text(orders,
+                  style:
+                      GoogleFonts.poppins(fontSize: 12, color: Colors.black54)),
             ],
           ),
         ),
@@ -204,13 +303,44 @@ class OrderProgress extends StatelessWidget {
     );
   }
 }
+
 class ReviewOrders extends StatelessWidget {
   final List<Order> orders = [
-    Order(date: "01/04/2024", id: "P12345", name: "ZithroMax Antibiotic", location: "New York, USA", status: "In Transit", statusColor: Colors.blue),
-    Order(date: "02/04/2024", id: "ZM2345", name: "Panadol Extra Strong", location: "London, UK", status: "Pending", statusColor: Colors.orange),
-    Order(date: "24/05/2024", id: "PX6789", name: "CiproCure 500mg", location: "Mumbai, India", status: "Delivered", statusColor: Colors.green),
-    Order(date: "24/05/2024", id: "CC5432", name: "AmoxiHeal 250mg", location: "Sydney, AUS", status: "Delivered", statusColor: Colors.green),
-    Order(date: "23/05/2024", id: "AH8765", name: "ZithroMax Antibiotic", location: "New York, USA", status: "Pending", statusColor: Colors.orange),
+    Order(
+        date: "01/04/2024",
+        id: "P12345",
+        name: "Pancit canton",
+        location: "Pila, Laguna",
+        status: "In Transit",
+        statusColor: Colors.blue),
+    Order(
+        date: "02/04/2024",
+        id: "ZM2345",
+        name: "GIN",
+        location: "Sta. Rosa, Laguna",
+        status: "Pending",
+        statusColor: Colors.orange),
+    Order(
+        date: "24/05/2024",
+        id: "PX6789",
+        name: "Bear Brand",
+        location: "Cavite, Philippines",
+        status: "Delivered",
+        statusColor: Colors.green),
+    Order(
+        date: "24/05/2024",
+        id: "CC5432",
+        name: "Paracetukmol",
+        location: "Cavite, Philippines",
+        status: "Delivered",
+        statusColor: Colors.green),
+    Order(
+        date: "23/05/2024",
+        id: "AH8765",
+        name: "USB Cable",
+        location: "Cebu, Philippines",
+        status: "Pending",
+        statusColor: Colors.orange),
   ];
 
   @override
@@ -224,17 +354,19 @@ class ReviewOrders extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Review Orders", 
+            Text(
+              "Review Orders",
               style: GoogleFonts.poppins(
-                fontSize: 18 * textScale, 
-                fontWeight: FontWeight.bold
-              ),
+                  fontSize: 18 * textScale, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 10),
             LayoutBuilder(
               builder: (context, constraints) {
                 return Column(
-                  children: orders.map((order) => OrderItem(order: order, maxWidth: constraints.maxWidth)).toList(),
+                  children: orders
+                      .map((order) => OrderItem(
+                          order: order, maxWidth: constraints.maxWidth))
+                      .toList(),
                 );
               },
             ),
@@ -253,7 +385,13 @@ class Order {
   final String status;
   final Color statusColor;
 
-  Order({required this.date, required this.id, required this.name, required this.location, required this.status, required this.statusColor});
+  Order(
+      {required this.date,
+      required this.id,
+      required this.name,
+      required this.location,
+      required this.status,
+      required this.statusColor});
 }
 
 class OrderItem extends StatelessWidget {
@@ -273,14 +411,25 @@ class OrderItem extends StatelessWidget {
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(order.date, style: GoogleFonts.poppins(fontSize: 14 * textScale, fontWeight: FontWeight.w500, color: Colors.black54)),
-                Text(order.id, style: GoogleFonts.poppins(fontSize: 12 * textScale, color: Colors.black45)),
-                Text(order.name, style: GoogleFonts.poppins(fontSize: 14 * textScale, fontWeight: FontWeight.w500)),
-                Text(order.location, style: GoogleFonts.poppins(fontSize: 12 * textScale, color: Colors.black54)),
+                Text(order.date,
+                    style: GoogleFonts.poppins(
+                        fontSize: 14 * textScale,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black54)),
+                Text(order.id,
+                    style: GoogleFonts.poppins(
+                        fontSize: 12 * textScale, color: Colors.black45)),
+                Text(order.name,
+                    style: GoogleFonts.poppins(
+                        fontSize: 14 * textScale, fontWeight: FontWeight.w500)),
+                Text(order.location,
+                    style: GoogleFonts.poppins(
+                        fontSize: 12 * textScale, color: Colors.black54)),
                 SizedBox(height: 5),
                 Align(
                   alignment: Alignment.centerLeft,
-                  child: StatusBadge(status: order.status, color: order.statusColor),
+                  child: StatusBadge(
+                      status: order.status, color: order.statusColor),
                 ),
                 Divider(),
               ],
@@ -288,10 +437,28 @@ class OrderItem extends StatelessWidget {
           : Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Expanded(flex: 2, child: Text(order.date, style: GoogleFonts.poppins(fontSize: 14 * textScale, fontWeight: FontWeight.w500, color: Colors.black54))),
-                Expanded(flex: 3, child: Text(order.name, style: GoogleFonts.poppins(fontSize: 14 * textScale, fontWeight: FontWeight.w500))),
-                Expanded(flex: 2, child: Text(order.location, style: GoogleFonts.poppins(fontSize: 12 * textScale, color: Colors.black54))),
-                Expanded(flex: 1, child: StatusBadge(status: order.status, color: order.statusColor)),
+                Expanded(
+                    flex: 2,
+                    child: Text(order.date,
+                        style: GoogleFonts.poppins(
+                            fontSize: 14 * textScale,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black54))),
+                Expanded(
+                    flex: 3,
+                    child: Text(order.name,
+                        style: GoogleFonts.poppins(
+                            fontSize: 14 * textScale,
+                            fontWeight: FontWeight.w500))),
+                Expanded(
+                    flex: 2,
+                    child: Text(order.location,
+                        style: GoogleFonts.poppins(
+                            fontSize: 12 * textScale, color: Colors.black54))),
+                Expanded(
+                    flex: 1,
+                    child: StatusBadge(
+                        status: order.status, color: order.statusColor)),
               ],
             ),
     );
@@ -312,7 +479,9 @@ class StatusBadge extends StatelessWidget {
         color: color.withOpacity(0.2),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Text(status, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+      child: Text(status,
+          style: GoogleFonts.poppins(
+              fontSize: 12, fontWeight: FontWeight.bold, color: color)),
     );
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'sellerRegister.dart'; // Import SellerRegistrationScreen
 import 'package:google_fonts/google_fonts.dart';
-
+import 'sellerdashboard.dart'; // Import SellerDashboardScreen
 void main() {
   runApp(const SellerLoginApp());
 }
@@ -60,7 +60,12 @@ class SellerLoginScreen extends StatelessWidget {
                     PasswordField(),
                     const SizedBox(height: 30),
                     ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => DashboardScreen()),
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFF651D32),
                         minimumSize: const Size(double.infinity, 50),

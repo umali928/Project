@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'register.dart'; // Import RegisterScreen
+import 'dashboard.dart'; // Import DashboardScreen
+
 void main() {
   runApp(const MyApp());
 }
@@ -26,7 +28,8 @@ class LoginScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          double textFieldWidth = constraints.maxWidth > 600 ? 400 : double.infinity;
+          double textFieldWidth =
+              constraints.maxWidth > 600 ? 400 : double.infinity;
           return SingleChildScrollView(
             child: ConstrainedBox(
               constraints: BoxConstraints(
@@ -63,7 +66,8 @@ class LoginScreen extends StatelessWidget {
                           labelText: 'Email',
                           filled: true,
                           fillColor: Colors.grey[200],
-                          contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 15),
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 20, horizontal: 15),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10.0),
                             borderSide: BorderSide.none,
@@ -94,7 +98,13 @@ class LoginScreen extends StatelessWidget {
                     SizedBox(
                       width: textFieldWidth,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => Dashboard()),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF651D32),
                           foregroundColor: Colors.white,
@@ -117,7 +127,8 @@ class LoginScreen extends StatelessWidget {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => SignUpScreen()),
+                          MaterialPageRoute(
+                              builder: (context) => SignUpScreen()),
                         );
                       },
                       child: Text(
@@ -162,7 +173,6 @@ class LoginScreen extends StatelessWidget {
   }
 }
 
-
 class PasswordField extends StatefulWidget {
   @override
   _PasswordFieldState createState() => _PasswordFieldState();
@@ -185,7 +195,8 @@ class _PasswordFieldState extends State<PasswordField> {
         labelText: 'Password',
         filled: true,
         fillColor: Colors.grey[200],
-        contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 15), // Increase padding
+        contentPadding: EdgeInsets.symmetric(
+            vertical: 20, horizontal: 15), // Increase padding
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
           borderSide: BorderSide.none,

@@ -1,5 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dashboard.dart';
+import 'profile.dart';
+import 'orderHistory.dart';
+
+class Wishlist extends StatefulWidget {
+  @override
+  _WishlistScreenState createState() => _WishlistScreenState();
+}
+
+class _WishlistScreenState extends State<Wishlist> {
+  int _selectedIndex = 1; // Set initial index to 1 for WishlistScreen
+
+  final List<Widget> _pages = [
+    // Add all your other screens here
+    HomeScreen(),
+    WishlistScreen(), // This is the Wishlist page
+    OrderHistoryScreen(),
+    SettingsPage(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
+        currentIndex: _selectedIndex,
+        selectedItemColor: Color(0xFF651D32),
+        unselectedItemColor: Colors.grey,
+        onTap: _onItemTapped,
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.favorite_border), label: "Wishlist"),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Account"),
+        ],
+      ),
+    );
+  }
+}
+
 class WishlistScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -9,7 +60,9 @@ class WishlistScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: Text('Wishlist', style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text('Wishlist',
+            style: GoogleFonts.poppins(
+                color: Colors.black, fontWeight: FontWeight.bold)),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -40,13 +93,16 @@ class WishlistScreen extends StatelessWidget {
                   ),
                   child: Icon(Icons.image, size: 40, color: Colors.grey[600]),
                 ),
-                title: Text('Product Name', style: TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text('Price', style: TextStyle(color: Colors.grey[600])),
+                title: Text('Product Name',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle:
+                    Text('Price', style: TextStyle(color: Colors.grey[600])),
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: Icon(Icons.add_shopping_cart, color: Color(0xFF651D32)),
+                      icon: Icon(Icons.add_shopping_cart,
+                          color: Color(0xFF651D32)),
                       onPressed: () {
                         // Add to cart functionality
                       },
@@ -77,7 +133,11 @@ class WishlistScreen extends StatelessWidget {
           onPressed: () {
             // Implement add all to cart logic
           },
-          child: Text('Add All To Cart', style: GoogleFonts.poppins(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold)),
+          child: Text('Add All To Cart',
+              style: GoogleFonts.poppins(
+                  fontSize: 20,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold)),
         ),
       ),
     );

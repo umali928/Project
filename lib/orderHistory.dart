@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'dashboard.dart'; // Import DashboardScreen
+import 'profile.dart'; // Import ProfileScreen
+import 'wishlist.dart'; // Import WishlistScreen
+
 void main() {
   runApp(const MyApp());
 }
@@ -15,11 +19,60 @@ class MyApp extends StatelessWidget {
         primaryColor: const Color(0xFF800000),
         scaffoldBackgroundColor: Colors.white,
         appBarTheme: const AppBarTheme(
-          backgroundColor: Color.fromARGB(255, 255, 255, 255),
-          foregroundColor: Color.fromARGB(255, 0, 0, 0),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
         ),
       ),
-      home: const OrderHistoryScreen(),
+      home: const MainNavigation(),
+    );
+  }
+}
+
+// Main Navigation with BottomNavigationBar
+class MainNavigation extends StatefulWidget {
+  const MainNavigation({super.key});
+
+  @override
+  State<MainNavigation> createState() => _MainNavigationState();
+}
+
+class _MainNavigationState extends State<MainNavigation> {
+  int _selectedIndex = 2;
+
+  final List<Widget> _pages = [
+    HomeScreen(),
+    WishlistScreen(),
+    OrderHistoryScreen(),
+    SettingsPage(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _pages,
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        selectedItemColor: Color(0xFF651D32),
+        unselectedItemColor: Colors.grey,
+        onTap: _onItemTapped,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.favorite_border), label: "Wishlist"),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+        ],
+      ),
     );
   }
 }
@@ -55,7 +108,8 @@ class OrderHistoryScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Order History", style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),  
+        title: Text("Order History",
+            style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       body: Padding(
@@ -89,7 +143,8 @@ class OrderHistoryScreen extends StatelessWidget {
                       color: Colors.grey[300],
                     ),
                     child: Center(
-                      child: Icon(Icons.image, color: Colors.grey, size: iconSize),
+                      child:
+                          Icon(Icons.image, color: Colors.grey, size: iconSize),
                     ),
                   ),
                   SizedBox(width: screenWidth * 0.04),
@@ -106,12 +161,17 @@ class OrderHistoryScreen extends StatelessWidget {
                           ),
                         ),
                         SizedBox(height: screenWidth * 0.02),
-                         Row(
+                        Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(order["date"], style: GoogleFonts.poppins(color: Colors.grey[700], fontSize: screenWidth * 0.04)),
+                            Text(order["date"],
+                                style: GoogleFonts.poppins(
+                                    color: Colors.grey[700],
+                                    fontSize: screenWidth * 0.04)),
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.02, vertical: screenWidth * 0.01),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: screenWidth * 0.02,
+                                  vertical: screenWidth * 0.01),
                               decoration: BoxDecoration(
                                 color: _getStatusColor(order["status"]),
                                 borderRadius: BorderRadius.circular(8),
@@ -141,7 +201,8 @@ class OrderHistoryScreen extends StatelessWidget {
                             ),
                             if (order["status"] == "Delivered")
                               IconButton(
-                                icon: Icon(Icons.delete, color: Colors.red, size: iconSize),
+                                icon: Icon(Icons.delete,
+                                    color: Colors.red, size: iconSize),
                                 onPressed: () {
                                   // Implement delete functionality here
                                 },

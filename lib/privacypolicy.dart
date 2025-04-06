@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'profile.dart'; // Import ProfileScreen
 
 void main() {
-  runApp(const MyApp());
+  runApp(policy());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class policy extends StatelessWidget {
+  const policy({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'E-Commerce App',
       theme: ThemeData(
-        primaryColor: const Color(0xFF800000), // Maroon
+        primaryColor: Color(0xFF800000), // Maroon
         scaffoldBackgroundColor: Colors.white,
-        appBarTheme: const AppBarTheme(
+        appBarTheme: AppBarTheme(
           backgroundColor: Color(0xFF800000),
           foregroundColor: Colors.white,
           elevation: 0,
@@ -23,7 +24,7 @@ class MyApp extends StatelessWidget {
         ),
         textTheme: GoogleFonts.poppinsTextTheme(),
       ),
-      home: const PrivacyPolicyScreen(),
+      home: PrivacyPolicyScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
@@ -39,7 +40,12 @@ class PrivacyPolicyScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pop(context); // Go back
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => settings(), // Go back to ProfilePage
+              ),
+            ); // Go back
           },
         ),
         title: Text(
@@ -55,7 +61,8 @@ class PrivacyPolicyScreen extends StatelessWidget {
           double horizontalPadding = constraints.maxWidth < 600 ? 20 : 100;
 
           return SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 20),
+            padding: EdgeInsets.symmetric(
+                horizontal: horizontalPadding, vertical: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -67,50 +74,50 @@ class PrivacyPolicyScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
                 _buildSectionTitle('1. Information We Collect'),
-                _buildBulletPoint('Personal Information: Name, email, phone number when you register'),
-                _buildBulletPoint('Payment Information: Credit card details processed through secure payment gateways'),
-                _buildBulletPoint('Device Information: IP address, browser type, operating system'),
-                _buildBulletPoint('Usage Data: Pages visited, time spent, features used'),
-
+                _buildBulletPoint(
+                    'Personal Information: Name, email, phone number when you register'),
+                _buildBulletPoint(
+                    'Payment Information: Credit card details processed through secure payment gateways'),
+                _buildBulletPoint(
+                    'Device Information: IP address, browser type, operating system'),
+                _buildBulletPoint(
+                    'Usage Data: Pages visited, time spent, features used'),
                 const SizedBox(height: 24),
                 _buildSectionTitle('2. How We Use Your Information'),
-                _buildBulletPoint('To process your transactions and deliver products'),
+                _buildBulletPoint(
+                    'To process your transactions and deliver products'),
                 _buildBulletPoint('To improve our app and customer service'),
                 _buildBulletPoint('To prevent fraud and enhance security'),
-
                 const SizedBox(height: 24),
                 _buildSectionTitle('3. Data Sharing'),
                 _buildParagraph(
                   'We do not sell your personal information. We may share data with:',
                 ),
-                _buildBulletPoint('Service providers who assist with payment processing, shipping, etc.'),
+                _buildBulletPoint(
+                    'Service providers who assist with payment processing, shipping, etc.'),
                 _buildBulletPoint('Legal authorities when required by law'),
-
                 const SizedBox(height: 24),
                 _buildSectionTitle('4. Data Security'),
                 _buildParagraph(
                   'We implement industry-standard security measures including encryption, secure servers, and regular audits to protect your data.',
                 ),
-
                 const SizedBox(height: 24),
                 _buildSectionTitle('5. Your Rights'),
-                _buildBulletPoint('Access, update, or delete your personal information'),
+                _buildBulletPoint(
+                    'Access, update, or delete your personal information'),
                 _buildBulletPoint('Opt-out of marketing communications'),
                 _buildBulletPoint('Request data portability'),
                 _buildBulletPoint('Withdraw consent where applicable'),
-
                 const SizedBox(height: 24),
                 _buildSectionTitle('6. Cookies and Tracking'),
                 _buildParagraph(
                   'We use cookies and similar technologies to enhance your experience, analyze usage, and deliver personalized ads. You can manage cookie preferences in your browser settings.',
                 ),
-
                 const SizedBox(height: 24),
                 _buildSectionTitle('7. Changes to This Policy'),
                 _buildParagraph(
                   'We may update this policy periodically. We will notify you of significant changes through the app or via email. Your continued use after changes constitutes acceptance.',
                 ),
-
                 const SizedBox(height: 24),
                 _buildSectionTitle('8. Contact Us'),
                 _buildParagraph(

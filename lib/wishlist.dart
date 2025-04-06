@@ -28,7 +28,9 @@ class _WishlistScreenState extends State<Wishlist> {
 
   @override
   Widget build(BuildContext context) {
+    
     return Scaffold(
+      backgroundColor: Colors.white,
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
@@ -38,6 +40,7 @@ class _WishlistScreenState extends State<Wishlist> {
         currentIndex: _selectedIndex,
         selectedItemColor: Color(0xFF651D32),
         unselectedItemColor: Colors.grey,
+        backgroundColor: Colors.white,
         onTap: _onItemTapped,
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
@@ -57,6 +60,7 @@ class WishlistScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
@@ -73,6 +77,7 @@ class WishlistScreen extends StatelessWidget {
           ),
         ),
         child: ListView.builder(
+          
           itemCount: 5, // Placeholder count
           padding: EdgeInsets.all(16),
           itemBuilder: (context, index) {
@@ -82,6 +87,7 @@ class WishlistScreen extends StatelessWidget {
               ),
               elevation: 3,
               margin: EdgeInsets.only(bottom: 12),
+              color: Colors.white,
               child: ListTile(
                 contentPadding: EdgeInsets.all(12),
                 leading: Container(

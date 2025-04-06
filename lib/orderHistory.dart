@@ -54,7 +54,9 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
+    
     return Scaffold(
+      backgroundColor: Colors.white,
       body: IndexedStack(
         index: _selectedIndex,
         children: _pages,
@@ -63,6 +65,7 @@ class _MainNavigationState extends State<MainNavigation> {
         currentIndex: _selectedIndex,
         selectedItemColor: Color(0xFF651D32),
         unselectedItemColor: Colors.grey,
+        backgroundColor: Colors.white,
         onTap: _onItemTapped,
         type: BottomNavigationBarType.fixed,
         items: const [
@@ -107,7 +110,10 @@ class OrderHistoryScreen extends StatelessWidget {
     double iconSize = screenWidth * 0.08;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        automaticallyImplyLeading: false,
         title: Text("Order History",
             style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
         centerTitle: true,

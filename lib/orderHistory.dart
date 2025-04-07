@@ -54,7 +54,6 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
-    
     return Scaffold(
       backgroundColor: Colors.white,
       body: IndexedStack(
@@ -198,8 +197,8 @@ class OrderHistoryScreen extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              "Total: ₱${order["total"]}",
-                              style: GoogleFonts.poppins(
+                              "Total: \u20B1${order["total"]}",
+                              style: GoogleFonts.roboto(
                                 fontSize: screenWidth * 0.045,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF800000),

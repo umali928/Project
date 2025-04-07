@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 // import 'package:fl_chart/fl_chart.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'Sellerlogin.dart';
 
 void main() {
   runApp(MyApp());
@@ -119,7 +120,8 @@ class NavigationDrawer extends StatelessWidget {
                 DrawerItem(icon: Icons.bar_chart, text: "View Sales"),
                 DrawerItem(icon: Icons.local_offer, text: "Discount & Coupons"),
                 DrawerItem(icon: Icons.message, text: "Message Users"),
-                DrawerItem(icon: Icons.account_balance_wallet, text: "Withdraw"),
+                DrawerItem(
+                    icon: Icons.account_balance_wallet, text: "Withdraw"),
                 DrawerItem(icon: Icons.person, text: "Profile"),
                 Divider(),
                 DrawerItem(icon: Icons.logout, text: "Log Out", isLogout: true),
@@ -159,7 +161,17 @@ class DrawerItem extends StatelessWidget {
         ),
       ),
       onTap: () {
-        // Implement navigation here
+        if (isLogout) {
+          // Navigate to login screen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (context) =>
+                    SellerLoginScreen()), // make sure LoginScreen exists in login.dart
+          );
+        } else {
+          // Other navigation logic if needed
+        }
       },
       hoverColor: Colors.grey[200],
     );

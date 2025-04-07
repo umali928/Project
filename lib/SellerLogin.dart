@@ -40,7 +40,7 @@ class SellerLoginScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 40),
                     Text(
-                      'Sign in to your Seller Account',
+                      'Login to your Seller Account',
                       style: GoogleFonts.poppins(fontSize: 35, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),

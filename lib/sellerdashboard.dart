@@ -20,7 +20,7 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
+      backgroundColor: Colors.white,
       drawer: NavigationDrawer(),
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -328,7 +328,7 @@ class ReviewOrders extends StatelessWidget {
     Order(
         date: "24/05/2024",
         id: "CC5432",
-        name: "Paracetukmol",
+        name: "Paracetemol",
         location: "Cavite, Philippines",
         status: "Delivered",
         statusColor: Colors.green),

@@ -80,21 +80,7 @@ class LoginScreen extends StatelessWidget {
                       width: textFieldWidth,
                       child: PasswordField(),
                     ),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {},
-                        child: Text(
-                          'Forgot your password?',
-                          style: GoogleFonts.poppins(
-                            color: Color(0xFF651D32),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 18),
                     SizedBox(
                       width: textFieldWidth,
                       child: ElevatedButton(
@@ -148,18 +134,18 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        IconButton(
-                          onPressed: () {},
-                          icon: Image.asset(
-                            'assets/googleicon.png',
-                            width: 40,
-                            height: 40,
-                          ),
-                        ),
-                      ],
+                    OutlinedButton.icon(
+                      onPressed: () {},
+                      icon: Image.asset('assets/googleicon.png', height: 24),
+                      label: Text('Continue with Google',
+                          style: GoogleFonts.poppins(
+                            color: Color(0xFF651D32),
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          )),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: Size(double.infinity, 50),
+                      ),
                     ),
                     const SizedBox(height: 50),
                   ],
@@ -195,8 +181,7 @@ class _PasswordFieldState extends State<PasswordField> {
         labelText: 'Password',
         filled: true,
         fillColor: Colors.grey[200],
-        contentPadding: EdgeInsets.symmetric(
-            vertical: 20, horizontal: 15),
+        contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 15),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
           borderSide: BorderSide.none,

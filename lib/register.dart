@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'login.dart'; // Import LoginScreen
+
 void main() {
   runApp(SignUpScreen());
 }
@@ -43,11 +44,11 @@ class _SignUpFormState extends State<SignUpForm> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start, 
-      mainAxisAlignment: MainAxisAlignment.center, 
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Align(
-          alignment: Alignment.center, 
+          alignment: Alignment.center,
           child: Text(
             'Create Account',
             style: GoogleFonts.poppins(
@@ -57,9 +58,9 @@ class _SignUpFormState extends State<SignUpForm> {
             ),
           ),
         ),
-        SizedBox(height: 25), 
+        SizedBox(height: 25),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10.0), 
+          padding: const EdgeInsets.symmetric(horizontal: 10.0),
           child: Text(
             'Create an account so you can explore all of the products!',
             textAlign: TextAlign.center,
@@ -77,7 +78,8 @@ class _SignUpFormState extends State<SignUpForm> {
             crossAxisAlignment: CrossAxisAlignment.start, // Align fields left
             children: [
               Padding(
-                padding: const EdgeInsets.only(left: 10.0), // Move email field right
+                padding:
+                    const EdgeInsets.only(left: 10.0), // Move email field right
                 child: TextField(
                   decoration: InputDecoration(
                     hintText: 'Email',
@@ -87,7 +89,8 @@ class _SignUpFormState extends State<SignUpForm> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Color(0xFF651D32), width: 2),
+                      borderSide:
+                          BorderSide(color: Color(0xFF651D32), width: 2),
                     ),
                     filled: true,
                     fillColor: Colors.grey[200],
@@ -95,10 +98,10 @@ class _SignUpFormState extends State<SignUpForm> {
                 ),
               ),
               SizedBox(height: 30), // More spacing
-              
+
               // Password Field
               Padding(
-                padding: const EdgeInsets.only(left: 10.0), 
+                padding: const EdgeInsets.only(left: 10.0),
                 child: TextField(
                   obscureText: !_isPasswordVisible,
                   decoration: InputDecoration(
@@ -109,7 +112,8 @@ class _SignUpFormState extends State<SignUpForm> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Color(0xFF651D32), width: 2),
+                      borderSide:
+                          BorderSide(color: Color(0xFF651D32), width: 2),
                     ),
                     filled: true,
                     fillColor: Colors.grey[200],
@@ -128,10 +132,10 @@ class _SignUpFormState extends State<SignUpForm> {
                   ),
                 ),
               ),
-              SizedBox(height: 30), 
+              SizedBox(height: 30),
 
               Padding(
-                padding: const EdgeInsets.only(left: 10.0), 
+                padding: const EdgeInsets.only(left: 10.0),
                 child: TextField(
                   obscureText: !_isConfirmPasswordVisible,
                   decoration: InputDecoration(
@@ -142,7 +146,8 @@ class _SignUpFormState extends State<SignUpForm> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Color(0xFF651D32), width: 2),
+                      borderSide:
+                          BorderSide(color: Color(0xFF651D32), width: 2),
                     ),
                     filled: true,
                     fillColor: Colors.grey[200],
@@ -154,14 +159,15 @@ class _SignUpFormState extends State<SignUpForm> {
                       ),
                       onPressed: () {
                         setState(() {
-                          _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                          _isConfirmPasswordVisible =
+                              !_isConfirmPasswordVisible;
                         });
                       },
                     ),
                   ),
                 ),
               ),
-              SizedBox(height: 30), 
+              SizedBox(height: 30),
 
               // Sign Up Button
               Align(
@@ -178,21 +184,21 @@ class _SignUpFormState extends State<SignUpForm> {
                   child: Text(
                     'Sign up',
                     style: GoogleFonts.poppins(
-                      fontSize: 20, 
+                      fontSize: 20,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ),
-              
-              SizedBox(height: 20), 
+
+              SizedBox(height: 20),
               Center(
                 child: GestureDetector(
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => LoginScreen()), 
+                      MaterialPageRoute(builder: (context) => LoginScreen()),
                     );
                   },
                   child: Text(
@@ -209,25 +215,24 @@ class _SignUpFormState extends State<SignUpForm> {
               Center(
                 child: Text(
                   'Or continue with',
-                  style: GoogleFonts.poppins(fontSize: 14, color: const Color.fromARGB(251, 0, 0, 0),fontWeight: FontWeight.bold),
+                  style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: const Color.fromARGB(251, 0, 0, 0),
+                      fontWeight: FontWeight.bold),
                 ),
               ),
               SizedBox(height: 15),
-
-    
-              Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      icon: Image.asset(
-                        'assets/googleicon.png',
-                        width: 40,
-                        height: 40,
-                      ),
-                      onPressed: () {},
-                    ),
-                  ],
+              OutlinedButton.icon(
+                onPressed: () {},
+                icon: Image.asset('assets/googleicon.png', height: 24),
+                label: Text('Continue with Google',
+                    style: GoogleFonts.poppins(
+                      color: Color(0xFF651D32),
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    )),
+                style: OutlinedButton.styleFrom(
+                  minimumSize: Size(double.infinity, 50),
                 ),
               ),
             ],
@@ -237,4 +242,3 @@ class _SignUpFormState extends State<SignUpForm> {
     );
   }
 }
-

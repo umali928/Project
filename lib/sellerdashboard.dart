@@ -35,7 +35,7 @@ class DashboardScreen extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                   color: Colors.black),
             ),
-            Spacer(), // Pushes "LSPUMART" to the right
+            Spacer(), // Push "LSPUMART" to the right
             Text(
               "LSPUMART",
               style: GoogleFonts.poppins(
@@ -160,7 +160,7 @@ class DrawerItem extends StatelessWidget {
       onTap: () {
         // Implement navigation here
       },
-      hoverColor: Colors.grey[200], // Slight hover effect
+      hoverColor: Colors.grey[200],
     );
   }
 }

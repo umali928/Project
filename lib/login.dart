@@ -196,7 +196,7 @@ class _PasswordFieldState extends State<PasswordField> {
         filled: true,
         fillColor: Colors.grey[200],
         contentPadding: EdgeInsets.symmetric(
-            vertical: 20, horizontal: 15), // Increase padding
+            vertical: 20, horizontal: 15),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
           borderSide: BorderSide.none,

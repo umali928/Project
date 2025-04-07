@@ -93,7 +93,7 @@ class SettingsPage extends StatelessWidget {
           Expanded(
             child: ListView(
               padding: EdgeInsets.symmetric(
-                  horizontal: screenWidth * 0.05), // Responsive padding
+                  horizontal: screenWidth * 0.05),
               children: [
                 SizedBox(height: screenHeight * 0.03),
                 CircleAvatar(
@@ -160,7 +160,7 @@ class SettingsPage extends StatelessWidget {
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(title, style: TextStyle(color: color)),
-      onTap: onTap, // Trigger navigation when tapped
+      onTap: onTap, 
       tileColor: Colors.white,
       contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
     );

@@ -43,11 +43,11 @@ class _SignUpFormState extends State<SignUpForm> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start, // Align elements to the left
-      mainAxisAlignment: MainAxisAlignment.center, // Keep centered vertically
+      crossAxisAlignment: CrossAxisAlignment.start, 
+      mainAxisAlignment: MainAxisAlignment.center, 
       children: [
         Align(
-          alignment: Alignment.center, // Center title
+          alignment: Alignment.center, 
           child: Text(
             'Create Account',
             style: GoogleFonts.poppins(
@@ -57,9 +57,9 @@ class _SignUpFormState extends State<SignUpForm> {
             ),
           ),
         ),
-        SizedBox(height: 25), // Increased spacing
+        SizedBox(height: 25), 
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10.0), // Adjust position
+          padding: const EdgeInsets.symmetric(horizontal: 10.0), 
           child: Text(
             'Create an account so you can explore all of the products!',
             textAlign: TextAlign.center,
@@ -70,7 +70,7 @@ class _SignUpFormState extends State<SignUpForm> {
             ),
           ),
         ),
-        SizedBox(height: 45), // Increased spacing
+        SizedBox(height: 45),
         ConstrainedBox(
           constraints: BoxConstraints(maxWidth: 400),
           child: Column(
@@ -98,7 +98,7 @@ class _SignUpFormState extends State<SignUpForm> {
               
               // Password Field
               Padding(
-                padding: const EdgeInsets.only(left: 10.0), // Adjust password field position
+                padding: const EdgeInsets.only(left: 10.0), 
                 child: TextField(
                   obscureText: !_isPasswordVisible,
                   decoration: InputDecoration(
@@ -128,9 +128,8 @@ class _SignUpFormState extends State<SignUpForm> {
                   ),
                 ),
               ),
-              SizedBox(height: 30), // More space before confirm password
+              SizedBox(height: 30), 
 
-              // Confirm Password Field
               Padding(
                 padding: const EdgeInsets.only(left: 10.0), 
                 child: TextField(
@@ -162,7 +161,7 @@ class _SignUpFormState extends State<SignUpForm> {
                   ),
                 ),
               ),
-              SizedBox(height: 30), // Move button down
+              SizedBox(height: 30), 
 
               // Sign Up Button
               Align(
@@ -171,7 +170,7 @@ class _SignUpFormState extends State<SignUpForm> {
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF651D32),
-                    minimumSize: Size(double.infinity, 60), // Adjust button size
+                    minimumSize: Size(double.infinity, 60),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -187,13 +186,13 @@ class _SignUpFormState extends State<SignUpForm> {
                 ),
               ),
               
-              SizedBox(height: 20), // Add space before "Already have an account"
+              SizedBox(height: 20), 
               Center(
                 child: GestureDetector(
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => LoginScreen()), // Navigate to LoginScreen
+                      MaterialPageRoute(builder: (context) => LoginScreen()), 
                     );
                   },
                   child: Text(
@@ -215,7 +214,7 @@ class _SignUpFormState extends State<SignUpForm> {
               ),
               SizedBox(height: 15),
 
-              // Social Media Icons
+    
               Center(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,

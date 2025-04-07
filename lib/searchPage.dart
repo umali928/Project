@@ -24,7 +24,7 @@ class SearchPage extends StatelessWidget {
           children: [
             AppBar(
               leading: IconButton(
-                icon: Icon(Icons.arrow_back, size: 28), // Increased icon size
+                icon: Icon(Icons.arrow_back, size: 28), 
                 onPressed: () {
                   Navigator.pop(context);
                 },
@@ -38,7 +38,7 @@ class SearchPage extends StatelessWidget {
                   decoration: InputDecoration(
                     hintText: "Search for products...",
                     border: InputBorder.none,
-                    prefixIcon: Icon(Icons.search, size: 28), // Increased icon size
+                    prefixIcon: Icon(Icons.search, size: 28),
                     contentPadding: EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
@@ -47,7 +47,7 @@ class SearchPage extends StatelessWidget {
                 Stack(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.shopping_cart, size: 28), // Increased icon size
+                      icon: Icon(Icons.shopping_cart, size: 28),
                       onPressed: () {
                         // Navigate to cart
                       },
@@ -76,7 +76,7 @@ class SearchPage extends StatelessWidget {
               ],
             ),
             Container(
-              width: double.infinity, // Full-width gray line
+              width: double.infinity, 
               height: 1,
               color: Colors.grey,
             ),
@@ -95,7 +95,7 @@ class SearchPage extends StatelessWidget {
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
               ),
-              itemCount: 6, // Placeholder count
+              itemCount: 6, 
               itemBuilder: (context, index) {
                 return Card(
                   elevation: 2,
@@ -109,7 +109,7 @@ class SearchPage extends StatelessWidget {
                         child: Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
-                            color: Colors.grey[300], // Placeholder for image
+                            color: Colors.grey[300], 
                           ),
                         ),
                       ),

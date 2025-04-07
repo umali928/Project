@@ -43,7 +43,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => settings(), // Go back to ProfilePage
+                builder: (context) => settings(), 
               ),
             ); // Go back
           },

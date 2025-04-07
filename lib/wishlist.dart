@@ -10,12 +10,11 @@ class Wishlist extends StatefulWidget {
 }
 
 class _WishlistScreenState extends State<Wishlist> {
-  int _selectedIndex = 1; // Set initial index to 1 for WishlistScreen
+  int _selectedIndex = 1; 
 
   final List<Widget> _pages = [
-    // Add all your other screens here
     HomeScreen(),
-    WishlistScreen(), // This is the Wishlist page
+    WishlistScreen(), 
     OrderHistoryScreen(),
     SettingsPage(),
   ];
@@ -116,7 +115,7 @@ class WishlistScreen extends StatelessWidget {
                     IconButton(
                       icon: Icon(Icons.delete, color: Colors.red),
                       onPressed: () {
-                        // Remove from wishlist functionality
+                        
                       },
                     ),
                   ],

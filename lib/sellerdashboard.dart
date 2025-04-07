@@ -184,6 +184,7 @@ class DashboardCard extends StatelessWidget {
     return Card(
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Row(
@@ -200,7 +201,7 @@ class DashboardCard extends StatelessWidget {
                           fontSize: 14, fontWeight: FontWeight.bold)),
                   SizedBox(height: 5),
                   Text(value,
-                      style: GoogleFonts.poppins(
+                      style: GoogleFonts.roboto(
                           fontSize: 24, fontWeight: FontWeight.bold)),
                   SizedBox(height: 5),
                   Row(
@@ -231,6 +232,7 @@ class OrderSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 3,
+      color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -328,7 +330,7 @@ class ReviewOrders extends StatelessWidget {
     Order(
         date: "24/05/2024",
         id: "CC5432",
-        name: "Paracetemol",
+        name: "Paracetukmol",
         location: "Cavite, Philippines",
         status: "Delivered",
         statusColor: Colors.green),
@@ -345,6 +347,7 @@ class ReviewOrders extends StatelessWidget {
   Widget build(BuildContext context) {
     double textScale = MediaQuery.of(context).textScaleFactor;
     return Card(
+      color: Colors.white,
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(

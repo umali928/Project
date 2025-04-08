@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "533992551897",
+    "project_id": "lspumart",
+    "storage_bucket": "lspumart.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:533992551897:android:9b95e0bec39908400815c8",
+        "android_client_info": {
+          "package_name": "com.example.lspu"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAifiplP33rXgwswb7YCL7PtMj9wuK18tE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

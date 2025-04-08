@@ -77,6 +77,27 @@ class _SignUpFormState extends State<SignUpForm> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start, // Align fields left
             children: [
+              // Full Name Field
+              Padding(
+                padding: const EdgeInsets.only(left: 10.0),
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Full Name',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide:
+                          BorderSide(color: Color(0xFF651D32), width: 2),
+                    ),
+                    filled: true,
+                    fillColor: Colors.grey[200],
+                  ),
+                ),
+              ),
+              SizedBox(height: 30),
               Padding(
                 padding:
                     const EdgeInsets.only(left: 10.0), // Move email field right

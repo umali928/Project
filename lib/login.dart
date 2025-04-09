@@ -1,10 +1,39 @@
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'register.dart'; // Import RegisterScreen
-import 'dashboard.dart'; // Import DashboardScreen
+import 'register.dart';
+import 'dashboard.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+        apiKey: "AIzaSyBbSQOdsCh7ImLhewcIhHUTcj9-1xbShQk",
+        authDomain: "lspumart.firebaseapp.com",
+        databaseURL: "https://lspumart-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "lspumart",
+        storageBucket: "lspumart.firebasestorage.app",
+        messagingSenderId: "533992551897",
+        appId: "1:533992551897:web:d04a482ad131a0700815c8"
+      ),
+    );
+  } else {
+    await Firebase.initializeApp();
+  }
+
+  await Supabase.initialize(
+    url: 'https://haoiqctsijynxwfoaspm.supabase.co',
+    anonKey: 'your-supabase-anon-key',
+  );
+
+  // 🔑 Check for existing session
+  firebase_auth.User? user = firebase_auth.FirebaseAuth.instance.currentUser;
+  runApp(user != null ? Dashboard() : const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -19,8 +48,34 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+
+  void loginUser() async {
+    try {
+      final credential = await firebase_auth.FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+      print("Logged in user UID: ${credential.user?.uid}");
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => Dashboard()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Login failed: Incorrect Email Or Password")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,13 +83,10 @@ class LoginScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          double textFieldWidth =
-              constraints.maxWidth > 600 ? 400 : double.infinity;
+          double textFieldWidth = constraints.maxWidth > 600 ? 400 : double.infinity;
           return SingleChildScrollView(
             child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minHeight: MediaQuery.of(context).size.height,
-              ),
+              constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -53,21 +105,18 @@ class LoginScreen extends StatelessWidget {
                     Text(
                       'Welcome to LSPU-Mart',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 44),
                     SizedBox(
                       width: textFieldWidth,
                       child: TextField(
+                        controller: emailController,
                         decoration: InputDecoration(
                           labelText: 'Email',
                           filled: true,
                           fillColor: Colors.grey[200],
-                          contentPadding: EdgeInsets.symmetric(
-                              vertical: 20, horizontal: 15),
+                          contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 15),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10.0),
                             borderSide: BorderSide.none,
@@ -76,21 +125,12 @@ class LoginScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    SizedBox(
-                      width: textFieldWidth,
-                      child: PasswordField(),
-                    ),
+                    SizedBox(width: textFieldWidth, child: PasswordField(controller: passwordController)),
                     const SizedBox(height: 18),
                     SizedBox(
                       width: textFieldWidth,
                       child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => Dashboard()),
-                          );
-                        },
+                        onPressed: loginUser,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF651D32),
                           foregroundColor: Colors.white,
@@ -101,10 +141,7 @@ class LoginScreen extends StatelessWidget {
                         ),
                         child: Text(
                           'Login',
-                          style: GoogleFonts.poppins(
-                            fontSize: 25,
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style: GoogleFonts.poppins(fontSize: 25, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -113,8 +150,7 @@ class LoginScreen extends StatelessWidget {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(
-                              builder: (context) => SignUpScreen()),
+                          MaterialPageRoute(builder: (context) => SignUpScreen()),
                         );
                       },
                       child: Text(
@@ -137,15 +173,15 @@ class LoginScreen extends StatelessWidget {
                     OutlinedButton.icon(
                       onPressed: () {},
                       icon: Image.asset('assets/googleicon.png', height: 24),
-                      label: Text('Continue with Google',
-                          style: GoogleFonts.poppins(
-                            color: Color(0xFF651D32),
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          )),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: Size(double.infinity, 50),
+                      label: Text(
+                        'Continue with Google',
+                        style: GoogleFonts.poppins(
+                          color: Color(0xFF651D32),
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
+                      style: OutlinedButton.styleFrom(minimumSize: Size(double.infinity, 50)),
                     ),
                     const SizedBox(height: 50),
                   ],
@@ -160,6 +196,10 @@ class LoginScreen extends StatelessWidget {
 }
 
 class PasswordField extends StatefulWidget {
+  final TextEditingController controller;
+
+  const PasswordField({required this.controller});
+
   @override
   _PasswordFieldState createState() => _PasswordFieldState();
 }
@@ -168,14 +208,13 @@ class _PasswordFieldState extends State<PasswordField> {
   bool _obscureText = true;
 
   void _togglePasswordVisibility() {
-    setState(() {
-      _obscureText = !_obscureText;
-    });
+    setState(() => _obscureText = !_obscureText);
   }
 
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: widget.controller,
       obscureText: _obscureText,
       decoration: InputDecoration(
         labelText: 'Password',
@@ -187,9 +226,7 @@ class _PasswordFieldState extends State<PasswordField> {
           borderSide: BorderSide.none,
         ),
         suffixIcon: IconButton(
-          icon: Icon(
-            _obscureText ? Icons.visibility : Icons.visibility_off,
-          ),
+          icon: Icon(_obscureText ? Icons.visibility : Icons.visibility_off),
           onPressed: _togglePasswordVisibility,
         ),
       ),

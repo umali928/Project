@@ -11,10 +11,24 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'login.dart';
 import 'package:image_picker/image_picker.dart';
-
+import 'package:flutter/foundation.dart' show kIsWeb;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+   if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+        apiKey: "AIzaSyBbSQOdsCh7ImLhewcIhHUTcj9-1xbShQk",
+        authDomain: "lspumart.firebaseapp.com",
+        databaseURL: "https://lspumart-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "lspumart",
+        storageBucket: "lspumart.firebasestorage.app",
+        messagingSenderId: "533992551897",
+        appId: "1:533992551897:web:d04a482ad131a0700815c8"
+      ),
+    );
+  } else {
+    await Firebase.initializeApp(); // Mobile config
+  }
   await Supabase.initialize(
     url:
         'https://haoiqctsijynxwfoaspm.supabase.co', // Replace with your Supabase URL

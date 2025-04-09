@@ -4,14 +4,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:firebase_storage/firebase_storage.dart';
-// import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'login.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+// import 'package:firebase_storage/firebase_storage.dart';
+// import 'dart:typed_data';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
    if (kIsWeb) {
@@ -460,22 +460,33 @@ class _SignUpFormState extends State<SignUpForm> {
                   ),
                 ),
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 30),
               Center(
                 child: GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => LoginScreen()),
-                    );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginScreen()),
+                  );
                   },
-                  child: Text(
-                    'Already have an account?? Click me!',
+                  child: RichText(
+                  text: TextSpan(
+                    text: 'Already have an account? ',
                     style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    ),
+                    children: [
+                    TextSpan(
+                      text: 'Log in here!',
+                      style: GoogleFonts.poppins(
                       fontSize: 14,
                       color: Color(0xFF651D32),
                       fontWeight: FontWeight.bold,
+                      ),
                     ),
+                    ],
+                  ),
                   ),
                 ),
               ),

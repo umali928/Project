@@ -126,7 +126,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 32),
                     SizedBox(width: textFieldWidth, child: PasswordField(controller: passwordController)),
-                    const SizedBox(height: 18),
+                    const SizedBox(height: 38),
                     SizedBox(
                       width: textFieldWidth,
                       child: ElevatedButton(
@@ -145,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 36),
                     TextButton(
                       onPressed: () {
                         Navigator.push(
@@ -153,37 +153,51 @@ class _LoginScreenState extends State<LoginScreen> {
                           MaterialPageRoute(builder: (context) => SignUpScreen()),
                         );
                       },
-                      child: Text(
-                        'Create new account',
-                        style: GoogleFonts.poppins(
-                          color: const Color.fromARGB(255, 0, 0, 0),
-                          fontWeight: FontWeight.bold,
+                        child: RichText(
+                        text: TextSpan(
+                          text: 'No account? ',
+                          style: GoogleFonts.poppins(
+                          color: Colors.black87,
+                          fontSize: 16,
+                          ),
+                          children: [
+                          TextSpan(
+                            text: 'Register Here',
+                            style: GoogleFonts.poppins(
+                            color: const Color(0xFF651D32),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            decoration: TextDecoration.underline,
+                            ),
+                          ),
+                          ],
+                        ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Or continue with',
-                      style: GoogleFonts.poppins(
-                        color: Color(0xFF651D32),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    OutlinedButton.icon(
-                      onPressed: () {},
-                      icon: Image.asset('assets/googleicon.png', height: 24),
-                      label: Text(
-                        'Continue with Google',
-                        style: GoogleFonts.poppins(
-                          color: Color(0xFF651D32),
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(minimumSize: Size(double.infinity, 50)),
-                    ),
-                    const SizedBox(height: 50),
+                    //HIDE FOR NOW
+                    // const SizedBox(height: 16),
+                    // Text(
+                    //   'Or continue with',
+                    //   style: GoogleFonts.poppins(
+                    //     color: Color(0xFF651D32),
+                    //     fontWeight: FontWeight.bold,
+                    //   ),
+                    // ),
+                    // const SizedBox(height: 12),
+                    // OutlinedButton.icon(
+                    //   onPressed: () {},
+                    //   icon: Image.asset('assets/googleicon.png', height: 24),
+                    //   label: Text(
+                    //     'Continue with Google',
+                    //     style: GoogleFonts.poppins(
+                    //       color: Color(0xFF651D32),
+                    //       fontSize: 18,
+                    //       fontWeight: FontWeight.bold,
+                    //     ),
+                    //   ),
+                    //   style: OutlinedButton.styleFrom(minimumSize: Size(double.infinity, 50)),
+                    // ),
+                    // const SizedBox(height: 50),
                   ],
                 ),
               ),

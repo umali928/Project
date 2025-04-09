@@ -460,22 +460,33 @@ class _SignUpFormState extends State<SignUpForm> {
                   ),
                 ),
               ),
-              SizedBox(height: 20),
+              SizedBox(height: 30),
               Center(
                 child: GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => LoginScreen()),
-                    );
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => LoginScreen()),
+                  );
                   },
-                  child: Text(
-                    'Already have an account?? Click me!',
+                  child: RichText(
+                  text: TextSpan(
+                    text: 'Already have an account? ',
                     style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    ),
+                    children: [
+                    TextSpan(
+                      text: 'Log in here!',
+                      style: GoogleFonts.poppins(
                       fontSize: 14,
                       color: Color(0xFF651D32),
                       fontWeight: FontWeight.bold,
+                      ),
                     ),
+                    ],
+                  ),
                   ),
                 ),
               ),

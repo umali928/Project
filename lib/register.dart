@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'login.dart';
+import 'package:image_picker/image_picker.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,37 +64,73 @@ class _SignUpFormState extends State<SignUpForm> {
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final ImagePicker _picker = ImagePicker();
 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
-  // Upload Image to Supabase
-  Future<String?> uploadProfilePicToSupabase(
-      Uint8List fileBytes, String userId) async {
-    final supabase = Supabase.instance.client;
-    final fileName = 'profile_pictures/$userId.jpg';
+  Uint8List? _imageBytes;
+  bool _isUploading = false;
+  Future<void> _pickImage() async {
     try {
-      // Upload the image data directly (no need to cast to File)
-      final response = await supabase.storage
-          .from('uploads') // Ensure this is the correct bucket
-          .uploadBinary(fileName, fileBytes,
-              fileOptions: FileOptions(contentType: 'image/jpeg'));
-
-      // Check if the upload was successful
-      if (response.isNotEmpty) {
-        // Get the public URL for the uploaded file
-        final publicUrl =
-            supabase.storage.from('uploads').getPublicUrl(fileName);
-        return publicUrl;
-      } else {
-        print('Error uploading image: $response');
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        setState(() {
+          _imageBytes = bytes;
+        });
       }
     } catch (e) {
-      print('Error uploading image: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to pick image: $e')),
+      );
     }
-    return null;
+  }
+  // Upload Image to Supabase
+  Future<String?> uploadProfilePicToSupabase(Uint8List fileBytes, String userId) async {
+  final supabase = Supabase.instance.client;
+  
+  // Detect file type from the bytes
+  String? fileExtension;
+  if (fileBytes.length >= 8) {
+    // Check for PNG signature
+    if (fileBytes[0] == 0x89 && fileBytes[1] == 0x50 && fileBytes[2] == 0x4E && fileBytes[3] == 0x47) {
+      fileExtension = 'png';
+    }
+    // Check for JPEG signature
+    else if (fileBytes[0] == 0xFF && fileBytes[1] == 0xD8) {
+      fileExtension = 'jpg';
+    }
   }
 
+  // Default to jpg if type couldn't be determined
+  fileExtension ??= 'jpg';
+  
+  final fileName = 'profile_pictures/$userId.$fileExtension';
+  final contentType = fileExtension == 'png' ? 'image/png' : 'image/jpeg';
+
+  try {
+    final response = await supabase.storage
+        .from('uploads')
+        .uploadBinary(
+          fileName, 
+          fileBytes,
+          fileOptions: FileOptions(contentType: contentType),
+        );
+
+    if (response.isEmpty) {
+      throw Exception('Empty response from Supabase');
+    }
+
+    final publicUrl = supabase.storage.from('uploads').getPublicUrl(fileName);
+    return publicUrl;
+  } catch (e) {
+    print('Error uploading image: $e');
+    rethrow; // Rethrow to handle in the calling function
+  }
+}
+
   Future<void> _register() async {
+    if (_isUploading) return;
     String fullName = fullNameController.text.trim();
     String email = emailController.text.trim();
     String password = passwordController.text.trim();
@@ -127,6 +164,17 @@ class _SignUpFormState extends State<SignUpForm> {
       );
       return;
     }
+    // Check if profile picture is selected
+  if (_imageBytes == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Please select a profile picture')),
+    );
+    return;
+  }
+ setState(() {
+    _isUploading = true;
+  });
+
 
     try {
       UserCredential userCredential =
@@ -134,14 +182,8 @@ class _SignUpFormState extends State<SignUpForm> {
         email: email,
         password: password,
       );
-      // Load the default profile picture from assets
-      Uint8List fileBytes = await rootBundle
-          .load('assets/defaultprofile.jpg')
-          .then((byteData) => byteData.buffer.asUint8List());
-
-      // Upload the profile picture to Supabase
-      String? profilePicUrl =
-          await uploadProfilePicToSupabase(fileBytes, userCredential.user!.uid);
+      // Upload the selected image
+    String? profilePicUrl = await uploadProfilePicToSupabase(_imageBytes!, userCredential.user!.uid);
       await _firestore.collection('users').doc(userCredential.user!.uid).set({
         'fullName': fullName,
         'email': email,
@@ -183,7 +225,13 @@ class _SignUpFormState extends State<SignUpForm> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(errorMessage)),
       );
+    }finally {
+    if (mounted) {
+      setState(() {
+        _isUploading = false;
+      });
     }
+   }
   }
 
   @override
@@ -203,20 +251,62 @@ class _SignUpFormState extends State<SignUpForm> {
             ),
           ),
         ),
-        SizedBox(height: 25),
+        SizedBox(height: 5),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10.0),
           child: Text(
             'Create an account so you can explore all of the products!',
             textAlign: TextAlign.center,
             style: GoogleFonts.poppins(
-              fontSize: 18,
+              fontSize: 15,
               color: Colors.black87,
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
-        SizedBox(height: 45),
+        SizedBox(height: 15),
+            Center(
+          child: GestureDetector(
+            onTap: _pickImage,
+            child: Stack(
+              children: [
+                CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.grey[200],
+                  backgroundImage: _imageBytes != null 
+                      ? MemoryImage(_imageBytes!) 
+                      : null,
+                  child: _imageBytes == null
+                      ? Icon(Icons.person, size: 50, color: Colors.grey)
+                      : null,
+                ),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    padding: EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Color(0xFF651D32),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.camera_alt, size: 20, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(height: 20),
+        Center(
+          child: Text(
+            'Tap to add profile picture (PNG/JPG only)',
+            style: GoogleFonts.poppins(
+              fontSize: 14,
+              color: Colors.grey,
+            ),
+          ),
+        ),
+        SizedBox(height: 15),
         ConstrainedBox(
           constraints: BoxConstraints(maxWidth: 400),
           child: Column(
@@ -332,6 +422,8 @@ class _SignUpFormState extends State<SignUpForm> {
                   ),
                 ),
               ),
+              // Profile picture upload section
+    
               SizedBox(height: 30),
               Align(
                 alignment: Alignment.center,
@@ -364,7 +456,7 @@ class _SignUpFormState extends State<SignUpForm> {
                     );
                   },
                   child: Text(
-                    'Already have an account',
+                    'Already have an account?? Click me!',
                     style: GoogleFonts.poppins(
                       fontSize: 14,
                       color: Color(0xFF651D32),
@@ -373,33 +465,33 @@ class _SignUpFormState extends State<SignUpForm> {
                   ),
                 ),
               ),
-              SizedBox(height: 30),
-              Center(
-                child: Text(
-                  'Or continue with',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: const Color.fromARGB(251, 0, 0, 0),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              SizedBox(height: 15),
-              OutlinedButton.icon(
-                onPressed: () {},
-                icon: Image.asset('assets/googleicon.png', height: 24),
-                label: Text(
-                  'Continue with Google',
-                  style: GoogleFonts.poppins(
-                    color: Color(0xFF651D32),
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: Size(double.infinity, 50),
-                ),
-              ),
+              // SizedBox(height: 30),
+              // Center(
+              //   child: Text(
+              //     'Or continue with',
+              //     style: GoogleFonts.poppins(
+              //       fontSize: 14,
+              //       color: const Color.fromARGB(251, 0, 0, 0),
+              //       fontWeight: FontWeight.bold,
+              //     ),
+              //   ),
+              // ),
+              // SizedBox(height: 15),
+              // OutlinedButton.icon(
+              //   onPressed: () {},
+              //   icon: Image.asset('assets/googleicon.png', height: 24),
+              //   label: Text(
+              //     'Continue with Google',
+              //     style: GoogleFonts.poppins(
+              //       color: Color(0xFF651D32),
+              //       fontSize: 15,
+              //       fontWeight: FontWeight.bold,
+              //     ),
+              //   ),
+              //   style: OutlinedButton.styleFrom(
+              //     minimumSize: Size(double.infinity, 50),
+              //   ),
+              // ),
             ],
           ),
         ),

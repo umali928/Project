@@ -6,8 +6,34 @@ import 'privacypolicy.dart'; // Import PrivacyPolicyScreen
 import 'orderHistory.dart';
 import 'wishlist.dart';
 import 'dashboard.dart'; // Import DashboardScreen
-
-void main() {
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Add this import
+import 'login.dart'; // Import LoginScreen
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+          apiKey: "AIzaSyBbSQOdsCh7ImLhewcIhHUTcj9-1xbShQk",
+          authDomain: "lspumart.firebaseapp.com",
+          databaseURL:
+              "https://lspumart-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "lspumart",
+          storageBucket: "lspumart.firebasestorage.app",
+          messagingSenderId: "533992551897",
+          appId: "1:533992551897:web:d04a482ad131a0700815c8"),
+    );
+  } else {
+    await Firebase.initializeApp();
+  }
+  await Supabase.initialize(
+    url: 'https://haoiqctsijynxwfoaspm.supabase.co',
+     anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhhb2lxY3RzaWp5bnh3Zm9hc3BtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxNzU3MDMsImV4cCI6MjA1OTc1MTcwM30.7kilmu9kxrABgg4ZMz9GIHm5Jv4LHLAIYR1_8q1eDEI', // Replace with your Supabase anon key
+  );
   runApp(settings());
 }
 
@@ -69,7 +95,45 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 }
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  String _name = '';
+  String _email = '';
+  String? _profileImage;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserData();
+  }
+
+  Future<void> fetchUserData() async {
+    final user = firebase_auth.FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (doc.exists) {
+        final data = doc.data();
+        setState(() {
+          _name = data?['fullName'] ?? 'No Name';
+          _email = data?['email'] ?? user.email ?? 'No Email';
+          _profileImage = data?['profilePicUrl'];
+        });
+      }
+    } catch (e) {
+      print('Error fetching Firestore data: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     double screenHeight = MediaQuery.of(context).size.height;
@@ -92,27 +156,30 @@ class SettingsPage extends StatelessWidget {
         children: [
           Expanded(
             child: ListView(
-              padding: EdgeInsets.symmetric(
-                  horizontal: screenWidth * 0.05),
+              padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
               children: [
                 SizedBox(height: screenHeight * 0.03),
                 CircleAvatar(
-                  radius: screenWidth * 0.15, // Responsive avatar size
-                  backgroundColor: Colors.grey[300], // Placeholder color
-                  backgroundImage:
-                      NetworkImage("https://example.com/profile.jpg"),
+                  radius: screenWidth * 0.15,
+                  backgroundColor: Colors.grey[300],
+                  backgroundImage: _profileImage != null
+                      ? NetworkImage(_profileImage!)
+                      : null,
+                  child: _profileImage == null
+                      ? Icon(Icons.person, size: 50, color: Colors.grey)
+                      : null,
                 ),
                 SizedBox(height: screenHeight * 0.015),
                 Text(
-                  "Juan Dela Cruz",
+                  _name,
                   style: GoogleFonts.poppins(
-                    fontSize: screenWidth * 0.05, // Dynamic text scaling
+                    fontSize: screenWidth * 0.05,
                     fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,
                 ),
                 Text(
-                  "JuanDelaCruz@gmail.com",
+                  _email,
                   style: GoogleFonts.poppins(
                     fontSize: screenWidth * 0.04,
                     color: Colors.grey,
@@ -140,7 +207,14 @@ class SettingsPage extends StatelessWidget {
                 buildListTile(Icons.person, "Personal Information"),
                 Divider(),
                 buildListTile(Icons.logout, "Log Out", color: Colors.red,
-                    onTap: () {
+                    onTap: () async {
+                  // ✅ Firebase logout
+                  await firebase_auth.FirebaseAuth.instance.signOut();
+
+                  // Optional: if using Supabase auth
+                  // await Supabase.instance.client.auth.signOut();
+
+                  // Navigate to login screen
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(builder: (context) => LoginScreen()),
@@ -160,7 +234,7 @@ class SettingsPage extends StatelessWidget {
     return ListTile(
       leading: Icon(icon, color: color),
       title: Text(title, style: TextStyle(color: color)),
-      onTap: onTap, 
+      onTap: onTap,
       tileColor: Colors.white,
       contentPadding: EdgeInsets.symmetric(vertical: 5, horizontal: 20),
     );

@@ -10,6 +10,7 @@ import 'package:flutter/services.dart';
 import 'login.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'verify.dart';
 // import 'package:firebase_storage/firebase_storage.dart';
 // import 'dart:typed_data';
 void main() async {
@@ -73,8 +74,7 @@ class _SignUpFormState extends State<SignUpForm> {
   final TextEditingController fullNameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController =
-      TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -196,23 +196,24 @@ class _SignUpFormState extends State<SignUpForm> {
         email: email,
         password: password,
       );
-      // Upload the selected image
-    String? profilePicUrl = await uploadProfilePicToSupabase(_imageBytes!, userCredential.user!.uid);
-      await _firestore.collection('users').doc(userCredential.user!.uid).set({
-        'fullName': fullName,
-        'email': email,
-        'profilePicUrl': profilePicUrl, // Store the profile picture URL
-        'createdAt': Timestamp.now(),
-      });
+       final user = userCredential.user;
+        if (user != null) {
+        await user.sendEmailVerification();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Account created successfully')),
-      );
+        final profileUrl = await uploadProfilePicToSupabase(_imageBytes!, user.uid);
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => LoginScreen()),
-      );
+        await _firestore.collection('users').doc(user.uid).set({
+          'fullName': fullName,
+          'email': email,
+          'profilePicUrl': profileUrl,
+          'createdAt': Timestamp.now(),
+        });
+
+        Navigator.pushReplacement(
+          context,
+            MaterialPageRoute(builder: (context) => VerifyScreen(user: userCredential.user!)),
+        );
+      }
     } catch (e) {
       String errorMessage = 'An error occurred. Please try again.';
       if (e is FirebaseAuthException) {

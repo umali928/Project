@@ -1,13 +1,22 @@
 import 'dart:async';
-// import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'login.dart'; // Make sure this file exists and points to your login screen
-
+// import 'dart:typed_data';
+import 'package:flutter/services.dart';
 class VerifyScreen extends StatefulWidget {
   final User user;
+  final String fullName;
+  final String email;
+  final String profilePicUrl;
+   VerifyScreen({
+    required this.user,
+    required this.fullName,
+    required this.email,
+    required this.profilePicUrl,
+  });
 
-  const VerifyScreen({Key? key, required this.user}) : super(key: key);
 
   @override
   State<VerifyScreen> createState() => _VerifyScreenState();
@@ -15,9 +24,10 @@ class VerifyScreen extends StatefulWidget {
 
 class _VerifyScreenState extends State<VerifyScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   late Timer _timer;
   bool _resent = false;
-
+  // bool _isInserted = false;
   @override
   void initState() {
     super.initState();
@@ -30,6 +40,14 @@ class _VerifyScreenState extends State<VerifyScreen> {
       var refreshedUser = _auth.currentUser;
 
       if (refreshedUser != null && refreshedUser.emailVerified) {
+        // _isInserted = true; // Prevent multiple inserts
+        // Insert user data into Firestore
+        await _firestore.collection('users').doc(refreshedUser.uid).set({
+        'fullName': widget.fullName,
+        'email': widget.email,
+        'profilePicUrl': widget.profilePicUrl,
+        'createdAt': Timestamp.now(),
+      });
         timer.cancel();
          // Now that the email is verified, store the data in Firestore
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Verification successful!')));

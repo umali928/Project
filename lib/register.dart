@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:typed_data';
@@ -77,7 +77,7 @@ class _SignUpFormState extends State<SignUpForm> {
   final TextEditingController confirmPasswordController = TextEditingController();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  // final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final ImagePicker _picker = ImagePicker();
 
   bool _isPasswordVisible = false;
@@ -202,16 +202,19 @@ class _SignUpFormState extends State<SignUpForm> {
 
         final profileUrl = await uploadProfilePicToSupabase(_imageBytes!, user.uid);
 
-        await _firestore.collection('users').doc(user.uid).set({
-          'fullName': fullName,
-          'email': email,
-          'profilePicUrl': profileUrl,
-          'createdAt': Timestamp.now(),
-        });
+        // await _firestore.collection('users').doc(user.uid).set({
+        //   'fullName': fullName,
+        //   'email': email,
+        //   'profilePicUrl': profileUrl,
+        //   'createdAt': Timestamp.now(),
+        // });
 
         Navigator.pushReplacement(
           context,
-            MaterialPageRoute(builder: (context) => VerifyScreen(user: userCredential.user!)),
+            MaterialPageRoute(builder: (context) => VerifyScreen( user: user,
+                                                                fullName: fullName,
+                                                                email: email,
+                                                                profilePicUrl: profileUrl ?? '',)),
         );
       }
     } catch (e) {

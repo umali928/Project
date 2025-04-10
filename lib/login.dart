@@ -28,7 +28,8 @@ void main() async {
 
   await Supabase.initialize(
     url: 'https://haoiqctsijynxwfoaspm.supabase.co',
-    anonKey: 'your-supabase-anon-key',
+     anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhhb2lxY3RzaWp5bnh3Zm9hc3BtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxNzU3MDMsImV4cCI6MjA1OTc1MTcwM30.7kilmu9kxrABgg4ZMz9GIHm5Jv4LHLAIYR1_8q1eDEI', // Replace with your Supabase anon key
   );
 
   // 🔑 Check for existing session

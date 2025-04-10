@@ -8,7 +8,7 @@ import 'wishlist.dart';
 import 'dashboard.dart'; // Import DashboardScreen
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // Add this import
-import 'login.dart'; // Import LoginScreen
+// import 'login.dart'; // Import LoginScreen
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;

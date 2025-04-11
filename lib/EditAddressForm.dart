@@ -37,16 +37,16 @@ class _EditAddressPageState extends State<EditAddressPage> {
     'Flat No. Street Details':
         TextEditingController(text: '3891 Ranchview Dr.\nRichardson, California 62639'),
     'Barangay': TextEditingController(text: 'Walmart'),
+    'City/Municipality': TextEditingController(text: 'Los Angeles'),
     'Province': TextEditingController(text: 'California'),
-    'City/District': TextEditingController(text: 'Los Angeles'),
   };
   final Map<String, IconData> _icons = {
     'Name': Icons.person,
     'Mobile Number': Icons.phone,
     'Flat No. Street Details': Icons.home_work,
     'Barangay': Icons.location_on,
+    'City/Municipality': Icons.location_city,
     'Province': Icons.map,
-    'City/District': Icons.location_city,
   };
   @override
   Widget build(BuildContext context) {

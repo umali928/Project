@@ -12,6 +12,7 @@ import 'package:cloud_firestore/cloud_firestore.dart'; // Add this import
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+import 'addressList.dart'; // Import AddressListScreen
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
@@ -194,7 +195,13 @@ class _SettingsPageState extends State<SettingsPage> {
                         builder: (context) => SellerLoginScreen()),
                   );
                 }),
-                buildListTile(Icons.location_on, "Delivery Address"),
+                buildListTile(Icons.location_on, "Delivery Address", onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => AddressListScreen()),
+                  );
+                }),
                 buildListTile(Icons.message, "Messages"),
                 Divider(),
                 buildListTile(Icons.lock, "Change Password"),

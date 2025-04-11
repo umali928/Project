@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'profile.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'addressForm.dart';
+import 'EditAddressForm.dart';
 void main() {
   runApp(const MyApp());
 }
@@ -60,7 +62,12 @@ class AddressListScreen extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
               ),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => AddAddressPage()),
+                );
+              },
               child: Text(
                 "+ New Address",
                 style: GoogleFonts.poppins(color: Color(0xFF651D32), fontWeight: FontWeight.w500),
@@ -127,7 +134,14 @@ class AddressListScreen extends StatelessWidget {
                             runSpacing: 4,
                             children: [
                               TextButton.icon(
-                                onPressed: () {},
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            EditAddressPage()),
+                                  );
+                                },
                                 icon: const Icon(Icons.edit,
                                     size: 16, color: Colors.blue),
                                 label:  Text("Edit",

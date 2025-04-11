@@ -1,225 +1,174 @@
 import 'package:flutter/material.dart';
-
-class AddressFormScreen extends StatefulWidget {
-  final String? name;
-  final String? address;
-  final String? type;
-  final bool? isDefault;
-
-  const AddressFormScreen({
-    super.key,
-    this.name,
-    this.address,
-    this.type,
-    this.isDefault,
-  });
-
-  @override
-  State<AddressFormScreen> createState() => _AddressFormScreenState();
+import 'package:google_fonts/google_fonts.dart';
+void main() {
+  runApp(const MyApp());
 }
 
-class _AddressFormScreenState extends State<AddressFormScreen> {
-  late String? selectedAddressType;
-  late bool useAsDefault;
-
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController mobileController = TextEditingController();
-  final TextEditingController addressLine1Controller = TextEditingController();
-  final TextEditingController addressLine2Controller = TextEditingController();
-  final TextEditingController landmarkController = TextEditingController();
-  final TextEditingController pincodeController = TextEditingController();
-  final TextEditingController stateController = TextEditingController();
-  final TextEditingController cityController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    selectedAddressType = widget.type ?? 'Home';
-    useAsDefault = widget.isDefault ?? false;
-
-    if (widget.name != null) {
-      nameController.text = widget.name!;
-    }
-    if (widget.address != null) {
-      final parts = widget.address!.split('\n');
-      addressLine1Controller.text = parts[0];
-      if (parts.length > 1) {
-        final cityStateZip = parts[1].split(' ');
-        if (cityStateZip.length >= 2) {
-          cityController.text = cityStateZip[0];
-          pincodeController.text = cityStateZip[1];
-        }
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    nameController.dispose();
-    mobileController.dispose();
-    addressLine1Controller.dispose();
-    addressLine2Controller.dispose();
-    landmarkController.dispose();
-    pincodeController.dispose();
-    stateController.dispose();
-    cityController.dispose();
-    super.dispose();
-  }
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.name == null ? 'Add New Address' : 'Edit Address',
-          style: const TextStyle(color: Colors.white),
-        ),
-        backgroundColor: const Color(0xFF800000), // Maroon color
-        iconTheme: const IconThemeData(color: Colors.white),
+    return MaterialApp(
+      title: 'Add Address',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.red, // Replace with a predefined MaterialColor
       ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildTextField(
-                                controller: nameController,
-                                label: 'Name',
-                                icon: Icons.person_outline,
-                              ),
-                              const SizedBox(height: 16),
-                              _buildTextField(
-                                controller: mobileController,
-                                label: 'Mobile Number',
-                                icon: Icons.phone_android_outlined,
-                                keyboardType: TextInputType.phone,
-                              ),
-                              const SizedBox(height: 16),
-                              _buildTextField(
-                                controller: addressLine1Controller,
-                                label: 'Flat No. & Street Details',
-                                icon: Icons.home_outlined,
-                                maxLines: 2,
-                              ),
-                              const SizedBox(height: 16),
-                              _buildTextField(
-                                controller: landmarkController,
-                                label: 'Barangay/Locality',
-                                icon: Icons.location_on_outlined,
-                              ),
-                              const SizedBox(height: 16),
-                              _buildTextField(
-                                controller: cityController,
-                                label: 'City/District',
-                                icon: Icons.location_city_outlined,
-                              ),
-                              const SizedBox(height: 24),
-                              const Text(
-                                'Address Type',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+      home: AddAddressPage(),
+    );
+  }
+}
+
+class AddAddressPage extends StatefulWidget {
+  const AddAddressPage({super.key});
+
+  @override
+  State<AddAddressPage> createState() => _AddAddressPageState();
+}
+
+class _AddAddressPageState extends State<AddAddressPage> {
+  String addressType = 'Home';
+  bool useAsDefault = false;
+
+  final _controllers = {
+    'Name': TextEditingController(text: 'David Guetta'),
+    'Mobile Number': TextEditingController(text: '+1-202 555 0143'),
+    'Flat No. Street Details':
+        TextEditingController(text: '3891 Ranchview Dr.\nRichardson, California 62639'),
+    'Barangay': TextEditingController(text: 'Walmart'),
+    'Province': TextEditingController(text: 'California'),
+    'City/District': TextEditingController(text: 'Los Angeles'),
+  };
+  final Map<String, IconData> _icons = {
+    'Name': Icons.person,
+    'Mobile Number': Icons.phone,
+    'Flat No. Street Details': Icons.home_work,
+    'Barangay': Icons.location_on,
+    'Province': Icons.map,
+    'City/District': Icons.location_city,
+  };
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title:  Text('Add New Address', 
+            style: GoogleFonts.poppins(
+                color: Colors.black, fontWeight: FontWeight.bold, fontSize: 20)),
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        foregroundColor: Colors.black,
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      ..._controllers.entries.map((entry) => Padding(
+                            padding: const EdgeInsets.only(bottom: 38),
+                            child: TextField(
+                              controller: entry.value,
+                              maxLines: entry.key == 'Flat No. Street Details' ? null : 1,
+                              decoration: InputDecoration(
+                                labelText: entry.key,
+                                filled: true,
+                                fillColor: Colors.white,
+                                 prefixIcon: Icon(_icons[entry.key], color: Color(0xFF651D32)),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 18),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey.shade300, width: 1),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide:
+                                      const BorderSide(color: Colors.blue, width: 1.5),
                                 ),
                               ),
-                              const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8,
-                                children: [
-                                  _buildChoiceChip('Home'),
-                                  _buildChoiceChip('Office'),
-                                  _buildChoiceChip('School'),
-                                ],
-                              ),
-                            ],
-                          ),
+                            ),
+                          )),
+                      const SizedBox(height: 2),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          "Address Type",
+                          style: GoogleFonts.poppins(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[800]),
                         ),
-                        const SizedBox(height: 32),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF800000), // Maroon color
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: ['Home', 'Office', 'School'].map((type) {
+                          final isSelected = addressType == type;
+                          return Expanded(
+                            child: GestureDetector(
+                              onTap: () => setState(() => addressType = type),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                                margin: const EdgeInsets.symmetric(horizontal: 6),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? Color(0xFF651D32) : Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(
+                                      color: isSelected
+                                          ? Colors.blue
+                                          : Colors.grey.shade300,
+                                      width: 1),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    type,
+                                    style: GoogleFonts.poppins(
+                                      color: isSelected ? Colors.white : Colors.black,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                            child: Text(
-                              widget.name == null ? 'Save Address' : 'Update Address',
-                              style: const TextStyle(fontSize: 16, color: Colors.white),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 12),
+                      const Spacer(),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: () {},
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF651D32),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
                           ),
+                          child: Text(
+                            "Save Address",
+                            style: GoogleFonts.poppins(fontSize: 16, color: Colors.white),
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                   ),
                 ),
               ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-    int maxLines = 1,
-  }) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: const Color(0xFF800000)),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Color(0xFF800000)),
-          borderRadius: BorderRadius.circular(12),
-        ),
-      ),
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-    );
-  }
-
-  Widget _buildChoiceChip(String label) {
-    return ChoiceChip(
-      label: Text(label),
-      selected: selectedAddressType == label,
-      onSelected: (selected) {
-        setState(() {
-          selectedAddressType = selected ? label : null;
-        });
-      },
-      selectedColor: const Color(0xFF800000),
-      backgroundColor: Colors.white,
-      labelStyle: TextStyle(
-        color: selectedAddressType == label
-            ? Colors.white
-            : const Color(0xFF800000),
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: const BorderSide(color: Color(0xFF800000)),
+            ),
+          );
+        },
       ),
     );
   }

@@ -116,23 +116,39 @@ class AddressListScreen extends StatelessWidget {
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text("No addresses found",style: GoogleFonts.poppins(
-                fontSize: 30, color: Colors.grey[600], fontWeight: FontWeight.w500)));
+            return Center(
+                child: Text("No addresses found",
+                    style: GoogleFonts.poppins(
+                        fontSize: 30,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500)));
           }
           if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}",style: GoogleFonts.poppins(
-                fontSize: 30, color: Colors.grey[600], fontWeight: FontWeight.w500)));
+            return Center(
+                child: Text("Error: ${snapshot.error}",
+                    style: GoogleFonts.poppins(
+                        fontSize: 30,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500)));
           }
 
           if (!snapshot.hasData) {
-            return Center(child: Text("No data",style: GoogleFonts.poppins(
-                fontSize: 30, color: Colors.grey[600], fontWeight: FontWeight.w500)));
+            return Center(
+                child: Text("No data",
+                    style: GoogleFonts.poppins(
+                        fontSize: 30,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500)));
           }
 
           if (snapshot.data!.docs.isEmpty) {
-            return Center(child: Text("No addresses found", style: GoogleFonts.poppins(
-                fontSize: 30, color: Colors.grey[600], fontWeight: FontWeight.w500)
-            ),);
+            return Center(
+              child: Text("No addresses found",
+                  style: GoogleFonts.poppins(
+                      fontSize: 30,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500)),
+            );
           }
           return ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -184,10 +200,10 @@ class AddressListScreen extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => EditAddressPage(
-                                    // to be continued
-                                    // addressId: doc.id,
-                                    // existingData: data,
-                                    ),
+                                  userId: user.uid,
+                                  addressId: doc.id,
+                                  existingData: data,
+                                ),
                               ),
                             );
                           },

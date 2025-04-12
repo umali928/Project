@@ -46,7 +46,7 @@ class _WishlistScreenState extends State<Wishlist> {
           BottomNavigationBarItem(
               icon: Icon(Icons.favorite_border), label: "Wishlist"),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Account"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
     );

@@ -256,7 +256,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         backgroundColor: Colors.grey[300],
                         backgroundImage: _profileImage != null
                             ? NetworkImage(_profileImage!)
-                            : AssetImage('assets/default_profile.png')
+                            : AssetImage('assets/defaultprofile.jpg')
                                 as ImageProvider,
                         child: _profileImage == null
                             ? Icon(Icons.person, size: 50, color: Colors.grey)

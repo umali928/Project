@@ -13,6 +13,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'addressList.dart'; // Import AddressListScreen
+import 'package:image_picker/image_picker.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
@@ -32,7 +34,7 @@ Future<void> main() async {
   }
   await Supabase.initialize(
     url: 'https://haoiqctsijynxwfoaspm.supabase.co',
-     anonKey:
+    anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhhb2lxY3RzaWp5bnh3Zm9hc3BtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxNzU3MDMsImV4cCI6MjA1OTc1MTcwM30.7kilmu9kxrABgg4ZMz9GIHm5Jv4LHLAIYR1_8q1eDEI', // Replace with your Supabase anon key
   );
   runApp(settings());
@@ -105,11 +107,96 @@ class _SettingsPageState extends State<SettingsPage> {
   String _name = '';
   String _email = '';
   String? _profileImage;
-
+  final ImagePicker _picker = ImagePicker();
   @override
   void initState() {
     super.initState();
     fetchUserData();
+  }
+
+  Future<void> _pickAndUploadImage() async {
+    final user = firebase_auth.FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image == null) return;
+
+      final bytes = await image.readAsBytes();
+
+      String? fileExtension;
+      if (bytes.length >= 8) {
+        if (bytes[0] == 0x89 &&
+            bytes[1] == 0x50 &&
+            bytes[2] == 0x4E &&
+            bytes[3] == 0x47) {
+          fileExtension = 'png';
+        } else if (bytes[0] == 0xFF && bytes[1] == 0xD8) {
+          fileExtension = 'jpg';
+        }
+      }
+      fileExtension ??= 'jpg';
+
+      final fileName = 'profile_pictures/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+      final contentType = fileExtension == 'png' ? 'image/png' : 'image/jpeg';
+
+      // 1. Get the old image path from Firestore (if it exists)
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      final oldUrl = userDoc.data()?['profilePicUrl'];
+
+      if (oldUrl != null && oldUrl.contains('profile_pictures')) {
+        final oldFileName =
+            oldUrl.split('/').last.split('?').first; // Get just the filename
+        await Supabase.instance.client.storage
+            .from('uploads')
+            .remove(['profile_pictures/$oldFileName']);
+            print("Deleting: profile_pictures/$oldFileName");
+      }
+
+      // 2. Upload the new image
+      await Supabase.instance.client.storage.from('uploads').uploadBinary(
+            fileName,
+            bytes,
+            fileOptions: FileOptions(
+              contentType: contentType,
+              upsert: true,
+            ),
+          );
+
+      // 3. Get new image public URL
+      String rawUrl = Supabase.instance.client.storage
+          .from('uploads')
+          .getPublicUrl(fileName);
+
+      final publicUrl = rawUrl.contains('?')
+          ? '$rawUrl&t=${DateTime.now().millisecondsSinceEpoch}'
+          : '$rawUrl?t=${DateTime.now().millisecondsSinceEpoch}';
+
+      // 4. Update Firestore with the new image URL
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({
+        'profilePicUrl': publicUrl,
+      });
+
+      setState(() {
+        _profileImage = publicUrl;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Profile picture updated')),
+      );
+    } catch (e) {
+      print("Failed to upload image: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to upload image')),
+      );
+    }
   }
 
   Future<void> fetchUserData() async {
@@ -160,15 +247,35 @@ class _SettingsPageState extends State<SettingsPage> {
               padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.05),
               children: [
                 SizedBox(height: screenHeight * 0.03),
-                CircleAvatar(
-                  radius: screenWidth * 0.15,
-                  backgroundColor: Colors.grey[300],
-                  backgroundImage: _profileImage != null
-                      ? NetworkImage(_profileImage!)
-                      : null,
-                  child: _profileImage == null
-                      ? Icon(Icons.person, size: 50, color: Colors.grey)
-                      : null,
+                Center(
+                  child: Stack(
+                    alignment: Alignment.bottomRight,
+                    children: [
+                      CircleAvatar(
+                        radius: screenWidth * 0.15,
+                        backgroundColor: Colors.grey[300],
+                        backgroundImage: _profileImage != null
+                            ? NetworkImage(_profileImage!)
+                            : AssetImage('assets/defaultprofile.jpg')
+                                as ImageProvider,
+                        child: _profileImage == null
+                            ? Icon(Icons.person, size: 50, color: Colors.grey)
+                            : null,
+                      ),
+                      Positioned(
+                        bottom: 0,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: _pickAndUploadImage,
+                          child: CircleAvatar(
+                            backgroundColor: Colors.white,
+                            radius: 18,
+                            child: Icon(Icons.camera_alt, color: Colors.black),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
                 SizedBox(height: screenHeight * 0.015),
                 Text(
@@ -210,15 +317,118 @@ class _SettingsPageState extends State<SettingsPage> {
                     MaterialPageRoute(builder: (context) => policy()),
                   );
                 }),
-                buildListTile(Icons.person, "Personal Information"),
+                buildListTile(Icons.edit_note_rounded, "Change Name",
+                    onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      String newName = '';
+                      return Dialog(
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.edit_rounded,
+                                  size: 40, color: Color(0xFF651D32)),
+                              SizedBox(height: 10),
+                              Text(
+                                "Update Your Name",
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 15),
+                              TextField(
+                                decoration: InputDecoration(
+                                  labelText: "Full Name",
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  prefixIcon: Icon(Icons.person_outline),
+                                ),
+                                onChanged: (value) {
+                                  newName = value;
+                                },
+                              ),
+                              SizedBox(height: 20),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(),
+                                    child: Text(
+                                      "Cancel",
+                                      style: GoogleFonts.poppins(
+                                          color: Color(0xFF651D32),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16),
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Color(0xFF651D32),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                    onPressed: () async {
+                                      final user = firebase_auth
+                                          .FirebaseAuth.instance.currentUser;
+                                      if (user != null &&
+                                          newName.trim().isNotEmpty) {
+                                        try {
+                                          await FirebaseFirestore.instance
+                                              .collection('users')
+                                              .doc(user.uid)
+                                              .update({'fullName': newName});
+                                          setState(() {
+                                            _name = newName;
+                                          });
+                                          Navigator.of(context).pop();
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                                content: Text(
+                                                    'Name updated successfully')),
+                                          );
+                                        } catch (e) {
+                                          print("Error updating name: $e");
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                                content: Text(
+                                                    'Failed to update name')),
+                                          );
+                                        }
+                                      }
+                                    },
+                                    child: Text(
+                                      "Save",
+                                      style: GoogleFonts.poppins(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                }),
                 Divider(),
                 buildListTile(Icons.logout, "Log Out", color: Colors.red,
                     onTap: () async {
                   // ✅ Firebase logout
                   await firebase_auth.FirebaseAuth.instance.signOut();
-
-                  // Optional: if using Supabase auth
-                  // await Supabase.instance.client.auth.signOut();
 
                   // Navigate to login screen
                   Navigator.pushReplacement(

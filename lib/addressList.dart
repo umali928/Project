@@ -73,7 +73,7 @@ class AddressListScreen extends StatelessWidget {
           style: GoogleFonts.poppins(
               color: Colors.black,
               fontWeight: FontWeight.bold,
-              fontSize: isSmallScreen ? 20 : 24),
+              fontSize: isSmallScreen ? 17 : 24),
         ),
         actions: [
           Padding(

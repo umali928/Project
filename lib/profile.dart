@@ -204,7 +204,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 }),
                 buildListTile(Icons.message, "Messages"),
                 Divider(),
-                buildListTile(Icons.lock, "Change Password"),
                 buildListTile(Icons.privacy_tip, "Privacy Policy", onTap: () {
                   Navigator.pushReplacement(
                     context,

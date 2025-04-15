@@ -13,14 +13,14 @@ void main() async {
   if (kIsWeb) {
     await Firebase.initializeApp(
       options: FirebaseOptions(
-        apiKey: "AIzaSyBbSQOdsCh7ImLhewcIhHUTcj9-1xbShQk",
-        authDomain: "lspumart.firebaseapp.com",
-        databaseURL: "https://lspumart-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "lspumart",
-        storageBucket: "lspumart.firebasestorage.app",
-        messagingSenderId: "533992551897",
-        appId: "1:533992551897:web:d04a482ad131a0700815c8"
-      ),
+          apiKey: "AIzaSyBbSQOdsCh7ImLhewcIhHUTcj9-1xbShQk",
+          authDomain: "lspumart.firebaseapp.com",
+          databaseURL:
+              "https://lspumart-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "lspumart",
+          storageBucket: "lspumart.firebasestorage.app",
+          messagingSenderId: "533992551897",
+          appId: "1:533992551897:web:d04a482ad131a0700815c8"),
     );
   } else {
     await Firebase.initializeApp();
@@ -28,7 +28,7 @@ void main() async {
 
   await Supabase.initialize(
     url: 'https://haoiqctsijynxwfoaspm.supabase.co',
-     anonKey:
+    anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhhb2lxY3RzaWp5bnh3Zm9hc3BtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxNzU3MDMsImV4cCI6MjA1OTc1MTcwM30.7kilmu9kxrABgg4ZMz9GIHm5Jv4LHLAIYR1_8q1eDEI', // Replace with your Supabase anon key
   );
 
@@ -62,7 +62,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void loginUser() async {
     try {
-      final credential = await firebase_auth.FirebaseAuth.instance.signInWithEmailAndPassword(
+      final credential =
+          await firebase_auth.FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
@@ -84,10 +85,12 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: Colors.white,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          double textFieldWidth = constraints.maxWidth > 600 ? 400 : double.infinity;
+          double textFieldWidth =
+              constraints.maxWidth > 600 ? 400 : double.infinity;
           return SingleChildScrollView(
             child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height),
+              constraints:
+                  BoxConstraints(minHeight: MediaQuery.of(context).size.height),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -106,7 +109,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'Welcome to LSPU-Mart',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: GoogleFonts.poppins(
+                          fontSize: 20, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 44),
                     SizedBox(
@@ -117,7 +121,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           labelText: 'Email',
                           filled: true,
                           fillColor: Colors.grey[200],
-                          contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 15),
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 20, horizontal: 15),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(10.0),
                             borderSide: BorderSide.none,
@@ -126,8 +131,30 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    SizedBox(width: textFieldWidth, child: PasswordField(controller: passwordController)),
-                    const SizedBox(height: 38),
+                    SizedBox(
+                        width: textFieldWidth,
+                        child: PasswordField(controller: passwordController)),
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (_) => const ForgotPasswordDialog(),
+                          );
+                        },
+                        child: Text(
+                          'Forgot Password?',
+                          style: GoogleFonts.poppins(
+                            color: Color(0xFF651D32),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 28),
                     SizedBox(
                       width: textFieldWidth,
                       child: ElevatedButton(
@@ -142,7 +169,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: Text(
                           'Login',
-                          style: GoogleFonts.poppins(fontSize: 25, fontWeight: FontWeight.bold),
+                          style: GoogleFonts.poppins(
+                              fontSize: 25, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
@@ -151,30 +179,31 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => SignUpScreen()),
+                          MaterialPageRoute(
+                              builder: (context) => SignUpScreen()),
                         );
                       },
-                        child: RichText(
+                      child: RichText(
                         text: TextSpan(
                           text: 'No account? ',
                           style: GoogleFonts.poppins(
-                          color: Colors.black87,
-                          fontSize: 16,
+                            color: Colors.black87,
+                            fontSize: 16,
                           ),
                           children: [
-                          TextSpan(
-                            text: 'Register Here',
-                            style: GoogleFonts.poppins(
-                            color: const Color(0xFF651D32),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            decoration: TextDecoration.underline,
+                            TextSpan(
+                              text: 'Register Here',
+                              style: GoogleFonts.poppins(
+                                color: const Color(0xFF651D32),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                decoration: TextDecoration.underline,
+                              ),
                             ),
-                          ),
                           ],
                         ),
-                        ),
                       ),
+                    ),
                     //HIDE FOR NOW
                     // const SizedBox(height: 16),
                     // Text(
@@ -245,6 +274,117 @@ class _PasswordFieldState extends State<PasswordField> {
           onPressed: _togglePasswordVisibility,
         ),
       ),
+    );
+  }
+}
+class ForgotPasswordDialog extends StatefulWidget {
+  const ForgotPasswordDialog({super.key});
+
+  @override
+  State<ForgotPasswordDialog> createState() => _ForgotPasswordDialogState();
+}
+
+class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
+  final TextEditingController emailController = TextEditingController();
+  bool isLoading = false;
+  String message = '';
+
+  void sendPasswordResetEmail() async {
+    setState(() {
+      isLoading = true;
+      message = '';
+    });
+
+    try {
+      await firebase_auth.FirebaseAuth.instance
+          .sendPasswordResetEmail(email: emailController.text.trim());
+      setState(() {
+        message = '✅ Reset link sent! Check your email.';
+      });
+    } catch (e) {
+      setState(() {
+        message = '❌ ${e.toString()}';
+      });
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      backgroundColor: Colors.white,
+      title: Text(
+        'Forgot Password',
+        style: GoogleFonts.poppins(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF651D32),
+        ),
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Enter your registered email address below:',
+            style: GoogleFonts.poppins(fontSize: 14, color: Colors.black87),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: emailController,
+            keyboardType: TextInputType.emailAddress,
+            decoration: InputDecoration(
+              hintText: 'you@example.com',
+              hintStyle: GoogleFonts.poppins(fontSize: 14),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (message.isNotEmpty)
+            Text(
+              message,
+              style: GoogleFonts.poppins(
+                fontSize: 13,
+                color: message.contains('✅') ? Colors.green : Colors.red,
+              ),
+            ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(
+            'Cancel',
+            style: GoogleFonts.poppins(color: Colors.grey[700]),
+          ),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Color(0xFF651D32),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          ),
+          onPressed: isLoading ? null : sendPasswordResetEmail,
+          child: isLoading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              : Text(
+                  'Send',
+                  style: GoogleFonts.poppins(color: Colors.white),
+                ),
+        ),
+      ],
     );
   }
 }

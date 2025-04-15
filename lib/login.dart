@@ -34,7 +34,12 @@ void main() async {
 
   // 🔑 Check for existing session
   firebase_auth.User? user = firebase_auth.FirebaseAuth.instance.currentUser;
-  runApp(user != null ? Dashboard() : const MyApp());
+   runApp(
+    MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: user != null ? Dashboard() : const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

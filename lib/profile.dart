@@ -137,7 +137,7 @@ class _SettingsPageState extends State<SettingsPage> {
       }
       fileExtension ??= 'jpg';
 
-      final fileName = 'profile_pictures/${user.uid}.$fileExtension';
+      final fileName = 'profile_pictures/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
       final contentType = fileExtension == 'png' ? 'image/png' : 'image/jpeg';
 
       // 1. Get the old image path from Firestore (if it exists)
@@ -154,6 +154,7 @@ class _SettingsPageState extends State<SettingsPage> {
         await Supabase.instance.client.storage
             .from('uploads')
             .remove(['profile_pictures/$oldFileName']);
+            print("Deleting: profile_pictures/$oldFileName");
       }
 
       // 2. Upload the new image
@@ -167,9 +168,13 @@ class _SettingsPageState extends State<SettingsPage> {
           );
 
       // 3. Get new image public URL
-      final publicUrl = Supabase.instance.client.storage
+      String rawUrl = Supabase.instance.client.storage
           .from('uploads')
           .getPublicUrl(fileName);
+
+      final publicUrl = rawUrl.contains('?')
+          ? '$rawUrl&t=${DateTime.now().millisecondsSinceEpoch}'
+          : '$rawUrl?t=${DateTime.now().millisecondsSinceEpoch}';
 
       // 4. Update Firestore with the new image URL
       await FirebaseFirestore.instance
@@ -251,7 +256,8 @@ class _SettingsPageState extends State<SettingsPage> {
                         backgroundColor: Colors.grey[300],
                         backgroundImage: _profileImage != null
                             ? NetworkImage(_profileImage!)
-                            : null,
+                            : AssetImage('assets/default_profile.png')
+                                as ImageProvider,
                         child: _profileImage == null
                             ? Icon(Icons.person, size: 50, color: Colors.grey)
                             : null,

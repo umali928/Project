@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'Sellerlogin.dart';
 import 'sellerdashboard.dart';
+import 'AddProductList.dart';
 class NavigationDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -43,8 +44,8 @@ class NavigationDrawer extends StatelessWidget {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                DrawerItem(icon: Icons.dashboard, text: "Dashboard"),
-                DrawerItem(icon: Icons.add, text: "Add Product"),
+                DrawerItem(icon: Icons.dashboard, text: "Dashboard", destination: DashboardScreen(),),
+                DrawerItem(icon: Icons.add, text: "Add Product", destination: AddProductList(),),
                 DrawerItem(icon: Icons.inventory, text: "Manage Product"),
                 DrawerItem(icon: Icons.shopping_cart, text: "Manage Orders"),
                 DrawerItem(icon: Icons.bar_chart, text: "View Sales"),
@@ -68,11 +69,13 @@ class DrawerItem extends StatelessWidget {
   final IconData icon;
   final String text;
   final bool isLogout;
+  final Widget? destination;
 
   const DrawerItem({
     required this.icon,
     required this.text,
     this.isLogout = false,
+    this.destination,
   });
 
   @override
@@ -91,16 +94,17 @@ class DrawerItem extends StatelessWidget {
         ),
       ),
       onTap: () {
+        Navigator.pop(context); // Close the drawer first
         if (isLogout) {
-          // Navigate to login screen
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
-                builder: (context) =>
-                    SellerLoginScreen()), // make sure LoginScreen exists in login.dart
+            MaterialPageRoute(builder: (context) => SellerLoginScreen()),
           );
-        } else {
-          // Other navigation logic if needed
+        } else if (destination != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => destination!),
+          );
         }
       },
       hoverColor: Colors.grey[200],

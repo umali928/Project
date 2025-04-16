@@ -5,7 +5,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'AddProductList.dart';
 void main() {
   runApp(const MyApp());
 }
@@ -137,7 +137,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.push(context, 
+            MaterialPageRoute(
+              builder: (context) => AddProductList(),
+            ),
+          ),  
         ),
       ),
       body: Form(

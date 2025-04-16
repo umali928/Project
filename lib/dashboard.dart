@@ -162,7 +162,7 @@ class HomeScreen extends StatelessWidget {
                     childAspectRatio: 1,
                     children: [
                       CategoryItem(icon: Icons.checkroom, label: "Clothes"),
-                      CategoryItem(icon: Icons.school, label: "School"),
+                      CategoryItem(icon: Icons.school, label: "School Supplies"),
                       CategoryItem(icon: Icons.sports, label: "Sports"),
                       CategoryItem(icon: Icons.fastfood, label: "Foods"),
                       CategoryItem(icon: Icons.grid_view, label: "All"),

@@ -48,9 +48,13 @@ class AddProductScreen extends StatefulWidget {
 
 class _AddProductScreenState extends State<AddProductScreen> {
   final _formKey = GlobalKey<FormState>();
+  // ignore: unused_field
   String _productName = '';
+  // ignore: unused_field
   String _productDescription = '';
+  // ignore: unused_field
   double _productPrice = 0;
+  // ignore: unused_field
   int _productStock = 0;
   String _selectedCategory = 'Clothes';
   final List<String> _categories = [

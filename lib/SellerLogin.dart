@@ -45,18 +45,18 @@ class SellerLoginScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Enter your email and password to log in',
+                      'Enter your Store Name and password to log in',
                       style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey),
                     ),
                     const SizedBox(height: 12),
-                    const Text('Email'),
+                     Text('Store Name', style: GoogleFonts.poppins(fontSize: 12),),
                     TextFormField(
                       decoration: const InputDecoration(
-                        hintText: 'Enter your email',
+                        hintText: 'Enter your Store Name',
                         border: OutlineInputBorder(),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 30),
                     const Text('Password'),
                     PasswordField(),
                     const SizedBox(height: 30),
@@ -78,27 +78,16 @@ class SellerLoginScreen extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                           )),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 30),
                     const Row(
                       children: [
                         Expanded(child: Divider()),
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 10),
-                          child: Text('Or'),
                         ),
-                        Expanded(child: Divider()),
                       ],
                     ),
-                    const SizedBox(height: 20),
-                    OutlinedButton.icon(
-                      onPressed: () {},
-                      icon: Image.asset('assets/googleicon.png', height: 24),
-                      label: const Text('Continue with Google'),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 30),
                     Center(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,

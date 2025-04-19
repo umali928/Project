@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'dashboard.dart';
 import 'profile.dart';
-import 'orderHistory.dart';
+import 'searchPage.dart';
 
 class Wishlist extends StatefulWidget {
   @override
@@ -15,7 +15,7 @@ class _WishlistScreenState extends State<Wishlist> {
   final List<Widget> _pages = [
     HomeScreen(),
     WishlistScreen(), 
-    OrderHistoryScreen(),
+    SearchPage(),
     SettingsPage(),
   ];
 
@@ -45,7 +45,7 @@ class _WishlistScreenState extends State<Wishlist> {
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(
               icon: Icon(Icons.favorite_border), label: "Wishlist"),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: "Shop"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),

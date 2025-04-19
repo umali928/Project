@@ -3,7 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'login.dart'; // Import LoginPage
 import 'SellerLogin.dart'; // Import SellerLoginScreen
 import 'privacypolicy.dart'; // Import PrivacyPolicyScreen
-import 'orderHistory.dart';
+import 'searchPage.dart';
+import 'orderHistory.dart'; // Import OrderHistoryScreen
 import 'wishlist.dart';
 import 'dashboard.dart'; // Import DashboardScreen
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -14,7 +15,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'addressList.dart'; // Import AddressListScreen
 import 'package:image_picker/image_picker.dart';
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
@@ -62,7 +62,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final List<Widget> _pages = [
     HomeScreen(),
     WishlistScreen(),
-    OrderHistoryScreen(),
+    SearchPage(),
     SettingsPage(),
   ];
 
@@ -90,7 +90,7 @@ class _ProfilePageState extends State<ProfilePage> {
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(
               icon: Icon(Icons.favorite_border), label: "Wishlist"),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: "Shop"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
@@ -258,9 +258,9 @@ class _SettingsPageState extends State<SettingsPage> {
                             ? NetworkImage(_profileImage!)
                             : AssetImage('assets/defaultprofile.jpg')
                                 as ImageProvider,
-                        child: _profileImage == null
-                            ? Icon(Icons.person, size: 50, color: Colors.grey)
-                            : null,
+                        // child: _profileImage == null
+                        //     ? Icon(Icons.person, size: 50, color: Colors.grey)
+                        //     : null,
                       ),
                       Positioned(
                         bottom: 0,
@@ -422,6 +422,12 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                       );
                     },
+                  );
+                }),
+                 buildListTile(Icons.history, "Order History", onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => OrderHistoryScreen()),
                   );
                 }),
                 Divider(),

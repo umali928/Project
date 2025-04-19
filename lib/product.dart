@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import 'package:google_fonts/google_fonts.dart';
+import 'cart.dart';
 void main() => runApp(ProductDetailApp());
 
 class ProductDetailApp extends StatelessWidget {
@@ -33,7 +34,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        leading: BackButton(color: Colors.black),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
@@ -43,7 +49,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           ),
           IconButton(
             icon: Icon(Icons.shopping_cart_outlined, color: Colors.black),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => CartScreen()),
+              );
+            },
           ),
         ],
       ),
@@ -66,7 +77,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         quantity > 1 ? () => setState(() => quantity--) : null,
                   ),
                   Text('$quantity',
-                      style: TextStyle(fontWeight: FontWeight.w600)),
+                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                   IconButton(
                     icon: Icon(Icons.add),
                     onPressed: () => setState(() => quantity++),
@@ -86,8 +97,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   ),
                 ),
                 onPressed: () {},
-                child:
-                    Text("Add to Cart", style: TextStyle(color: Colors.white)),
+                child: Text("Add to Cart",
+                    style: GoogleFonts.poppins(color: Colors.white)),
               ),
             ),
           ],
@@ -109,14 +120,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   alignment: Alignment.center,
                   child: Text(
                     'Product Frame',
-                    style: TextStyle(fontSize: 20, color: Colors.grey.shade600),
+                    style: GoogleFonts.poppins(
+                        fontSize: 20, color: Colors.grey.shade600),
                   ),
                 ),
                 SizedBox(height: 16),
-                Text("Calvin Clein", style: TextStyle(color: Colors.grey)),
-                Text("Regular fit slim fit shirt",
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                Text("PRODUCT NAME",
+                    style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.bold, fontSize: 20)),
                 SizedBox(height: 8),
                 Row(
                   children: [
@@ -130,29 +141,32 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         children: [
                           Icon(Icons.star, size: 14, color: Colors.white),
                           SizedBox(width: 4),
-                          Text("4.1", style: TextStyle(color: Colors.white)),
+                          Text("4.8",
+                              style: GoogleFonts.poppins(color: Colors.white)),
                         ],
                       ),
                     ),
                     SizedBox(width: 8),
-                    Text("87 Reviews"),
+                    Text("574 Reviews",
+                        style: GoogleFonts.poppins(color: Colors.grey)),
                   ],
                 ),
                 SizedBox(height: 12),
-                Text("\$35",
-                    style:
-                        TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                Text("\₱68",
+                    style: GoogleFonts.roboto(
+                        fontSize: 20, fontWeight: FontWeight.bold)),
                 SizedBox(height: 8),
                 Text("Description",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
                 SizedBox(height: 6),
                 Text(
                   "Experience comfort and style with our premium slim-fit cotton shirt. "
                   "Designed for all-day wear with breathable fabric and a tailored silhouette.",
-                  style: TextStyle(height: 1.4),
+                  style: GoogleFonts.poppins(height: 1.4),
                 ),
                 SizedBox(height: 20),
-                Text("Color: $selectedColor", style: TextStyle(fontSize: 16)),
+                Text("Color: $selectedColor",
+                    style: GoogleFonts.poppins(fontSize: 16)),
                 SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
@@ -176,7 +190,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   }).toList(),
                 ),
                 SizedBox(height: 20),
-                Text("Size", style: TextStyle(fontWeight: FontWeight.bold)),
+                Text("Size",
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
                 SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
@@ -201,8 +216,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 ),
                 SizedBox(height: 32),
                 Text("Ratings & Reviews",
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style: GoogleFonts.poppins(
+                        fontSize: 18, fontWeight: FontWeight.bold)),
                 SizedBox(height: 12),
                 Container(
                   padding: EdgeInsets.all(16),
@@ -217,10 +232,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       Row(
                         children: [
                           Text("4.8",
-                              style: TextStyle(
+                              style: GoogleFonts.poppins(
                                   fontSize: 28, fontWeight: FontWeight.bold)),
                           Text("/5",
-                              style: TextStyle(
+                              style: GoogleFonts.poppins(
                                   fontSize: 20, color: Colors.black54)),
                           SizedBox(width: 12),
                           Column(
@@ -228,7 +243,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                             children: [
                               Text("Overall Rating"),
                               Text("574 Ratings",
-                                  style: TextStyle(color: Colors.grey)),
+                                  style:
+                                      GoogleFonts.poppins(color: Colors.grey)),
                             ],
                           ),
                           Spacer(),

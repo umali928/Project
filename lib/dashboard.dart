@@ -4,8 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'wishlist.dart'; // Import WishlistScreen
 import 'profile.dart';
 import 'cart.dart'; // Import CartScreen
-import 'orderHistory.dart';
-
+import 'searchPage.dart';
+import 'product.dart';
 void main() {
   runApp(EcommerceApp());
 }
@@ -31,7 +31,7 @@ class _DashboardState extends State<Dashboard> {
   final List<Widget> _pages = [
     HomeScreen(),
     WishlistScreen(),
-    OrderHistoryScreen(),
+    SearchPage(),
     SettingsPage(),
   ];
 
@@ -59,7 +59,7 @@ class _DashboardState extends State<Dashboard> {
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(
               icon: Icon(Icons.favorite_border), label: "Wishlist"),
-          BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
+          BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: "Shop"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
@@ -218,7 +218,8 @@ class HomeScreen extends StatelessWidget {
 class ProductHorizontalList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    double cardWidth = MediaQuery.of(context).size.width / (MediaQuery.of(context).size.width > 600 ? 4 : 2.5);
+    double cardWidth = MediaQuery.of(context).size.width /
+        (MediaQuery.of(context).size.width > 600 ? 4 : 2.5);
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -226,75 +227,84 @@ class ProductHorizontalList extends StatelessWidget {
         children: List.generate(10, (index) {
           return Padding(
             padding: const EdgeInsets.only(right: 12.0),
-            child: Container(
-              width: cardWidth,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.15),
-                    blurRadius: 3,
-                    offset: Offset(0, 1),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Stack(
-                    children: [
-                      Container(
-                        height: 100,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                        ),
-                        child: Center(
-                          child: Text(
-                            'Image',
-                            style: TextStyle(color: Colors.grey),
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) =>ProductDetailPage()), // Replace with actual product page widget
+                );
+              },
+              child: Container(
+                width: cardWidth,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.15),
+                      blurRadius: 3,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Stack(
+                      children: [
+                        Container(
+                          height: 100,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(12)),
+                          ),
+                          child: Center(
+                            child: Text(
+                              'Image',
+                              style: GoogleFonts.poppins(color: Colors.grey),
+                            ),
                           ),
                         ),
-                      ),
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: Icon(Icons.favorite_border, color: Colors.red),
-                      ),
-                    ],
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      'Product Name',
-                      style: TextStyle(fontWeight: FontWeight.w500),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                    child: Text(
-                      '\₱68',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-                    child: Row(
-                      children: [
-                        Icon(Icons.star, color: Colors.amber, size: 14),
-                        SizedBox(width: 4),
-                        Text('4.8', style: TextStyle(fontWeight: FontWeight.bold)),
-                        SizedBox(width: 4),
-                        Text('(692)', style: TextStyle(color: Colors.grey)),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Icon(Icons.favorite_border, color: Colors.red),
+                        ),
                       ],
                     ),
-                  ),
-                ],
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        'Product Name',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Text(
+                        '\₱68',
+                        style: GoogleFonts.roboto(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+                      child: Row(
+                        children: [
+                          Icon(Icons.star, color: Colors.amber, size: 14),
+                          SizedBox(width: 4),
+                          Text('4.8', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+                          SizedBox(width: 4),
+                          Text('(692)', style: GoogleFonts.poppins(color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           );

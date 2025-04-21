@@ -150,14 +150,14 @@ class _SettingsPageState extends State<SettingsPage> {
 
       if (oldUrl != null && oldUrl.contains('profile_pictures')) {
         final oldFileName =
-            oldUrl.split('/').last.split('?').first; // Get just the filename
+            oldUrl.split('/').last.split('?').first; 
         await Supabase.instance.client.storage
             .from('uploads')
             .remove(['profile_pictures/$oldFileName']);
             print("Deleting: profile_pictures/$oldFileName");
       }
 
-      // 2. Upload the new image
+      
       await Supabase.instance.client.storage.from('uploads').uploadBinary(
             fileName,
             bytes,

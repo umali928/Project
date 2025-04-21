@@ -4,7 +4,7 @@ import 'dashboard.dart'; // Import DashboardScreen
 import 'profile.dart'; // Import ProfileScreen
 import 'product.dart';
 import 'package:google_fonts/google_fonts.dart';
-
+import 'cart.dart';
 void main() {
   runApp(MyApp());
 }
@@ -80,11 +80,14 @@ class _SearchPageState extends State<SearchPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
         appBar: PreferredSize(
           preferredSize: Size.fromHeight(80),
           child: Column(
             children: [
               AppBar(
+                automaticallyImplyLeading: false,
+                backgroundColor: Colors.white,
                 title: Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -266,7 +269,11 @@ class _SearchPageState extends State<SearchPage> {
                       IconButton(
                         icon: Icon(Icons.shopping_cart, size: 28),
                         onPressed: () {
-                          // Navigate to cart
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => CartScreen()),
+                          );
                         },
                       ),
                       Positioned(
@@ -279,7 +286,7 @@ class _SearchPageState extends State<SearchPage> {
                             shape: BoxShape.circle,
                           ),
                           child: Text(
-                            '2', // Placeholder for cart count
+                            '3', // Placeholder for cart count
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 14,
@@ -300,9 +307,9 @@ class _SearchPageState extends State<SearchPage> {
             ],
           ),
         ),
-        body: Expanded(
-          child: ProductVerticalList(),
-        ));
+        body:  ProductVerticalList(),
+    );
+   
   }
 }
 

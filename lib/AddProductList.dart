@@ -140,7 +140,7 @@ class AddProductList extends StatelessWidget {
                               ),
                             ),
                             Text(product['price'],
-                                style: GoogleFonts.poppins(
+                                style: GoogleFonts.roboto(
                                   fontSize: isLargeScreen ? 16 : 14,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.green[700],

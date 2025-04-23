@@ -209,30 +209,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-                    //HIDE FOR NOW
-                    // const SizedBox(height: 16),
-                    // Text(
-                    //   'Or continue with',
-                    //   style: GoogleFonts.poppins(
-                    //     color: Color(0xFF651D32),
-                    //     fontWeight: FontWeight.bold,
-                    //   ),
-                    // ),
-                    // const SizedBox(height: 12),
-                    // OutlinedButton.icon(
-                    //   onPressed: () {},
-                    //   icon: Image.asset('assets/googleicon.png', height: 24),
-                    //   label: Text(
-                    //     'Continue with Google',
-                    //     style: GoogleFonts.poppins(
-                    //       color: Color(0xFF651D32),
-                    //       fontSize: 18,
-                    //       fontWeight: FontWeight.bold,
-                    //     ),
-                    //   ),
-                    //   style: OutlinedButton.styleFrom(minimumSize: Size(double.infinity, 50)),
-                    // ),
-                    // const SizedBox(height: 50),
+                
                   ],
                 ),
               ),

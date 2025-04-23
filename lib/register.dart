@@ -494,33 +494,7 @@ class _SignUpFormState extends State<SignUpForm> {
                   ),
                 ),
               ),
-              // SizedBox(height: 30),
-              // Center(
-              //   child: Text(
-              //     'Or continue with',
-              //     style: GoogleFonts.poppins(
-              //       fontSize: 14,
-              //       color: const Color.fromARGB(251, 0, 0, 0),
-              //       fontWeight: FontWeight.bold,
-              //     ),
-              //   ),
-              // ),
-              // SizedBox(height: 15),
-              // OutlinedButton.icon(
-              //   onPressed: () {},
-              //   icon: Image.asset('assets/googleicon.png', height: 24),
-              //   label: Text(
-              //     'Continue with Google',
-              //     style: GoogleFonts.poppins(
-              //       color: Color(0xFF651D32),
-              //       fontSize: 15,
-              //       fontWeight: FontWeight.bold,
-              //     ),
-              //   ),
-              //   style: OutlinedButton.styleFrom(
-              //     minimumSize: Size(double.infinity, 50),
-              //   ),
-              // ),
+          
             ],
           ),
         ),

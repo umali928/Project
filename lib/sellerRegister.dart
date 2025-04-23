@@ -1,9 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'SellerLogin.dart'; // Import SellerLoginScreen
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart';
+import 'package:crypto/crypto.dart';
+import 'dart:convert'; // For utf8.encode
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firestore import
+import 'package:firebase_auth/firebase_auth.dart'; // Firebase Auth import
 
-void main() {
-  runApp(const SellerRegistrationApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+          apiKey: "AIzaSyBbSQOdsCh7ImLhewcIhHUTcj9-1xbShQk",
+          authDomain: "lspumart.firebaseapp.com",
+          databaseURL:
+              "https://lspumart-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "lspumart",
+          storageBucket: "lspumart.firebasestorage.app",
+          messagingSenderId: "533992551897",
+          appId: "1:533992551897:web:d04a482ad131a0700815c8"),
+    );
+  } else {
+    await Firebase.initializeApp(); // Mobile config
+  }
+  runApp(SellerRegistrationApp());
 }
 
 class SellerRegistrationApp extends StatelessWidget {
@@ -28,6 +51,71 @@ class SellerRegistrationScreen extends StatefulWidget {
 
 class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
   bool _isPasswordVisible = false;
+
+  final TextEditingController storeNameController = TextEditingController();
+  final TextEditingController streetController = TextEditingController();
+  final TextEditingController barangayController = TextEditingController();
+  final TextEditingController cityController = TextEditingController();
+  final TextEditingController provinceController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+
+  void registerSeller() async {
+    if (!_formKey.currentState!.validate()) {
+      return; // Stop if validation fails
+    }
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No authenticated user found.')),
+        );
+        return;
+      }
+
+      // Ensure phone number starts with +63
+      String phoneNumber = phoneController.text.trim();
+      if (!phoneNumber.startsWith('+63')) {
+        phoneNumber = '+63' + phoneNumber;
+      }
+
+      final hashedPassword = sha256
+          .convert(utf8.encode(passwordController.text.trim()))
+          .toString();
+
+      // Save seller data inside user's document -> sellerInfo subcollection
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('sellerInfo')
+          .add({
+        'storeName': storeNameController.text.trim(),
+        'street': streetController.text.trim(),
+        'barangay': barangayController.text.trim(),
+        'city': cityController.text.trim(),
+        'province': provinceController.text.trim(),
+        'phone': phoneNumber,
+        'password': hashedPassword,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Registration successful!')),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => SellerLoginScreen()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Registration failed: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,53 +143,62 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
                 padding: EdgeInsets.symmetric(
                     horizontal: horizontalPadding, vertical: 16.0),
                 child: IntrinsicHeight(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Sign up',
-                          style: GoogleFonts.poppins(
-                              fontSize: 32.0, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8.0),
-                      Text('Create an account to continue!',
-                          style: GoogleFonts.poppins(
-                              color: Colors.grey, fontSize: 14.0)),
-                      const SizedBox(height: 24.0),
-                      _buildTextField('Store Name', 'Input store name',
-                          icon: Icons.store_outlined),
-                      _buildTextField('Street', 'Enter street',
-                          icon: Icons.home_outlined),
-                      _buildTextField('Barangay', 'Enter barangay',
-                          icon: Icons.location_city),
-                      _buildTextField(
-                          'City or Municipality', 'Enter city or municipality',
-                          icon: Icons.location_city_outlined),
-                      _buildTextField('Province', 'Enter province',
-                          icon: Icons.map_outlined),
-                      _buildPhoneField(),
-                      _buildPasswordField(),
-                      const Spacer(), // Pushes the button to bottom
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF651D32),
-                            minimumSize: const Size(double.infinity, 50),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12.0)),
-                          ),
-                          child: Text(
-                            'Register',
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Sign up',
                             style: GoogleFonts.poppins(
-                              fontSize: 16.0,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                                fontSize: 32.0, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8.0),
+                        Text('Create an account to continue!',
+                            style: GoogleFonts.poppins(
+                                color: Colors.grey, fontSize: 14.0)),
+                        const SizedBox(height: 24.0),
+                        _buildTextField('Store Name', 'Input store name',
+                            icon: Icons.store_outlined,
+                            controller: storeNameController),
+                        _buildTextField('Street', 'Enter street',
+                            icon: Icons.home_outlined,
+                            controller: streetController),
+                        _buildTextField('Barangay', 'Enter barangay',
+                            icon: Icons.location_city,
+                            controller: barangayController),
+                        _buildTextField('City or Municipality',
+                            'Enter city or municipality',
+                            icon: Icons.location_city_outlined,
+                            controller: cityController),
+                        _buildTextField('Province', 'Enter province',
+                            icon: Icons.map_outlined,
+                            controller: provinceController),
+                        _buildPhoneField(),
+                        _buildPasswordField(controller: passwordController),
+                        const Spacer(), // Pushes the button to bottom
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed:
+                                registerSeller, // Call the register function
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF651D32),
+                              minimumSize: const Size(double.infinity, 50),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12.0)),
+                            ),
+                            child: Text(
+                              'Register',
+                              style: GoogleFonts.poppins(
+                                fontSize: 16.0,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16.0),
-                    ],
+                        const SizedBox(height: 16.0),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -112,19 +209,27 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
     );
   }
 
-  Widget _buildTextField(String label, String hint, {IconData? icon}) {
+  Widget _buildTextField(String label, String hint,
+      {IconData? icon, required TextEditingController controller}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
         const SizedBox(height: 8.0),
-        TextField(
+        TextFormField(
+          controller: controller,
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: icon != null ? Icon(icon) : null,
             border:
                 OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
           ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return '$label is required';
+            }
+            return null;
+          },
         ),
         const SizedBox(height: 16.0),
       ],
@@ -132,17 +237,45 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
   }
 
   Widget _buildPhoneField() {
-    return _buildTextField('Phone Number', '(09) 726-0592', icon: Icons.phone);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Phone Number',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
+        const SizedBox(height: 8.0),
+        TextFormField(
+          controller: phoneController,
+          keyboardType: TextInputType.phone,
+          decoration: InputDecoration(
+            hintText: '(09) 726-0592',
+            prefixIcon: Icon(Icons.phone),
+            border:
+                OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Phone Number is required';
+            }
+            if (!RegExp(r'^\+?63\d{10}$').hasMatch('+63' + value.trim())) {
+              return 'Enter a valid phone number';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16.0),
+      ],
+    );
   }
 
-  Widget _buildPasswordField() {
+  Widget _buildPasswordField({required TextEditingController controller}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Set Password',
             style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
         const SizedBox(height: 8.0),
-        TextField(
+        TextFormField(
+          controller: controller,
           obscureText: !_isPasswordVisible,
           decoration: InputDecoration(
             hintText: 'Enter password',
@@ -159,6 +292,15 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
             border:
                 OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
           ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Password is required';
+            }
+            if (value.length < 6) {
+              return 'Password must be at least 6 characters';
+            }
+            return null;
+          },
         ),
         const SizedBox(height: 16.0),
       ],

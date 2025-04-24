@@ -1,8 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'Sellerlogin.dart';
 import 'sellerdashboard.dart';
 import 'AddProductList.dart';
-class NavigationDrawer extends StatelessWidget {
+
+class NavigationDrawer extends StatefulWidget {
+  @override
+  State<NavigationDrawer> createState() => _NavigationDrawerState();
+}
+
+class _NavigationDrawerState extends State<NavigationDrawer> {
+  String storeName = "My Store";
+
+  @override
+  void initState() {
+    super.initState();
+    loadStoreName();
+  }
+
+  Future<void> loadStoreName() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? name = prefs.getString('sellerStoreName');
+    setState(() {
+      storeName = name ?? "My Store";
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
@@ -10,7 +33,7 @@ class NavigationDrawer extends StatelessWidget {
       child: Column(
         children: [
           SizedBox(
-            height: 200, // Adjust height as needed
+            height: 200,
             child: DrawerHeader(
               decoration: BoxDecoration(
                 color: Color(0xFF800000),
@@ -19,15 +42,10 @@ class NavigationDrawer extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons
-                          .store, // You can change to Icons.dashboard, Icons.store, etc.
-                      size: 40,
-                      color: Colors.white,
-                    ),
+                    Icon(Icons.store, size: 40, color: Colors.white),
                     SizedBox(height: 10),
                     Text(
-                      'My Store',
+                      storeName,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 28,
@@ -44,8 +62,8 @@ class NavigationDrawer extends StatelessWidget {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                DrawerItem(icon: Icons.dashboard, text: "Dashboard", destination: DashboardScreen(),),
-                DrawerItem(icon: Icons.add, text: "Add Product", destination: AddProductList(),),
+                DrawerItem(icon: Icons.dashboard, text: "Dashboard", destination: DashboardScreen()),
+                DrawerItem(icon: Icons.add, text: "Add Product", destination: AddProductList()),
                 DrawerItem(icon: Icons.inventory, text: "Manage Product"),
                 DrawerItem(icon: Icons.shopping_cart, text: "Manage Orders"),
                 DrawerItem(icon: Icons.bar_chart, text: "View Sales"),
@@ -91,9 +109,13 @@ class DrawerItem extends StatelessWidget {
           color: isLogout ? Colors.redAccent : Colors.black87,
         ),
       ),
-      onTap: () {
-        Navigator.pop(context); // Close the drawer first
+      onTap: () async {
+        Navigator.pop(context); // Close the drawer
+
         if (isLogout) {
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.remove('sellerStoreName');
+
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => SellerLoginScreen()),

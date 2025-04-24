@@ -5,6 +5,7 @@ import 'profile.dart'; // Import ProfileScreen
 import 'product.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'cart.dart';
+
 void main() {
   runApp(MyApp());
 }
@@ -81,235 +82,223 @@ class _SearchPageState extends State<SearchPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-        appBar: PreferredSize(
-          preferredSize: Size.fromHeight(80),
-          child: Column(
-            children: [
-              AppBar(
-                automaticallyImplyLeading: false,
-                backgroundColor: Colors.white,
-                title: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: "Search for products...",
-                      border: InputBorder.none,
-                      prefixIcon: Icon(Icons.search, size: 28),
-                      contentPadding: EdgeInsets.symmetric(vertical: 12),
-                    ),
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(80),
+        child: Column(
+          children: [
+            AppBar(
+              automaticallyImplyLeading: false,
+              backgroundColor: Colors.white,
+              title: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: "Search for products...",
+                    border: InputBorder.none,
+                    prefixIcon: Icon(Icons.search, size: 28),
+                    contentPadding: EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
-                actions: [
-                  IconButton(
-                    icon: Icon(Icons.filter_list, size: 28),
-                    onPressed: () {
-                      showModalBottomSheet(
+              ),
+              actions: [
+                IconButton(
+                  icon: Icon(Icons.filter_list, size: 28),
+                  onPressed: () {
+                    showModalBottomSheet(
                         context: context,
                         shape: RoundedRectangleBorder(
                           borderRadius:
                               BorderRadius.vertical(top: Radius.circular(16)),
                         ),
                         builder: (context) {
-                          return Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Center(
-                                  child: Container(
-                                    width: 40,
-                                    height: 4,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[300],
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(height: 16),
-                                Text(
-                                  'Filter Options',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(height: 16),
-                                Text(
-                                  'Category',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Wrap(
-                                  spacing: 16, // Add more spacing between chips
-                                  runSpacing:
-                                      8, // Add vertical spacing between rows
+                          return SafeArea(
+                            child: SingleChildScrollView(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    FilterChip(
-                                      label: Text('Clothes'),
-                                      onSelected: (bool value) {},
-                                    ),
-                                    FilterChip(
-                                      label: Text('School'),
-                                      onSelected: (bool value) {},
-                                    ),
-                                    FilterChip(
-                                      label: Text('Sports'),
-                                      onSelected: (bool value) {},
-                                    ),
-                                    FilterChip(
-                                      label: Text('Food'),
-                                      onSelected: (bool value) {},
-                                    ),
-                                    FilterChip(
-                                      label: Text('All'),
-                                      onSelected: (bool value) {},
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 16),
-                                Text(
-                                  'Price Range',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: TextField(
-                                        decoration: InputDecoration(
-                                          labelText: 'Min Price',
-                                          border: OutlineInputBorder(),
+                                    Center(
+                                      child: Container(
+                                        width: 40,
+                                        height: 4,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[300],
+                                          borderRadius:
+                                              BorderRadius.circular(2),
                                         ),
-                                        keyboardType: TextInputType.number,
-                                        onChanged: (value) {
-                                          // Handle min price input
-                                        },
                                       ),
                                     ),
-                                    SizedBox(width: 16),
-                                    Expanded(
-                                      child: TextField(
-                                        decoration: InputDecoration(
-                                          labelText: 'Max Price',
-                                          border: OutlineInputBorder(),
-                                        ),
-                                        keyboardType: TextInputType.number,
-                                        onChanged: (value) {
-                                          // Handle max price input
-                                        },
+                                    SizedBox(height: 16),
+                                    Text(
+                                      'Filter Options',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                  ],
-                                ),
-                                SizedBox(height: 16),
-                                Text(
-                                  'Ratings',
-                                  style: GoogleFonts.poppins(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                Row(
-                                  children: List.generate(5, (index) {
-                                    return IconButton(
-                                      icon: Icon(
-                                        Icons.star,
-                                        color: index < 4
-                                            ? Colors.amber
-                                            : Colors.grey,
-                                      ),
-                                      onPressed: () {
-                                        // Handle rating selection
-                                      },
-                                    );
-                                  }),
-                                ),
-                                SizedBox(height: 16),
-                                Center(
-                                  child: ElevatedButton(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Color(0xFF651D32),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 32, vertical: 12),
-                                    ),
-                                    onPressed: () {
-                                      // Apply filter logic
-                                      Navigator.pop(context);
-                                    },
-                                    child: Text(
-                                      'Apply Filters',
+                                    SizedBox(height: 16),
+                                    Text(
+                                      'Category',
                                       style: GoogleFonts.poppins(
                                         fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                        fontWeight: FontWeight.w500,
                                       ),
                                     ),
-                                  ),
+                                    Wrap(
+                                      spacing: 16,
+                                      runSpacing: 8,
+                                      children: [
+                                        FilterChip(
+                                            label: Text('Clothes'),
+                                            onSelected: (_) {}),
+                                        FilterChip(
+                                            label: Text('School'),
+                                            onSelected: (_) {}),
+                                        FilterChip(
+                                            label: Text('Sports'),
+                                            onSelected: (_) {}),
+                                        FilterChip(
+                                            label: Text('Food'),
+                                            onSelected: (_) {}),
+                                        FilterChip(
+                                            label: Text('All'),
+                                            onSelected: (_) {}),
+                                      ],
+                                    ),
+                                    SizedBox(height: 16),
+                                    Text(
+                                      'Price Range',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextField(
+                                            decoration: InputDecoration(
+                                              labelText: 'Min Price',
+                                              border: OutlineInputBorder(),
+                                            ),
+                                            keyboardType: TextInputType.number,
+                                          ),
+                                        ),
+                                        SizedBox(width: 16),
+                                        Expanded(
+                                          child: TextField(
+                                            decoration: InputDecoration(
+                                              labelText: 'Max Price',
+                                              border: OutlineInputBorder(),
+                                            ),
+                                            keyboardType: TextInputType.number,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 16),
+                                    Text(
+                                      'Ratings',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    Row(
+                                      children: List.generate(5, (index) {
+                                        return IconButton(
+                                          icon: Icon(
+                                            Icons.star,
+                                            color: index < 4
+                                                ? Colors.amber
+                                                : Colors.grey,
+                                          ),
+                                          onPressed: () {},
+                                        );
+                                      }),
+                                    ),
+                                    SizedBox(height: 16),
+                                    Center(
+                                      child: ElevatedButton(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Color(0xFF651D32),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 32, vertical: 12),
+                                        ),
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          'Apply Filters',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
                           );
-                        },
-                      );
-                    },
-                  ),
-                  Stack(
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.shopping_cart, size: 28),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => CartScreen()),
-                          );
-                        },
-                      ),
-                      Positioned(
-                        right: 6,
-                        top: 6,
-                        child: Container(
-                          padding: EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            '3', // Placeholder for cart count
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        });
+                  },
+                ),
+                Stack(
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.shopping_cart, size: 28),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => CartScreen()),
+                        );
+                      },
+                    ),
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          '3', // Placeholder for cart count
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                    ],
-                  ),
-                ],
-              ),
-              Container(
-                width: double.infinity,
-                height: 1,
-                color: Colors.grey,
-              ),
-            ],
-          ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            Container(
+              width: double.infinity,
+              height: 1,
+              color: Colors.grey,
+            ),
+          ],
         ),
-        body:  ProductVerticalList(),
+      ),
+      body: ProductVerticalList(),
     );
-   
   }
 }
 
@@ -344,8 +333,7 @@ class ProductVerticalList extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) => ProductDetailPage()),
+                  MaterialPageRoute(builder: (context) => ProductDetailPage()),
                 );
               },
               child: Container(
@@ -384,8 +372,7 @@ class ProductVerticalList extends StatelessWidget {
                         const Positioned(
                           top: 8,
                           right: 8,
-                          child:
-                              Icon(Icons.favorite_border, color: Colors.red),
+                          child: Icon(Icons.favorite_border, color: Colors.red),
                         ),
                       ],
                     ),
@@ -394,8 +381,7 @@ class ProductVerticalList extends StatelessWidget {
                         padding: const EdgeInsets.all(8.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               'Product Name',
@@ -449,4 +435,3 @@ class ProductVerticalList extends StatelessWidget {
     );
   }
 }
-

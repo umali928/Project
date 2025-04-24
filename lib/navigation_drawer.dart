@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // 👈 Added
 import 'Sellerlogin.dart';
 import 'sellerdashboard.dart';
 import 'AddProductList.dart';
+
 class NavigationDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -20,8 +22,7 @@ class NavigationDrawer extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons
-                          .store, // You can change to Icons.dashboard, Icons.store, etc.
+                      Icons.store,
                       size: 40,
                       color: Colors.white,
                     ),
@@ -44,8 +45,8 @@ class NavigationDrawer extends StatelessWidget {
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
-                DrawerItem(icon: Icons.dashboard, text: "Dashboard", destination: DashboardScreen(),),
-                DrawerItem(icon: Icons.add, text: "Add Product", destination: AddProductList(),),
+                DrawerItem(icon: Icons.dashboard, text: "Dashboard", destination: DashboardScreen()),
+                DrawerItem(icon: Icons.add, text: "Add Product", destination: AddProductList()),
                 DrawerItem(icon: Icons.inventory, text: "Manage Product"),
                 DrawerItem(icon: Icons.shopping_cart, text: "Manage Orders"),
                 DrawerItem(icon: Icons.bar_chart, text: "View Sales"),
@@ -91,9 +92,15 @@ class DrawerItem extends StatelessWidget {
           color: isLogout ? Colors.redAccent : Colors.black87,
         ),
       ),
-      onTap: () {
+      onTap: () async {
         Navigator.pop(context); // Close the drawer first
+
         if (isLogout) {
+          // ✅ Clear session
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.remove('sellerStoreName');
+
+          // ✅ Redirect to login
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => SellerLoginScreen()),

@@ -76,6 +76,20 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
         return;
       }
 
+      // Check if the user already has a seller account
+      final sellerSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('sellerInfo')
+          .get();
+
+      if (sellerSnapshot.docs.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('You already have a seller account.')),
+        );
+        return;
+      }
+
       // Ensure phone number starts with +63
       String phoneNumber = phoneController.text.trim();
       if (!phoneNumber.startsWith('+63')) {
@@ -246,8 +260,13 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
         TextFormField(
           controller: phoneController,
           keyboardType: TextInputType.phone,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\+?\d*')),
+            LengthLimitingTextInputFormatter(13),
+            _PhoneNumberFormatter(),
+          ],
           decoration: InputDecoration(
-            hintText: '(09) 726-0592',
+            hintText: '+639123456789',
             prefixIcon: Icon(Icons.phone),
             border:
                 OutlineInputBorder(borderRadius: BorderRadius.circular(12.0)),
@@ -256,8 +275,9 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
             if (value == null || value.trim().isEmpty) {
               return 'Phone Number is required';
             }
-            if (!RegExp(r'^\+?63\d{10}$').hasMatch('+63' + value.trim())) {
-              return 'Enter a valid phone number';
+            final phoneRegex = RegExp(r'^\+63\d{10}$');
+            if (!phoneRegex.hasMatch(value.trim())) {
+              return 'Invalid phone number. Use +63 followed by 10 digits (e.g. +639123456789).';
             }
             return null;
           },
@@ -304,6 +324,39 @@ class _SellerRegistrationScreenState extends State<SellerRegistrationScreen> {
         ),
         const SizedBox(height: 16.0),
       ],
+    );
+  }
+}
+
+// Formatter to ensure phone number starts with +63 and is valid
+class _PhoneNumberFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    String text = newValue.text;
+
+    // Ensure it starts with +63
+    if (!text.startsWith('+63')) {
+      text = '+63' + text.replaceAll(RegExp(r'^\+?63?'), '');
+    }
+
+    // Only allow digits after +63
+    if (text.length > 3) {
+      String prefix = text.substring(0, 3);
+      String digits = text.substring(3).replaceAll(RegExp(r'\D'), '');
+      text = prefix + digits;
+    }
+
+    // Limit to 13 characters
+    if (text.length > 13) {
+      text = text.substring(0, 13);
+    }
+
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
     );
   }
 }

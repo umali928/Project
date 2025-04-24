@@ -11,21 +11,22 @@ import 'login.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'verify.dart';
+
 // import 'package:firebase_storage/firebase_storage.dart';
 // import 'dart:typed_data';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-   if (kIsWeb) {
+  if (kIsWeb) {
     await Firebase.initializeApp(
       options: FirebaseOptions(
-        apiKey: "AIzaSyBbSQOdsCh7ImLhewcIhHUTcj9-1xbShQk",
-        authDomain: "lspumart.firebaseapp.com",
-        databaseURL: "https://lspumart-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "lspumart",
-        storageBucket: "lspumart.firebasestorage.app",
-        messagingSenderId: "533992551897",
-        appId: "1:533992551897:web:d04a482ad131a0700815c8"
-      ),
+          apiKey: "AIzaSyBbSQOdsCh7ImLhewcIhHUTcj9-1xbShQk",
+          authDomain: "lspumart.firebaseapp.com",
+          databaseURL:
+              "https://lspumart-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "lspumart",
+          storageBucket: "lspumart.firebasestorage.app",
+          messagingSenderId: "533992551897",
+          appId: "1:533992551897:web:d04a482ad131a0700815c8"),
     );
   } else {
     await Firebase.initializeApp(); // Mobile config
@@ -74,7 +75,8 @@ class _SignUpFormState extends State<SignUpForm> {
   final TextEditingController fullNameController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
   // final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -99,49 +101,52 @@ class _SignUpFormState extends State<SignUpForm> {
       );
     }
   }
+
   // Upload Image to Supabase
-  Future<String?> uploadProfilePicToSupabase(Uint8List fileBytes, String userId) async {
-  final supabase = Supabase.instance.client;
-  
-  // Detect file type from the bytes
-  String? fileExtension;
-  if (fileBytes.length >= 8) {
-    // Check for PNG signature
-    if (fileBytes[0] == 0x89 && fileBytes[1] == 0x50 && fileBytes[2] == 0x4E && fileBytes[3] == 0x47) {
-      fileExtension = 'png';
+  Future<String?> uploadProfilePicToSupabase(
+      Uint8List fileBytes, String userId) async {
+    final supabase = Supabase.instance.client;
+
+    // Detect file type from the bytes
+    String? fileExtension;
+    if (fileBytes.length >= 8) {
+      // Check for PNG signature
+      if (fileBytes[0] == 0x89 &&
+          fileBytes[1] == 0x50 &&
+          fileBytes[2] == 0x4E &&
+          fileBytes[3] == 0x47) {
+        fileExtension = 'png';
+      }
+      // Check for JPEG signature
+      else if (fileBytes[0] == 0xFF && fileBytes[1] == 0xD8) {
+        fileExtension = 'jpg';
+      }
     }
-    // Check for JPEG signature
-    else if (fileBytes[0] == 0xFF && fileBytes[1] == 0xD8) {
-      fileExtension = 'jpg';
+
+    // Default to jpg if type couldn't be determined
+    fileExtension ??= 'jpg';
+
+    final fileName = 'profile_pictures/$userId.$fileExtension';
+    final contentType = fileExtension == 'png' ? 'image/png' : 'image/jpeg';
+
+    try {
+      final response = await supabase.storage.from('uploads').uploadBinary(
+            fileName,
+            fileBytes,
+            fileOptions: FileOptions(contentType: contentType),
+          );
+
+      if (response.isEmpty) {
+        throw Exception('Empty response from Supabase');
+      }
+
+      final publicUrl = supabase.storage.from('uploads').getPublicUrl(fileName);
+      return publicUrl;
+    } catch (e) {
+      print('Error uploading image: $e');
+      rethrow; // Rethrow to handle in the calling function
     }
   }
-
-  // Default to jpg if type couldn't be determined
-  fileExtension ??= 'jpg';
-  
-  final fileName = 'profile_pictures/$userId.$fileExtension';
-  final contentType = fileExtension == 'png' ? 'image/png' : 'image/jpeg';
-
-  try {
-    final response = await supabase.storage
-        .from('uploads')
-        .uploadBinary(
-          fileName, 
-          fileBytes,
-          fileOptions: FileOptions(contentType: contentType),
-        );
-
-    if (response.isEmpty) {
-      throw Exception('Empty response from Supabase');
-    }
-
-    final publicUrl = supabase.storage.from('uploads').getPublicUrl(fileName);
-    return publicUrl;
-  } catch (e) {
-    print('Error uploading image: $e');
-    rethrow; // Rethrow to handle in the calling function
-  }
-}
 
   Future<void> _register() async {
     if (_isUploading) return;
@@ -179,16 +184,15 @@ class _SignUpFormState extends State<SignUpForm> {
       return;
     }
     // Check if profile picture is selected
-  if (_imageBytes == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Please select a profile picture')),
-    );
-    return;
-  }
- setState(() {
-    _isUploading = true;
-  });
-
+    if (_imageBytes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select a profile picture')),
+      );
+      return;
+    }
+    setState(() {
+      _isUploading = true;
+    });
 
     try {
       UserCredential userCredential =
@@ -196,25 +200,22 @@ class _SignUpFormState extends State<SignUpForm> {
         email: email,
         password: password,
       );
-       final user = userCredential.user;
-        if (user != null) {
+      final user = userCredential.user;
+      if (user != null) {
         await user.sendEmailVerification();
 
-        final profileUrl = await uploadProfilePicToSupabase(_imageBytes!, user.uid);
-
-        // await _firestore.collection('users').doc(user.uid).set({
-        //   'fullName': fullName,
-        //   'email': email,
-        //   'profilePicUrl': profileUrl,
-        //   'createdAt': Timestamp.now(),
-        // });
+        final profileUrl =
+            await uploadProfilePicToSupabase(_imageBytes!, user.uid);
 
         Navigator.pushReplacement(
           context,
-            MaterialPageRoute(builder: (context) => VerifyScreen( user: user,
-                                                                fullName: fullName,
-                                                                email: email,
-                                                                profilePicUrl: profileUrl ?? '',)),
+          MaterialPageRoute(
+              builder: (context) => VerifyScreen(
+                    user: user,
+                    fullName: fullName,
+                    email: email,
+                    profilePicUrl: profileUrl ?? '',
+                  )),
         );
       }
     } catch (e) {
@@ -243,13 +244,13 @@ class _SignUpFormState extends State<SignUpForm> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(errorMessage)),
       );
-    }finally {
-    if (mounted) {
-      setState(() {
-        _isUploading = false;
-      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUploading = false;
+        });
+      }
     }
-   }
   }
 
   @override
@@ -283,7 +284,7 @@ class _SignUpFormState extends State<SignUpForm> {
           ),
         ),
         SizedBox(height: 15),
-            Center(
+        Center(
           child: GestureDetector(
             onTap: _pickImage,
             child: Stack(
@@ -291,9 +292,8 @@ class _SignUpFormState extends State<SignUpForm> {
                 CircleAvatar(
                   radius: 50,
                   backgroundColor: Colors.grey[200],
-                  backgroundImage: _imageBytes != null 
-                      ? MemoryImage(_imageBytes!) 
-                      : null,
+                  backgroundImage:
+                      _imageBytes != null ? MemoryImage(_imageBytes!) : null,
                   child: _imageBytes == null
                       ? Icon(Icons.person, size: 50, color: Colors.grey)
                       : null,
@@ -307,7 +307,8 @@ class _SignUpFormState extends State<SignUpForm> {
                       color: Color(0xFF651D32),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.camera_alt, size: 20, color: Colors.white),
+                    child:
+                        Icon(Icons.camera_alt, size: 20, color: Colors.white),
                   ),
                 ),
               ],
@@ -441,7 +442,7 @@ class _SignUpFormState extends State<SignUpForm> {
                 ),
               ),
               // Profile picture upload section
-    
+
               SizedBox(height: 30),
               Align(
                 alignment: Alignment.center,
@@ -468,33 +469,32 @@ class _SignUpFormState extends State<SignUpForm> {
               Center(
                 child: GestureDetector(
                   onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => LoginScreen()),
-                  );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => LoginScreen()),
+                    );
                   },
                   child: RichText(
-                  text: TextSpan(
-                    text: 'Already have an account? ',
-                    style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: Colors.black87,
-                    ),
-                    children: [
-                    TextSpan(
-                      text: 'Log in here!',
+                    text: TextSpan(
+                      text: 'Already have an account? ',
                       style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: Color(0xFF651D32),
-                      fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.black87,
                       ),
+                      children: [
+                        TextSpan(
+                          text: 'Log in here!',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: Color(0xFF651D32),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-                    ],
-                  ),
                   ),
                 ),
               ),
-          
             ],
           ),
         ),

@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
@@ -6,8 +8,72 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'AddProductList.dart';
-void main() {
-  runApp(const MyApp());
+import 'package:firebase_core/firebase_core.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+          apiKey: "AIzaSyBbSQOdsCh7ImLhewcIhHUTcj9-1xbShQk",
+          authDomain: "lspumart.firebaseapp.com",
+          databaseURL:
+              "https://lspumart-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "lspumart",
+          storageBucket: "lspumart.firebasestorage.app",
+          messagingSenderId: "533992551897",
+          appId: "1:533992551897:web:d04a482ad131a0700815c8"),
+    );
+  } else {
+    await Firebase.initializeApp(); // Mobile config
+  }
+  await Supabase.initialize(
+    url:
+        'https://haoiqctsijynxwfoaspm.supabase.co', // Replace with your Supabase URL
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhhb2lxY3RzaWp5bnh3Zm9hc3BtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxNzU3MDMsImV4cCI6MjA1OTc1MTcwM30.7kilmu9kxrABgg4ZMz9GIHm5Jv4LHLAIYR1_8q1eDEI', // Replace with your Supabase anon key
+  );
+  runApp(MyApp());
+}
+
+Future<String?> uploadProductImageToSupabase(
+    Uint8List fileBytes, String productId) async {
+  final supabase = Supabase.instance.client;
+
+  // Detect file type
+  String? fileExtension;
+  if (fileBytes.length >= 8) {
+    if (fileBytes[0] == 0x89 &&
+        fileBytes[1] == 0x50 &&
+        fileBytes[2] == 0x4E &&
+        fileBytes[3] == 0x47) {
+      fileExtension = 'png';
+    } else if (fileBytes[0] == 0xFF && fileBytes[1] == 0xD8) {
+      fileExtension = 'jpg';
+    }
+  }
+  fileExtension ??= 'jpg';
+
+  final fileName = 'products/$productId.$fileExtension';
+  final contentType = fileExtension == 'png' ? 'image/png' : 'image/jpeg';
+
+  try {
+    final response = await supabase.storage.from('uploads').uploadBinary(
+          fileName,
+          fileBytes,
+          fileOptions: FileOptions(contentType: contentType),
+        );
+
+    if (response.isEmpty) throw Exception('Upload failed with empty response');
+
+    final publicUrl = supabase.storage.from('uploads').getPublicUrl(fileName);
+    return publicUrl;
+  } catch (e) {
+    print('Error uploading product image: $e');
+    return null;
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -57,12 +123,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   // ignore: unused_field
   int _productStock = 0;
   String _selectedCategory = 'Clothes';
-  final List<String> _categories = [
-    'Clothes',
-    'School Supplies',
-    'Foods',
-    'Sports'
-  ];
+  final List<String> _categories = ['Clothes', 'School', 'Sports', 'Foods'];
 
   String? _productImage;
   Uint8List? _webImage;
@@ -137,11 +198,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.push(context, 
+          onPressed: () => Navigator.push(
+            context,
             MaterialPageRoute(
               builder: (context) => AddProductList(),
             ),
-          ),  
+          ),
         ),
       ),
       body: Form(
@@ -333,10 +395,109 @@ class _AddProductScreenState extends State<AddProductScreen> {
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
                         ),
-                        onPressed: () {
+                        onPressed: () async {
                           if (_formKey.currentState!.validate()) {
                             _formKey.currentState!.save();
-                            // Save logic here
+
+                            if (_productImage == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content:
+                                        Text('Please upload a product image')),
+                              );
+                              return;
+                            }
+
+                            try {
+                              showDialog(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (_) => const Center(
+                                    child: CircularProgressIndicator()),
+                              );
+
+                              // 1. Convert image to bytes
+                              final bytes = kIsWeb
+                                  ? _webImage!
+                                  : await File(_productImage!).readAsBytes();
+
+                              // 2. Upload image to Supabase
+                              final productId = DateTime.now()
+                                  .millisecondsSinceEpoch
+                                  .toString(); // Unique ID for filename
+                              final imageUrl =
+                                  await uploadProductImageToSupabase(
+                                      bytes, productId);
+
+                              if (imageUrl == null) {
+                                Navigator.of(context).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text('Image upload failed')),
+                                );
+                                return;
+                              }
+
+                              // 3. Get seller info from Firestore
+                              final userId =
+                                  FirebaseAuth.instance.currentUser!.uid;
+                              final sellerDoc = await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(userId)
+                                  .collection('sellerInfo')
+                                  .get();
+
+                              if (sellerDoc.docs.isEmpty) {
+                                Navigator.of(context).pop();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content:
+                                          Text('Seller information not found')),
+                                );
+                                return;
+                              }
+
+                              final sellerId = sellerDoc.docs.first.id;
+
+                              // 4. Save product to Firestore
+                              await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(userId)
+                                  .collection('sellerInfo')
+                                  .doc(sellerId)
+                                  .collection('products')
+                                  .doc(productId) // ✅ set document ID manually
+                                  .set({
+                                'productName': _productName,
+                                'description': _productDescription,
+                                'price': _productPrice,
+                                'stock': _productStock,
+                                'category': _selectedCategory,
+                                'imageUrl': imageUrl,
+                                'sellerId': sellerId,
+                                'createdAt': FieldValue.serverTimestamp(),
+                              });
+
+                              Navigator.of(context)
+                                  .pop(); // Close loading dialog
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content:
+                                        Text('Product added successfully!')),
+                              );
+
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => AddProductList()),
+                              );
+                            } catch (e) {
+                              Navigator.of(context).pop(); // Close loading
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Failed: $e')),
+                              );
+                            }
                           }
                         },
                         child: Text('Add Product',

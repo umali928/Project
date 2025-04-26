@@ -224,8 +224,76 @@ class Manageproduct extends StatelessWidget {
                                           ),
                                           SizedBox(width: 10),
                                           TextButton.icon(
-                                            onPressed: () {
-                                              // TODO: Handle remove
+                                            onPressed: () async {
+                                              final productId = products[index]
+                                                  .id; // Get the Firestore doc ID
+                                              final imageUrl =
+                                                  product['imageUrl'] ?? '';
+
+                                              try {
+                                                // 1. Delete image from Supabase Storage
+                                                if (imageUrl.isNotEmpty) {
+                                                  final supabase =
+                                                      Supabase.instance.client;
+
+                                                  // Extract only the image path after Supabase base URL
+                                                  final Uri uri =
+                                                      Uri.parse(imageUrl);
+
+                                                  // Assuming the path starts with 'uploads/'
+                                                  final int uploadIndex = uri
+                                                      .pathSegments
+                                                      .indexOf('uploads');
+                                                  final path = uri.pathSegments
+                                                      .sublist(uploadIndex + 1)
+                                                      .join('/');
+
+                                                  final result = await supabase
+                                                      .storage
+                                                      .from(
+                                                          'uploads') // <- correct bucket
+                                                      .remove([
+                                                    path
+                                                  ]); // <- correct path inside the bucket
+
+                                                  if (result.isNotEmpty) {
+                                                    print(
+                                                        'Image deleted from Supabase successfully! Deleted paths: $result');
+                                                  } else {
+                                                    print(
+                                                        'No file was deleted from Supabase.');
+                                                  }
+                                                }
+
+                                                // 2. Delete the product document from Firestore
+                                                await FirebaseFirestore.instance
+                                                    .collection('users')
+                                                    .doc(userId)
+                                                    .collection('sellerInfo')
+                                                    .doc(sellerId)
+                                                    .collection('products')
+                                                    .doc(productId)
+                                                    .delete();
+
+                                                print(
+                                                    'Product deleted successfully.');
+
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                      content: Text(
+                                                          'Product deleted successfully')),
+                                                );
+                                              } catch (e) {
+                                                print(
+                                                    'Error deleting product: $e');
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                      content: Text(
+                                                          'Failed to delete product')),
+                                                );
+                                              }
                                             },
                                             icon: Icon(Icons.delete,
                                                 color: Colors.red),

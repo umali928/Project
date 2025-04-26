@@ -2,8 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'AddProduct.dart';
 import 'package:lspu/navigation_drawer.dart' as custom;
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+          apiKey: "AIzaSyBbSQOdsCh7ImLhewcIhHUTcj9-1xbShQk",
+          authDomain: "lspumart.firebaseapp.com",
+          databaseURL:
+              "https://lspumart-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "lspumart",
+          storageBucket: "lspumart.firebasestorage.app",
+          messagingSenderId: "533992551897",
+          appId: "1:533992551897:web:d04a482ad131a0700815c8"),
+    );
+  } else {
+    await Firebase.initializeApp(); // Mobile config
+  }
+  await Supabase.initialize(
+    url: 'https://haoiqctsijynxwfoaspm.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+  );
   runApp(MyApp());
 }
 
@@ -20,31 +45,11 @@ class MyApp extends StatelessWidget {
 }
 
 class Manageproduct extends StatelessWidget {
-  final List<Map<String, dynamic>> products = [
-    {
-      "name": "Pancit Canton",
-      "category": "Food",
-      "price": "₱25.00",
-      "stock": "120",
-    },
-    {
-      "name": "Bear Brand",
-      "category": "Beverages",
-      "price": "₱50.00",
-      "stock": "80",
-    },
-    {
-      "name": "USB Cable",
-      "category": "Electronics",
-      "price": "₱100.00",
-      "stock": "200",
-    },
-  ];
-
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isLargeScreen = screenWidth > 600;
+    final userId = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -75,87 +80,178 @@ class Manageproduct extends StatelessWidget {
         ),
         iconTheme: IconThemeData(color: Colors.black),
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return Padding(
-            padding: EdgeInsets.all(isLargeScreen ? 24 : 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Home / Add Product",
-                  style: GoogleFonts.poppins(
-                    fontSize: isLargeScreen ? 16 : 14,
-                    color: Colors.black54,
-                  ),
-                ),
-                SizedBox(height: isLargeScreen ? 20 : 12),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: products.length,
-                    itemBuilder: (context, index) {
-                      final product = products[index];
-                      return Container(
-                        margin: EdgeInsets.only(bottom: isLargeScreen ? 20 : 16),
-                        padding: EdgeInsets.all(isLargeScreen ? 20 : 16),
-                        decoration: BoxDecoration(
-                          color: Color(0xFFF8F8F8),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black12,
-                              blurRadius: 6,
-                              offset: Offset(0, 2),
+      body: userId == null
+          ? Center(child: Text("User not logged in"))
+          : StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(userId)
+                  .collection('sellerInfo')
+                  .limit(1)
+                  .snapshots(),
+              builder: (context, sellerSnapshot) {
+                if (sellerSnapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
+                if (!sellerSnapshot.hasData ||
+                    sellerSnapshot.data!.docs.isEmpty) {
+                  return Center(child: Text("No seller info found."));
+                }
+
+                final sellerId = sellerSnapshot.data!.docs.first.id;
+
+                return StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(userId)
+                      .collection('sellerInfo')
+                      .doc(sellerId)
+                      .collection('products')
+                      .snapshots(),
+                  builder: (context, productSnapshot) {
+                    if (productSnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+                    if (!productSnapshot.hasData ||
+                        productSnapshot.data!.docs.isEmpty) {
+                      return Center(child: Text("No products found."));
+                    }
+
+                    final products = productSnapshot.data!.docs;
+
+                    return Padding(
+                      padding: EdgeInsets.all(isLargeScreen ? 24 : 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Home / Manage Product",
+                            style: GoogleFonts.poppins(
+                              fontSize: isLargeScreen ? 16 : 14,
+                              color: Colors.black54,
                             ),
-                          ],
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            CircleAvatar(
-                              radius: isLargeScreen ? 26 : 22,
-                              backgroundColor: Color(0xFF651D32),
-                              child: Icon(Icons.inventory,
-                                  color: Colors.white,
-                                  size: isLargeScreen ? 26 : 20),
+                          ),
+                          SizedBox(height: isLargeScreen ? 20 : 12),
+                          Expanded(
+                            child: ListView.builder(
+                              itemCount: products.length,
+                              itemBuilder: (context, index) {
+                                final product = products[index].data()
+                                    as Map<String, dynamic>;
+
+                                return Container(
+                                  margin: EdgeInsets.only(
+                                      bottom: isLargeScreen ? 20 : 16),
+                                  padding:
+                                      EdgeInsets.all(isLargeScreen ? 20 : 16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black12,
+                                        blurRadius: 6,
+                                        offset: Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      if (product['imageUrl'] != null &&
+                                          product['imageUrl'].isNotEmpty)
+                                        ClipRRect(
+                                          borderRadius:
+                                              BorderRadius.circular(12),
+                                          child: Image.network(
+                                            product['imageUrl'],
+                                            height: 180,
+                                            width: double.infinity,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      SizedBox(height: 12),
+                                      Text(
+                                        product['productName'] ?? 'No Name',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: isLargeScreen ? 18 : 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        "Category: ${product['category'] ?? 'N/A'}",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: isLargeScreen ? 14 : 13,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                      Text(
+                                        "Stock: ${product['stock']?.toString() ?? '0'}",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: isLargeScreen ? 14 : 13,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                      Text(
+                                        "Price: ₱${product['price']?.toString() ?? '0.00'}",
+                                        style: GoogleFonts.poppins(
+                                          fontSize: isLargeScreen ? 14 : 13,
+                                          color: Colors.green[700],
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      Divider(height: 20, thickness: 1),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.start,
+                                        children: [
+                                          TextButton.icon(
+                                            onPressed: () {
+                                              // TODO: Handle edit
+                                            },
+                                            icon: Icon(Icons.edit,
+                                                color: Colors.blue),
+                                            label: Text(
+                                              "Edit",
+                                              style: GoogleFonts.poppins(
+                                                color: Colors.blue,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(width: 10),
+                                          TextButton.icon(
+                                            onPressed: () {
+                                              // TODO: Handle remove
+                                            },
+                                            icon: Icon(Icons.delete,
+                                                color: Colors.red),
+                                            label: Text(
+                                              "Remove",
+                                              style: GoogleFonts.poppins(
+                                                color: Colors.red,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    ],
+                                  ),
+                                );
+                              },
                             ),
-                            SizedBox(width: isLargeScreen ? 20 : 14),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(product['name'],
-                                      style: GoogleFonts.poppins(
-                                        fontSize: isLargeScreen ? 18 : 16,
-                                        fontWeight: FontWeight.w600,
-                                      )),
-                                  SizedBox(height: 6),
-                                  Text("Category: ${product['category']}",
-                                      style: GoogleFonts.poppins(
-                                          fontSize: isLargeScreen ? 14 : 13)),
-                                  Text("Stock: ${product['stock']}",
-                                      style: GoogleFonts.poppins(
-                                          fontSize: isLargeScreen ? 14 : 13)),
-                                ],
-                              ),
-                            ),
-                            Text(product['price'],
-                                style: GoogleFonts.roboto(
-                                  fontSize: isLargeScreen ? 16 : 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green[700],
-                                )),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
             ),
-          );
-        },
-      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(
@@ -166,11 +262,13 @@ class Manageproduct extends StatelessWidget {
         label: Text(
           "Add Product",
           style: GoogleFonts.poppins(
-              fontSize: isLargeScreen ? 18 : 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.white),
+            fontSize: isLargeScreen ? 18 : 16,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
         ),
-        icon: Icon(Icons.add, color: Colors.white, size: isLargeScreen ? 24 : 20),
+        icon:
+            Icon(Icons.add, color: Colors.white, size: isLargeScreen ? 24 : 20),
         backgroundColor: Color(0xFF651D32),
       ),
     );

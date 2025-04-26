@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Sellerlogin.dart';
 import 'sellerdashboard.dart';
-import 'AddProductList.dart';
+import 'ManageProduct.dart';
 
 class NavigationDrawer extends StatefulWidget {
   @override
@@ -63,8 +63,7 @@ class _NavigationDrawerState extends State<NavigationDrawer> {
               padding: EdgeInsets.zero,
               children: [
                 DrawerItem(icon: Icons.dashboard, text: "Dashboard", destination: DashboardScreen()),
-                DrawerItem(icon: Icons.add, text: "Add Product", destination: AddProductList()),
-                DrawerItem(icon: Icons.inventory, text: "Manage Product"),
+                DrawerItem(icon: Icons.inventory, text: "Manage Product", destination: Manageproduct()),
                 DrawerItem(icon: Icons.shopping_cart, text: "Manage Orders"),
                 DrawerItem(icon: Icons.bar_chart, text: "View Sales"),
                 DrawerItem(icon: Icons.local_offer, text: "Discount & Coupons"),

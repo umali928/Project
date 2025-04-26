@@ -14,12 +14,12 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Product List',
       theme: ThemeData(primarySwatch: Colors.green),
-      home: AddProductList(),
+      home: Manageproduct(),
     );
   }
 }
 
-class AddProductList extends StatelessWidget {
+class Manageproduct extends StatelessWidget {
   final List<Map<String, dynamic>> products = [
     {
       "name": "Pancit Canton",

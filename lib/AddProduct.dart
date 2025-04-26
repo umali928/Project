@@ -7,7 +7,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'AddProductList.dart';
+import 'ManageProduct.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -201,7 +201,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
           onPressed: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AddProductList(),
+              builder: (context) => Manageproduct(),
             ),
           ),
         ),
@@ -490,7 +490,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (_) => AddProductList()),
+                                    builder: (_) =>Manageproduct()),
                               );
                             } catch (e) {
                               Navigator.of(context).pop(); // Close loading

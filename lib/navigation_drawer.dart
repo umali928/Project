@@ -68,7 +68,7 @@ class _NavigationDrawerState extends State<NavigationDrawer> {
                 DrawerItem(icon: Icons.shopping_cart, text: "Manage Orders"),
                 DrawerItem(icon: Icons.bar_chart, text: "View Sales"),
                 DrawerItem(icon: Icons.local_offer, text: "Discount & Coupons"),
-                DrawerItem(icon: Icons.message, text: "Message Users"),
+                // DrawerItem(icon: Icons.message, text: "Message Users"),
                 DrawerItem(icon: Icons.person, text: "Profile"),
                 Divider(),
                 DrawerItem(icon: Icons.logout, text: "Log Out", isLogout: true),

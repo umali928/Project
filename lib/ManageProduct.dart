@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'EditProduct.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -139,7 +140,12 @@ class Manageproduct extends StatelessWidget {
                               itemBuilder: (context, index) {
                                 final product = products[index].data()
                                     as Map<String, dynamic>;
-
+                                final stockValue = product['stock'];
+                                final stock = stockValue is int
+                                    ? stockValue
+                                    : stockValue is String
+                                        ? int.tryParse(stockValue) ?? 0
+                                        : 0;
                                 return Container(
                                   margin: EdgeInsets.only(
                                       bottom: isLargeScreen ? 20 : 16),
@@ -189,7 +195,7 @@ class Manageproduct extends StatelessWidget {
                                         ),
                                       ),
                                       Text(
-                                        "Stock: ${product['stock']?.toString() ?? '0'}",
+                                        "Stock: $stock",
                                         style: GoogleFonts.poppins(
                                           fontSize: isLargeScreen ? 14 : 13,
                                           color: Colors.grey[600],
@@ -210,7 +216,19 @@ class Manageproduct extends StatelessWidget {
                                         children: [
                                           TextButton.icon(
                                             onPressed: () {
-                                              // TODO: Handle edit
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      EditProductScreen(
+                                                    productId:
+                                                        products[index].id,
+                                                    productData: product,
+                                                    sellerId: sellerId,
+                                                    userId: userId,
+                                                  ),
+                                                ),
+                                              );
                                             },
                                             icon: Icon(Icons.edit,
                                                 color: Colors.blue),

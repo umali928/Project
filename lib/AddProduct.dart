@@ -460,13 +460,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
                               final sellerId = sellerDoc.docs.first.id;
 
                               // 4. Save product to Firestore
+                              // 🔥 Save product globally so ALL USERS can see
                               await FirebaseFirestore.instance
-                                  .collection('users')
-                                  .doc(userId)
-                                  .collection('sellerInfo')
-                                  .doc(sellerId)
                                   .collection('products')
-                                  .doc(productId) // ✅ set document ID manually
+                                  .doc(productId)
                                   .set({
                                 'productName': _productName,
                                 'description': _productDescription,
@@ -477,7 +474,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                 'sellerId': sellerId,
                                 'createdAt': FieldValue.serverTimestamp(),
                               });
-
                               Navigator.of(context)
                                   .pop(); // Close loading dialog
 
@@ -490,7 +486,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (_) =>Manageproduct()),
+                                    builder: (_) => Manageproduct()),
                               );
                             } catch (e) {
                               Navigator.of(context).pop(); // Close loading

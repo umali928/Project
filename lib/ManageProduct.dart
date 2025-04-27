@@ -100,14 +100,12 @@ class Manageproduct extends StatelessWidget {
                 }
 
                 final sellerId = sellerSnapshot.data!.docs.first.id;
+                print("Current seller ID: $sellerId"); // Add this line to debug
 
                 return StreamBuilder<QuerySnapshot>(
                   stream: FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(userId)
-                      .collection('sellerInfo')
-                      .doc(sellerId)
                       .collection('products')
+                      .where('sellerId', isEqualTo: sellerId)
                       .snapshots(),
                   builder: (context, productSnapshot) {
                     if (productSnapshot.connectionState ==
@@ -117,6 +115,12 @@ class Manageproduct extends StatelessWidget {
                     if (!productSnapshot.hasData ||
                         productSnapshot.data!.docs.isEmpty) {
                       return Center(child: Text("No products found."));
+                    }
+                    if (!productSnapshot.hasData ||
+                        productSnapshot.data!.docs.isEmpty) {
+                      return Center(
+                          child:
+                              Text("No products found (sellerId: $sellerId)"));
                     }
 
                     final products = productSnapshot.data!.docs;
@@ -285,10 +289,6 @@ class Manageproduct extends StatelessWidget {
 
                                                 // 2. Delete the product document from Firestore
                                                 await FirebaseFirestore.instance
-                                                    .collection('users')
-                                                    .doc(userId)
-                                                    .collection('sellerInfo')
-                                                    .doc(sellerId)
                                                     .collection('products')
                                                     .doc(productId)
                                                     .delete();

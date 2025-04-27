@@ -113,7 +113,7 @@ class DrawerItem extends StatelessWidget {
 
         if (isLogout) {
           SharedPreferences prefs = await SharedPreferences.getInstance();
-          await prefs.remove('sellerStoreName');
+          await prefs.clear();
 
           Navigator.pushReplacement(
             context,

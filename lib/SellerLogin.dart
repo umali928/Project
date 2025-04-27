@@ -36,17 +36,23 @@ class _SellerLoginScreenState extends State<SellerLoginScreen> {
 
     final storeName = storeNameController.text.trim();
     final password = passwordController.text.trim();
-    final hashedInputPassword = sha256.convert(utf8.encode(password)).toString();
+    final hashedInputPassword =
+        sha256.convert(utf8.encode(password)).toString();
 
     try {
-      final userDocs = await FirebaseFirestore.instance.collection('users').get();
+      final userDocs =
+          await FirebaseFirestore.instance.collection('users').get();
 
       for (var userDoc in userDocs.docs) {
-        final sellerInfoSnapshot = await userDoc.reference.collection('sellerInfo').get();
+        final sellerInfoSnapshot = await userDoc.reference
+            .collection('sellerInfo')
+            .where('storeName', isEqualTo: storeName)
+            .get();
 
         for (var sellerDoc in sellerInfoSnapshot.docs) {
           final data = sellerDoc.data();
-          if (data['storeName'] == storeName && data['password'] == hashedInputPassword) {
+          if (data['storeName'] == storeName &&
+              data['password'] == hashedInputPassword) {
             // ✅ Save session
             SharedPreferences prefs = await SharedPreferences.getInstance();
             await prefs.setString('sellerStoreName', storeName);
@@ -157,7 +163,8 @@ class _SellerLoginScreenState extends State<SellerLoginScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                    builder: (context) => SellerRegistrationApp()),
+                                    builder: (context) =>
+                                        SellerRegistrationApp()),
                               );
                             },
                             child: Text('Sign Up',

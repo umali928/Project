@@ -229,10 +229,10 @@ class ProductHorizontalList extends StatelessWidget {
             padding: const EdgeInsets.only(right: 12.0),
             child: GestureDetector(
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) =>ProductDetailPage()), // Replace with actual product page widget
-                );
+                // Navigator.push(
+                //   context,
+                //   // MaterialPageRoute(builder: (context) =>ProductDetailPage()), // Replace with actual product page widget
+                // );
               },
               child: Container(
                 width: cardWidth,

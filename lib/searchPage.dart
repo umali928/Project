@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:lspu/wishlist.dart';
 import 'dashboard.dart'; // Import DashboardScreen
@@ -8,8 +9,9 @@ import 'cart.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:firebase_auth/firebase_auth.dart';
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
     await Firebase.initializeApp(
@@ -328,13 +330,11 @@ class _SearchPageState extends State<SearchPage> {
 }
 
 class ProductVerticalList extends StatelessWidget {
-  const ProductVerticalList({super.key});
+  const ProductVerticalList({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
-
-    // Adjust crossAxisCount based on screen width
     int crossAxisCount = 2;
     if (screenWidth >= 600 && screenWidth < 900) {
       crossAxisCount = 3;
@@ -342,10 +342,20 @@ class ProductVerticalList extends StatelessWidget {
       crossAxisCount = 4;
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('products').snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(child: Text('No products found.'));
+        }
+
+        final products = snapshot.data!.docs;
+
         return GridView.builder(
-          itemCount: 10,
+          itemCount: products.length,
           padding: const EdgeInsets.all(12),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
@@ -354,11 +364,19 @@ class ProductVerticalList extends StatelessWidget {
             childAspectRatio: 0.68,
           ),
           itemBuilder: (context, index) {
+            final product = products[index];
+            final data = product.data() as Map<String, dynamic>;
+
             return GestureDetector(
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ProductDetailPage()),
+                  MaterialPageRoute(
+                    builder: (context) => ProductDetailPage(
+                      productData: data,
+                      productId: '',
+                    ),
+                  ),
                 );
               },
               child: Container(
@@ -379,25 +397,33 @@ class ProductVerticalList extends StatelessWidget {
                     Stack(
                       children: [
                         Container(
-                          height: constraints.maxWidth < 600
-                              ? constraints.maxWidth * 0.4
-                              : constraints.maxWidth * 0.26,
+                          height: screenWidth < 600
+                              ? screenWidth * 0.4
+                              : screenWidth * 0.26,
                           width: double.infinity,
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
                             borderRadius: const BorderRadius.vertical(
                               top: Radius.circular(12),
                             ),
+                            image: data['imageUrl'] != null
+                                ? DecorationImage(
+                                    image: NetworkImage(data['imageUrl']),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
                           ),
-                          child: const Center(
-                            child: Text('Image',
-                                style: TextStyle(color: Colors.grey)),
-                          ),
+                          child: data['imageUrl'] == null
+                              ? const Center(
+                                  child: Text('No Image',
+                                      style: TextStyle(color: Colors.grey)),
+                                )
+                              : null,
                         ),
-                        const Positioned(
+                        Positioned(
                           top: 8,
                           right: 8,
-                          child: Icon(Icons.favorite_border, color: Colors.red),
+                          child: WishlistButton(data: data),
                         ),
                       ],
                     ),
@@ -409,7 +435,7 @@ class ProductVerticalList extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Product Name',
+                              data['productName'] ?? 'No name',
                               style: GoogleFonts.poppins(
                                 fontWeight: FontWeight.w500,
                                 fontSize: 14,
@@ -418,7 +444,7 @@ class ProductVerticalList extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
-                              '₱68',
+                              '₱${data['price'].toString()}',
                               style: GoogleFonts.roboto(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
@@ -430,7 +456,7 @@ class ProductVerticalList extends StatelessWidget {
                                     color: Colors.amber, size: 14),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '4.8',
+                                  '0.0', // Placeholder rating
                                   style: GoogleFonts.poppins(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 12,
@@ -438,7 +464,7 @@ class ProductVerticalList extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '(692)',
+                                  '(0)', // Placeholder number of ratings
                                   style: GoogleFonts.poppins(
                                     color: Colors.grey,
                                     fontSize: 12,
@@ -457,6 +483,68 @@ class ProductVerticalList extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+// 🛠 Wishlist Button directly inside ProductVerticalList
+class WishlistButton extends StatefulWidget {
+  final Map<String, dynamic> data;
+  const WishlistButton({Key? key, required this.data}) : super(key: key);
+
+  @override
+  _WishlistButtonState createState() => _WishlistButtonState();
+}
+
+class _WishlistButtonState extends State<WishlistButton> {
+  bool isWishlisted = false;
+
+  void toggleWishlist() async {
+    setState(() {
+      isWishlisted = !isWishlisted;
+    });
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      print('No user logged in');
+      return;
+    }
+    final wishlistRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('wishlist');
+
+    if (isWishlisted) {
+      // ✅ Add to wishlist
+      await wishlistRef.add({
+        'productId': widget.data['id'] ?? '',
+        'productName': widget.data['productName'] ?? '',
+        'price': widget.data['price'] ?? 0,
+        'imageUrl': widget.data['imageUrl'] ?? '',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      print('Added to wishlist');
+    } else {
+      // ❌ Remove from wishlist
+      // First, search for matching productId
+      final snapshot = await wishlistRef
+          .where('productId', isEqualTo: widget.data['id'] ?? '')
+          .get();
+
+      for (var doc in snapshot.docs) {
+        await wishlistRef.doc(doc.id).delete();
+      }
+      print('Removed from wishlist');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(
+        isWishlisted ? Icons.favorite : Icons.favorite_border,
+        color: Colors.red,
+      ),
+      onPressed: toggleWishlist,
     );
   }
 }

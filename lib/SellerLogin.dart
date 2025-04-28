@@ -6,7 +6,7 @@ import 'dart:convert'; // For utf8.encode
 import 'package:shared_preferences/shared_preferences.dart';
 import 'sellerRegister.dart';
 import 'sellerdashboard.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -32,52 +32,61 @@ class _SellerLoginScreenState extends State<SellerLoginScreen> {
   bool isPasswordHidden = true; // Added state for password visibility
 
   void loginSeller() async {
-    setState(() => isLoading = true);
+  setState(() => isLoading = true);
 
-    final storeName = storeNameController.text.trim();
-    final password = passwordController.text.trim();
-    final hashedInputPassword =
-        sha256.convert(utf8.encode(password)).toString();
+  final storeName = storeNameController.text.trim();
+  final password = passwordController.text.trim();
+  final hashedInputPassword = sha256.convert(utf8.encode(password)).toString();
 
-    try {
-      final userDocs =
-          await FirebaseFirestore.instance.collection('users').get();
-
-      for (var userDoc in userDocs.docs) {
-        final sellerInfoSnapshot = await userDoc.reference
-            .collection('sellerInfo')
-            .where('storeName', isEqualTo: storeName)
-            .get();
-
-        for (var sellerDoc in sellerInfoSnapshot.docs) {
-          final data = sellerDoc.data();
-          if (data['storeName'] == storeName &&
-              data['password'] == hashedInputPassword) {
-            // ✅ Save session
-            SharedPreferences prefs = await SharedPreferences.getInstance();
-            await prefs.setString('sellerStoreName', storeName);
-
-            // ✅ Navigate to dashboard
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => DashboardScreen()),
-            );
-            return;
-          }
-        }
-      }
-
+  try {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Invalid store name or password")),
+        const SnackBar(content: Text("Please login as user first.")),
       );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Login failed: $e")),
-      );
-    } finally {
-      setState(() => isLoading = false);
+      return;
     }
+
+    // 🔥 Only check inside the current logged-in user's sellerInfo
+    final sellerInfoSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUser.uid)
+        .collection('sellerInfo')
+        .where('storeName', isEqualTo: storeName)
+        .get();
+
+    if (sellerInfoSnapshot.docs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Seller info not found")),
+      );
+      return;
+    }
+
+    final data = sellerInfoSnapshot.docs.first.data();
+    if (data['password'] != hashedInputPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Invalid password")),
+      );
+      return;
+    }
+
+    // ✅ Save session
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('sellerStoreName', storeName);
+
+    // ✅ Navigate to dashboard
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => DashboardScreen()),
+    );
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Login failed: $e")),
+    );
+  } finally {
+    setState(() => isLoading = false);
   }
+}
 
   @override
   Widget build(BuildContext context) {

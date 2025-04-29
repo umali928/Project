@@ -207,7 +207,7 @@ class Manageproduct extends StatelessWidget {
                                       ),
                                       Text(
                                         "Price: ₱${product['price']?.toString() ?? '0.00'}",
-                                        style: GoogleFonts.poppins(
+                                        style: GoogleFonts.roboto(
                                           fontSize: isLargeScreen ? 14 : 13,
                                           color: Colors.green[700],
                                           fontWeight: FontWeight.w600,

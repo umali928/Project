@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:lspu/wishlist.dart';
 import 'dashboard.dart'; // Import DashboardScreen
@@ -5,8 +6,34 @@ import 'profile.dart'; // Import ProfileScreen
 import 'product.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'cart.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:firebase_auth/firebase_auth.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+          apiKey: "AIzaSyBbSQOdsCh7ImLhewcIhHUTcj9-1xbShQk",
+          authDomain: "lspumart.firebaseapp.com",
+          databaseURL:
+              "https://lspumart-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "lspumart",
+          storageBucket: "lspumart.firebasestorage.app",
+          messagingSenderId: "533992551897",
+          appId: "1:533992551897:web:d04a482ad131a0700815c8"),
+    );
+  } else {
+    await Firebase.initializeApp(); // Mobile config
+  }
+  await Supabase.initialize(
+    url:
+        'https://haoiqctsijynxwfoaspm.supabase.co', // Replace with your Supabase URL
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhhb2lxY3RzaWp5bnh3Zm9hc3BtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxNzU3MDMsImV4cCI6MjA1OTc1MTcwM30.7kilmu9kxrABgg4ZMz9GIHm5Jv4LHLAIYR1_8q1eDEI', // Replace with your Supabase anon key
+  );
   runApp(MyApp());
 }
 
@@ -303,13 +330,12 @@ class _SearchPageState extends State<SearchPage> {
 }
 
 class ProductVerticalList extends StatelessWidget {
-  const ProductVerticalList({super.key});
+  
+  const ProductVerticalList({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
-
-    // Adjust crossAxisCount based on screen width
     int crossAxisCount = 2;
     if (screenWidth >= 600 && screenWidth < 900) {
       crossAxisCount = 3;
@@ -317,10 +343,20 @@ class ProductVerticalList extends StatelessWidget {
       crossAxisCount = 4;
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('products').snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Center(child: Text('No products found.'));
+        }
+
+        final products = snapshot.data!.docs;
+
         return GridView.builder(
-          itemCount: 10,
+          itemCount: products.length,
           padding: const EdgeInsets.all(12),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
@@ -329,11 +365,20 @@ class ProductVerticalList extends StatelessWidget {
             childAspectRatio: 0.68,
           ),
           itemBuilder: (context, index) {
+            final product = products[index];
+            final data = product.data() as Map<String, dynamic>;
+            data['productId'] = product.id; // ✅ Inject productId manually
+
             return GestureDetector(
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ProductDetailPage()),
+                  MaterialPageRoute(
+                    builder: (context) => ProductDetailPage(
+                      productData: data,
+                      productId: product.id,
+                    ),
+                  ),
                 );
               },
               child: Container(
@@ -354,25 +399,33 @@ class ProductVerticalList extends StatelessWidget {
                     Stack(
                       children: [
                         Container(
-                          height: constraints.maxWidth < 600
-                              ? constraints.maxWidth * 0.4
-                              : constraints.maxWidth * 0.26,
+                          height: screenWidth < 600
+                              ? screenWidth * 0.4
+                              : screenWidth * 0.26,
                           width: double.infinity,
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
                             borderRadius: const BorderRadius.vertical(
                               top: Radius.circular(12),
                             ),
+                            image: data['imageUrl'] != null
+                                ? DecorationImage(
+                                    image: NetworkImage(data['imageUrl']),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
                           ),
-                          child: const Center(
-                            child: Text('Image',
-                                style: TextStyle(color: Colors.grey)),
-                          ),
+                          child: data['imageUrl'] == null
+                              ? const Center(
+                                  child: Text('No Image',
+                                      style: TextStyle(color: Colors.grey)),
+                                )
+                              : null,
                         ),
-                        const Positioned(
+                        Positioned(
                           top: 8,
                           right: 8,
-                          child: Icon(Icons.favorite_border, color: Colors.red),
+                          child: WishlistButton(data: data),
                         ),
                       ],
                     ),
@@ -384,7 +437,7 @@ class ProductVerticalList extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Product Name',
+                              data['productName'] ?? 'No name',
                               style: GoogleFonts.poppins(
                                 fontWeight: FontWeight.w500,
                                 fontSize: 14,
@@ -393,7 +446,7 @@ class ProductVerticalList extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
-                              '₱68',
+                              '₱${data['price'].toString()}',
                               style: GoogleFonts.roboto(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
@@ -405,7 +458,7 @@ class ProductVerticalList extends StatelessWidget {
                                     color: Colors.amber, size: 14),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '4.8',
+                                  '0.0', // Placeholder rating
                                   style: GoogleFonts.poppins(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 12,
@@ -413,7 +466,7 @@ class ProductVerticalList extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '(692)',
+                                  '(0)', // Placeholder number of ratings
                                   style: GoogleFonts.poppins(
                                     color: Colors.grey,
                                     fontSize: 12,
@@ -432,6 +485,98 @@ class ProductVerticalList extends StatelessWidget {
           },
         );
       },
+    );
+  }
+}
+
+// 🛠 Wishlist Button directly inside ProductVerticalList
+class WishlistButton extends StatefulWidget {
+  final Map<String, dynamic> data;
+  const WishlistButton({Key? key, required this.data}) : super(key: key);
+
+  @override
+  _WishlistButtonState createState() => _WishlistButtonState();
+}
+
+class _WishlistButtonState extends State<WishlistButton> {
+  bool isWishlisted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkIfWishlisted();
+  }
+
+  void _checkIfWishlisted() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final wishlistRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('wishlist');
+
+    final productId = widget.data['productId'];
+    final snapshot = await wishlistRef
+        .where('productId', isEqualTo: productId)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      setState(() {
+        isWishlisted = true;
+      });
+    }
+  }
+
+  void toggleWishlist() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      print('No user logged in');
+      return;
+    }
+
+    final wishlistRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('wishlist');
+    final productId = widget.data['productId'] ?? '';
+
+    if (!isWishlisted) {
+      // ✅ Add to wishlist
+      await wishlistRef.add({
+        'productId': productId,
+        'productName': widget.data['productName'] ?? '',
+        'price': widget.data['price'] ?? 0,
+        'imageUrl': widget.data['imageUrl'] ?? '',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      print('Added to wishlist');
+    } else {
+      // ❌ Remove from wishlist
+      final snapshot = await wishlistRef
+          .where('productId', isEqualTo: productId)
+          .get();
+
+      for (var doc in snapshot.docs) {
+        await wishlistRef.doc(doc.id).delete();
+      }
+      print('Removed from wishlist');
+    }
+
+    setState(() {
+      isWishlisted = !isWishlisted;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(
+        isWishlisted ? Icons.favorite : Icons.favorite_border,
+        color: isWishlisted ? Colors.red : const Color.fromARGB(255, 255, 0, 0),
+      ),
+      onPressed: toggleWishlist,
     );
   }
 }

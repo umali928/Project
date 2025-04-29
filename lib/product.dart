@@ -1,54 +1,110 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'cart.dart';
-void main() => runApp(ProductDetailApp());
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+          apiKey: "AIzaSyBbSQOdsCh7ImLhewcIhHUTcj9-1xbShQk",
+          authDomain: "lspumart.firebaseapp.com",
+          databaseURL:
+              "https://lspumart-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "lspumart",
+          storageBucket: "lspumart.firebasestorage.app",
+          messagingSenderId: "533992551897",
+          appId: "1:533992551897:web:d04a482ad131a0700815c8"),
+    );
+  } else {
+    await Firebase.initializeApp(); // Mobile config
+  }
+  await Supabase.initialize(
+    url:
+        'https://haoiqctsijynxwfoaspm.supabase.co', // Replace with your Supabase URL
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhhb2lxY3RzaWp5bnh3Zm9hc3BtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxNzU3MDMsImV4cCI6MjA1OTc1MTcwM30.7kilmu9kxrABgg4ZMz9GIHm5Jv4LHLAIYR1_8q1eDEI', // Replace with your Supabase anon key
+  );
+  runApp(ProductDetailApp());
+}
 
 class ProductDetailApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: ProductDetailPage(),
+      home: const ProductDetailPage(
+          productData: {}, productId: ''), // Default values
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
 class ProductDetailPage extends StatefulWidget {
+  final Map<String, dynamic> productData;
+  final String productId;
+
+  const ProductDetailPage(
+      {Key? key, required this.productData, required this.productId})
+      : super(key: key);
+
   @override
   _ProductDetailPageState createState() => _ProductDetailPageState();
 }
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
-  final List<String> colors = ["White", "Red", "Blue", "Black", "Green"];
-  final List<String> sizes = ["S", "M", "L", "XL"];
-  String selectedColor = "White";
-  String selectedSize = "M";
   int quantity = 1;
+  double rating = 0.0;
+  int reviewsCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchProductDetails();
+  }
+
+  void fetchProductDetails() async {
+    try {
+      final productDoc = await FirebaseFirestore.instance
+          .collection('products')
+          .doc(widget.productId)
+          .get();
+
+      if (productDoc.exists) {
+        final data = productDoc.data()!;
+        setState(() {
+          rating = data['rating'] ?? 0.0;
+          reviewsCount = data['reviewsCount'] ?? 0;
+        });
+      }
+    } catch (e) {
+      print("Error fetching product details: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    // ignore: unused_local_variable
-    final isTablet = screenWidth > 600;
+    final product = widget.productData;
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
           IconButton(
-            icon: Icon(Icons.favorite_border, color: Colors.black),
+            icon: const Icon(Icons.favorite_border, color: Colors.black),
             onPressed: () {},
           ),
           IconButton(
-            icon: Icon(Icons.shopping_cart_outlined, color: Colors.black),
+            icon: const Icon(Icons.shopping_cart_outlined, color: Colors.black),
             onPressed: () {
               Navigator.push(
                 context,
@@ -59,11 +115,10 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ],
       ),
       bottomNavigationBar: Padding(
-        padding:
-            EdgeInsets.symmetric(horizontal: screenWidth * 0.04, vertical: 12),
+        padding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.of(context).size.width * 0.04, vertical: 12),
         child: Row(
           children: [
-            // Quantity Selector
             Container(
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.grey.shade400),
@@ -72,26 +127,25 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: Icon(Icons.remove),
+                    icon: const Icon(Icons.remove),
                     onPressed:
                         quantity > 1 ? () => setState(() => quantity--) : null,
                   ),
                   Text('$quantity',
                       style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                   IconButton(
-                    icon: Icon(Icons.add),
+                    icon: const Icon(Icons.add),
                     onPressed: () => setState(() => quantity++),
                   ),
                 ],
               ),
             ),
-            SizedBox(width: 16),
-            // Add to Cart Button
+            const SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Color(0xFF651D32),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: const Color(0xFF651D32),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -104,187 +158,171 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           ],
         ),
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.of(context).size.width * 0.04),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product Image
+            Container(
+              height: MediaQuery.of(context).size.height * 0.3,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                image: product['imageUrl'] != null
+                    ? DecorationImage(
+                        image: NetworkImage(product['imageUrl']),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
+              ),
+              alignment: Alignment.center,
+              child:
+                  product['imageUrl'] == null ? const Text("No Image") : null,
+            ),
+            const SizedBox(height: 16),
+
+            // Product Name
+            Text(
+              product['productName'] ?? 'No Name',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 24,
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // Product Price
+            Text(
+              "₱${product['price']?.toString() ?? '0'}",
+              style: GoogleFonts.roboto(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Product Description
+            Text(
+              "Description",
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              product['description'] ?? 'No description available.',
+              style: GoogleFonts.poppins(height: 1.6, fontSize: 16),
+            ),
+            const SizedBox(height: 20),
+
+            // Product Stock
+            Text(
+              "Stock: ${product['stock']?.toString() ?? '0'}",
+              style: GoogleFonts.poppins(fontSize: 16),
+            ),
+            const SizedBox(height: 32),
+
+            // Rating and Reviews
+            Row(
               children: [
-                // Product Frame
                 Container(
-                  height: MediaQuery.of(context).size.height *
-                      0.3, // 40% of screen height
-                  width: double.infinity,
-                  color: Colors.grey.shade300,
-                  alignment: Alignment.center,
-                  child: Text(
-                    'Product Frame',
-                    style: GoogleFonts.poppins(
-                        fontSize: 20, color: Colors.grey.shade600),
-                  ),
-                ),
-                SizedBox(height: 16),
-                Text("PRODUCT NAME",
-                    style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.bold, fontSize: 20)),
-                SizedBox(height: 8),
-                Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.orange,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.star, size: 14, color: Colors.white),
-                          SizedBox(width: 4),
-                          Text("4.8",
-                              style: GoogleFonts.poppins(color: Colors.white)),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: 8),
-                    Text("574 Reviews",
-                        style: GoogleFonts.poppins(color: Colors.grey)),
-                  ],
-                ),
-                SizedBox(height: 12),
-                Text("\₱68",
-                    style: GoogleFonts.roboto(
-                        fontSize: 20, fontWeight: FontWeight.bold)),
-                SizedBox(height: 8),
-                Text("Description",
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-                SizedBox(height: 6),
-                Text(
-                  "Experience comfort and style with our premium slim-fit cotton shirt. "
-                  "Designed for all-day wear with breathable fabric and a tailored silhouette.",
-                  style: GoogleFonts.poppins(height: 1.4),
-                ),
-                SizedBox(height: 20),
-                Text("Color: $selectedColor",
-                    style: GoogleFonts.poppins(fontSize: 16)),
-                SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: colors.map((color) {
-                    bool isSelected = color == selectedColor;
-                    return OutlinedButton(
-                      onPressed: () => setState(() => selectedColor = color),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                            color: isSelected
-                                ? Color(0xFF651D32)
-                                : Colors.grey.shade400),
-                        backgroundColor:
-                            isSelected ? Color(0xFF651D32) : Colors.transparent,
-                        foregroundColor:
-                            isSelected ? Colors.white : Color(0xFF651D32),
-                      ),
-                      child: Text(color),
-                    );
-                  }).toList(),
-                ),
-                SizedBox(height: 20),
-                Text("Size",
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
-                SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: sizes.map((size) {
-                    bool isSelected = size == selectedSize;
-                    return OutlinedButton(
-                      onPressed: () => setState(() => selectedSize = size),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                            color: isSelected
-                                ? Color(0xFF651D32)
-                                : Colors.grey.shade400),
-                        backgroundColor:
-                            isSelected ? Color(0xFF651D32) : Colors.transparent,
-                        foregroundColor:
-                            isSelected ? Colors.white : Color(0xFF651D32),
-                      ),
-                      child: Text(size),
-                    );
-                  }).toList(),
-                ),
-                SizedBox(height: 32),
-                Text("Ratings & Reviews",
-                    style: GoogleFonts.poppins(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
-                SizedBox(height: 12),
-                Container(
-                  padding: EdgeInsets.all(16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(4),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          Text("4.8",
-                              style: GoogleFonts.poppins(
-                                  fontSize: 28, fontWeight: FontWeight.bold)),
-                          Text("/5",
-                              style: GoogleFonts.poppins(
-                                  fontSize: 20, color: Colors.black54)),
-                          SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("Overall Rating"),
-                              Text("574 Ratings",
-                                  style:
-                                      GoogleFonts.poppins(color: Colors.grey)),
-                            ],
-                          ),
-                          Spacer(),
-                          OutlinedButton(
-                            onPressed: () {},
-                            child: Text("Rate"),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Color(0xFF651D32),
-                              side: BorderSide(color: Color(0xFF651D32)),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 16),
-                      Row(
-                        children: List.generate(
-                          5,
-                          (index) =>
-                              Icon(Icons.star, color: Colors.orange, size: 20),
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text("Amazing!",
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                      SizedBox(height: 4),
+                      const Icon(Icons.star, size: 14, color: Colors.white),
+                      const SizedBox(width: 4),
                       Text(
-                        "An amazing fit. I am somewhere around 6ft and ordered 40 size. "
-                        "It's a perfect fit and quality is worth the price...",
+                        rating.toStringAsFixed(1),
+                        style: GoogleFonts.poppins(color: Colors.white),
                       ),
-                      SizedBox(height: 8),
-                      Text("David Johnson, 1st Jan 2020",
-                          style: TextStyle(color: Colors.grey)),
                     ],
                   ),
                 ),
-                SizedBox(height: 32),
+                const SizedBox(width: 8),
+                Text(
+                  "$reviewsCount Reviews",
+                  style: GoogleFonts.poppins(color: Colors.grey, fontSize: 14),
+                ),
               ],
             ),
-          );
-        },
+            const SizedBox(height: 32),
+
+            // Reviews Section
+            Text(
+              "Reviews",
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 16),
+            reviewsCount > 0
+                ? ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: reviewsCount,
+                    itemBuilder: (context, index) {
+                      // Placeholder for actual review data
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: Colors.grey.shade300,
+                              child: const Icon(Icons.person, color: Colors.white),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "User $index",
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "This is a placeholder review. Replace this with actual review content.",
+                                    style: GoogleFonts.poppins(fontSize: 14),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  )
+                : Center(
+                    child: Text(
+                      "No reviews yet. Be the first to review this product!",
+                      style: GoogleFonts.poppins(
+                        color: Colors.grey,
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+            const SizedBox(height: 32),
+
+            // Spacer to fill remaining space
+            SizedBox(
+              height: MediaQuery.of(context).size.height * 0.2,
+            ),
+          ],
+        ),
       ),
     );
   }

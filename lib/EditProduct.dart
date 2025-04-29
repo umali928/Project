@@ -194,10 +194,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
 
       // 🔥 Update Firestore with new product data
       await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.userId)
-          .collection('sellerInfo')
-          .doc(widget.sellerId)
           .collection('products')
           .doc(widget.productId)
           .update({

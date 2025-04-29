@@ -10,7 +10,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'package:provider/provider.dart';
+import 'wishlist_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
@@ -34,7 +35,9 @@ void main() async {
     anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhhb2lxY3RzaWp5bnh3Zm9hc3BtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxNzU3MDMsImV4cCI6MjA1OTc1MTcwM30.7kilmu9kxrABgg4ZMz9GIHm5Jv4LHLAIYR1_8q1eDEI', // Replace with your Supabase anon key
   );
-  runApp(MyApp());
+  runApp(
+       MyApp(),
+    );
 }
 
 class MyApp extends StatelessWidget {
@@ -492,18 +495,27 @@ class ProductVerticalList extends StatelessWidget {
 // 🛠 Wishlist Button directly inside ProductVerticalList
 class WishlistButton extends StatefulWidget {
   final Map<String, dynamic> data;
+
   const WishlistButton({Key? key, required this.data}) : super(key: key);
+
+  static final Map<String, bool> _wishlistStates = {};
+
+  static void updateWishlistState(String productId, bool value) {
+    _wishlistStates[productId] = value;
+  }
 
   @override
   _WishlistButtonState createState() => _WishlistButtonState();
 }
 
 class _WishlistButtonState extends State<WishlistButton> {
-  bool isWishlisted = false;
+  late bool isWishlisted;
 
   @override
   void initState() {
     super.initState();
+    final productId = widget.data['productId'];
+    isWishlisted = WishlistButton._wishlistStates[productId] ?? false;
     _checkIfWishlisted();
   }
 
@@ -525,35 +537,31 @@ class _WishlistButtonState extends State<WishlistButton> {
     if (snapshot.docs.isNotEmpty) {
       setState(() {
         isWishlisted = true;
+        WishlistButton._wishlistStates[productId] = true;
       });
     }
   }
 
   void toggleWishlist() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      print('No user logged in');
-      return;
-    }
+    if (user == null) return;
 
     final wishlistRef = FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .collection('wishlist');
-    final productId = widget.data['productId'] ?? '';
+
+    final productId = widget.data['productId'];
 
     if (!isWishlisted) {
-      // ✅ Add to wishlist
       await wishlistRef.add({
         'productId': productId,
-        'productName': widget.data['productName'] ?? '',
-        'price': widget.data['price'] ?? 0,
-        'imageUrl': widget.data['imageUrl'] ?? '',
+        'productName': widget.data['productName'],
+        'price': widget.data['price'],
+        'imageUrl': widget.data['imageUrl'],
         'timestamp': FieldValue.serverTimestamp(),
       });
-      print('Added to wishlist');
     } else {
-      // ❌ Remove from wishlist
       final snapshot = await wishlistRef
           .where('productId', isEqualTo: productId)
           .get();
@@ -561,11 +569,11 @@ class _WishlistButtonState extends State<WishlistButton> {
       for (var doc in snapshot.docs) {
         await wishlistRef.doc(doc.id).delete();
       }
-      print('Removed from wishlist');
     }
 
     setState(() {
       isWishlisted = !isWishlisted;
+      WishlistButton.updateWishlistState(productId, isWishlisted);
     });
   }
 

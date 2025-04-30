@@ -15,6 +15,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'addressList.dart'; // Import AddressListScreen
 import 'package:image_picker/image_picker.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
@@ -58,13 +59,17 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   int _selectedIndex = 3;
-
-  final List<Widget> _pages = [
-    HomeScreen(),
-    WishlistScreen(),
-    SearchPage(),
-    SettingsPage(),
-  ];
+  late final List<Widget> _pages; // ✅ Persistent tabs
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      HomeScreen(),
+      WishlistScreen(),
+      SearchPage(),
+      SettingsPage(),
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -90,7 +95,8 @@ class _ProfilePageState extends State<ProfilePage> {
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(
               icon: Icon(Icons.favorite_border), label: "Wishlist"),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: "Shop"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_bag), label: "Shop"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
@@ -137,7 +143,8 @@ class _SettingsPageState extends State<SettingsPage> {
       }
       fileExtension ??= 'jpg';
 
-      final fileName = 'profile_pictures/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+      final fileName =
+          'profile_pictures/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
       final contentType = fileExtension == 'png' ? 'image/png' : 'image/jpeg';
 
       // 1. Get the old image path from Firestore (if it exists)
@@ -149,15 +156,13 @@ class _SettingsPageState extends State<SettingsPage> {
       final oldUrl = userDoc.data()?['profilePicUrl'];
 
       if (oldUrl != null && oldUrl.contains('profile_pictures')) {
-        final oldFileName =
-            oldUrl.split('/').last.split('?').first; 
+        final oldFileName = oldUrl.split('/').last.split('?').first;
         await Supabase.instance.client.storage
             .from('uploads')
             .remove(['profile_pictures/$oldFileName']);
-            print("Deleting: profile_pictures/$oldFileName");
+        print("Deleting: profile_pictures/$oldFileName");
       }
 
-      
       await Supabase.instance.client.storage.from('uploads').uploadBinary(
             fileName,
             bytes,
@@ -424,10 +429,11 @@ class _SettingsPageState extends State<SettingsPage> {
                     },
                   );
                 }),
-                 buildListTile(Icons.history, "Order History", onTap: () {
+                buildListTile(Icons.history, "Order History", onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => OrderHistoryScreen()),
+                    MaterialPageRoute(
+                        builder: (context) => OrderHistoryScreen()),
                   );
                 }),
                 Divider(),

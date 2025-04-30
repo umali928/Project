@@ -8,8 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:provider/provider.dart';
-import 'wishlist_provider.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
@@ -55,13 +54,17 @@ class Wishlist extends StatefulWidget {
 
 class _WishlistScreenState extends State<Wishlist> {
   int _selectedIndex = 1;
-
-  final List<Widget> _pages = [
-    HomeScreen(),
-    WishlistScreen(),
-    SearchPage(),
-    SettingsPage(),
-  ];
+  late final List<Widget> _pages; // ✅ Persistent tabs
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      HomeScreen(),
+      WishlistScreen(),
+      SearchPage(),
+      SettingsPage(),
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -132,8 +135,11 @@ class WishlistScreen extends StatelessWidget {
             return Center(child: CircularProgressIndicator());
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
-            return Center(child: Text('Your wishlist is empty.', style: GoogleFonts.poppins(
-                fontSize: 18, color: Colors.grey[600] ),));
+            return Center(
+                child: Text(
+              'Your wishlist is empty.',
+              style: GoogleFonts.poppins(fontSize: 18, color: Colors.grey[600]),
+            ));
 
           final items = snapshot.data!.docs;
 
@@ -187,7 +193,12 @@ class WishlistScreen extends StatelessWidget {
 
                           final productId = data['productId'];
                           if (productId != null) {
-                            WishlistButton.updateWishlistState(productId, false);
+                            WishlistButton.updateWishlistState(
+                                productId, false);
+                            if (WishlistButton.refreshCallback != null) {
+                              WishlistButton
+                                  .refreshCallback!(); // 🔁 Force UI update
+                            }
                           }
                         },
                       ),

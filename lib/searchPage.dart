@@ -10,8 +10,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:provider/provider.dart';
-import 'wishlist_provider.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
@@ -36,8 +35,8 @@ void main() async {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhhb2lxY3RzaWp5bnh3Zm9hc3BtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxNzU3MDMsImV4cCI6MjA1OTc1MTcwM30.7kilmu9kxrABgg4ZMz9GIHm5Jv4LHLAIYR1_8q1eDEI', // Replace with your Supabase anon key
   );
   runApp(
-       MyApp(),
-    );
+    MyApp(),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -60,13 +59,17 @@ class MainNavigation extends StatefulWidget {
 
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 2;
-
-  final List<Widget> _pages = [
-    HomeScreen(),
-    WishlistScreen(),
-    SearchPage(),
-    SettingsPage(),
-  ];
+  late final List<Widget> _pages; // ✅ Persistent tabs
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      HomeScreen(),
+      WishlistScreen(),
+      SearchPage(),
+      SettingsPage(),
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -332,9 +335,27 @@ class _SearchPageState extends State<SearchPage> {
   }
 }
 
-class ProductVerticalList extends StatelessWidget {
-  
+class ProductVerticalList extends StatefulWidget {
   const ProductVerticalList({Key? key}) : super(key: key);
+
+  @override
+  State<ProductVerticalList> createState() => _ProductVerticalListState();
+}
+
+class _ProductVerticalListState extends State<ProductVerticalList> {
+  @override
+  void initState() {
+    super.initState();
+    WishlistButton.refreshCallback = () {
+      if (mounted) setState(() {});
+    };
+  }
+
+  @override
+  void dispose() {
+    WishlistButton.refreshCallback = null;
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -350,10 +371,10 @@ class ProductVerticalList extends StatelessWidget {
       stream: FirebaseFirestore.instance.collection('products').snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator());
         }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return Center(child: Text('No products found.'));
+          return const Center(child: Text('No products found.'));
         }
 
         final products = snapshot.data!.docs;
@@ -365,12 +386,12 @@ class ProductVerticalList extends StatelessWidget {
             crossAxisCount: crossAxisCount,
             mainAxisSpacing: 16,
             crossAxisSpacing: 12,
-            childAspectRatio: 0.68,
+            childAspectRatio: 0.66, // slightly taller to fit button
           ),
           itemBuilder: (context, index) {
             final product = products[index];
             final data = product.data() as Map<String, dynamic>;
-            data['productId'] = product.id; // ✅ Inject productId manually
+            data['productId'] = product.id;
 
             return GestureDetector(
               onTap: () {
@@ -399,45 +420,35 @@ class ProductVerticalList extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Stack(
-                      children: [
-                        Container(
-                          height: screenWidth < 600
-                              ? screenWidth * 0.4
-                              : screenWidth * 0.26,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: const BorderRadius.vertical(
-                              top: Radius.circular(12),
-                            ),
-                            image: data['imageUrl'] != null
-                                ? DecorationImage(
-                                    image: NetworkImage(data['imageUrl']),
-                                    fit: BoxFit.cover,
-                                  )
-                                : null,
-                          ),
-                          child: data['imageUrl'] == null
-                              ? const Center(
-                                  child: Text('No Image',
-                                      style: TextStyle(color: Colors.grey)),
-                                )
-                              : null,
+                    Container(
+                      height: screenWidth < 600
+                          ? screenWidth * 0.4
+                          : screenWidth * 0.26,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(12),
                         ),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: WishlistButton(data: data),
-                        ),
-                      ],
+                        image: data['imageUrl'] != null
+                            ? DecorationImage(
+                                image: NetworkImage(data['imageUrl']),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                      ),
+                      child: data['imageUrl'] == null
+                          ? const Center(
+                              child: Text('No Image',
+                                  style: TextStyle(color: Colors.grey)),
+                            )
+                          : null,
                     ),
                     Expanded(
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
                               data['productName'] ?? 'No name',
@@ -448,6 +459,7 @@ class ProductVerticalList extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
+                            const SizedBox(height: 4),
                             Text(
                               '₱${data['price'].toString()}',
                               style: GoogleFonts.roboto(
@@ -455,13 +467,14 @@ class ProductVerticalList extends StatelessWidget {
                                 fontSize: 14,
                               ),
                             ),
+                            const SizedBox(height: 4),
                             Row(
                               children: [
                                 const Icon(Icons.star,
                                     color: Colors.amber, size: 14),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '0.0', // Placeholder rating
+                                  '0.0',
                                   style: GoogleFonts.poppins(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 12,
@@ -469,13 +482,18 @@ class ProductVerticalList extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '(0)', // Placeholder number of ratings
+                                  '(0)',
                                   style: GoogleFonts.poppins(
                                     color: Colors.grey,
                                     fontSize: 12,
                                   ),
                                 ),
                               ],
+                            ),
+                            const Spacer(), // Push button to bottom
+                            SizedBox(
+                              width: double.infinity,
+                              child: WishlistButton(data: data),
                             ),
                           ],
                         ),
@@ -499,9 +517,11 @@ class WishlistButton extends StatefulWidget {
   const WishlistButton({Key? key, required this.data}) : super(key: key);
 
   static final Map<String, bool> _wishlistStates = {};
+  static Function()? refreshCallback; // ✅ Add this
 
   static void updateWishlistState(String productId, bool value) {
     _wishlistStates[productId] = value;
+    if (refreshCallback != null) refreshCallback!(); // ✅ Trigger UI refresh
   }
 
   @override
@@ -562,9 +582,8 @@ class _WishlistButtonState extends State<WishlistButton> {
         'timestamp': FieldValue.serverTimestamp(),
       });
     } else {
-      final snapshot = await wishlistRef
-          .where('productId', isEqualTo: productId)
-          .get();
+      final snapshot =
+          await wishlistRef.where('productId', isEqualTo: productId).get();
 
       for (var doc in snapshot.docs) {
         await wishlistRef.doc(doc.id).delete();
@@ -579,12 +598,20 @@ class _WishlistButtonState extends State<WishlistButton> {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(
-        isWishlisted ? Icons.favorite : Icons.favorite_border,
-        color: isWishlisted ? Colors.red : const Color.fromARGB(255, 255, 0, 0),
-      ),
+    return ElevatedButton(
       onPressed: toggleWishlist,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: isWishlisted ? Colors.grey[300] : Color(0xFF651D32),
+        foregroundColor: isWishlisted ? Colors.black : Colors.white,
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      child: Text(
+        isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist',
+        style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500),
+      ),
     );
   }
 }

@@ -6,6 +6,7 @@ import 'profile.dart';
 import 'cart.dart'; // Import CartScreen
 import 'searchPage.dart';
 import 'product.dart';
+
 void main() {
   runApp(EcommerceApp());
 }
@@ -27,13 +28,17 @@ class Dashboard extends StatefulWidget {
 
 class _DashboardState extends State<Dashboard> {
   int _selectedIndex = 0;
-
-  final List<Widget> _pages = [
-    HomeScreen(),
-    WishlistScreen(),
-    SearchPage(),
-    SettingsPage(),
-  ];
+  late final List<Widget> _pages; // ✅ Persistent tabs
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      HomeScreen(),
+      WishlistScreen(),
+      SearchPage(),
+      SettingsPage(),
+    ];
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -59,7 +64,8 @@ class _DashboardState extends State<Dashboard> {
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(
               icon: Icon(Icons.favorite_border), label: "Wishlist"),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: "Shop"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_bag), label: "Shop"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
@@ -189,7 +195,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ),
 
-                 SizedBox(height: 20),
+                  SizedBox(height: 20),
                   Text("Top Products",
                       style:
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -215,6 +221,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
+
 class ProductHorizontalList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -257,8 +264,8 @@ class ProductHorizontalList extends StatelessWidget {
                           width: double.infinity,
                           decoration: BoxDecoration(
                             color: Colors.grey[200],
-                            borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(12)),
+                            borderRadius:
+                                BorderRadius.vertical(top: Radius.circular(12)),
                           ),
                           child: Center(
                             child: Text(
@@ -297,9 +304,12 @@ class ProductHorizontalList extends StatelessWidget {
                         children: [
                           Icon(Icons.star, color: Colors.amber, size: 14),
                           SizedBox(width: 4),
-                          Text('4.8', style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
+                          Text('4.8',
+                              style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.bold)),
                           SizedBox(width: 4),
-                          Text('(692)', style: GoogleFonts.poppins(color: Colors.grey)),
+                          Text('(692)',
+                              style: GoogleFonts.poppins(color: Colors.grey)),
                         ],
                       ),
                     ),
@@ -313,6 +323,7 @@ class ProductHorizontalList extends StatelessWidget {
     );
   }
 }
+
 class CategoryItem extends StatelessWidget {
   final IconData icon;
   final String label;

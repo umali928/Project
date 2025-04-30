@@ -5,6 +5,8 @@ import 'cart.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'searchPage.dart'; // or wherever WishlistButton is defined
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -99,10 +101,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.favorite_border, color: Colors.black),
-            onPressed: () {},
-          ),
+          WishlistHeartIcon(data: {
+            'productId': widget.productId,
+            'productName': widget.productData['productName'],
+            'price': widget.productData['price'],
+            'imageUrl': widget.productData['imageUrl'],
+          }),
           IconButton(
             icon: const Icon(Icons.shopping_cart_outlined, color: Colors.black),
             onPressed: () {
@@ -278,7 +282,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                           children: [
                             CircleAvatar(
                               backgroundColor: Colors.grey.shade300,
-                              child: const Icon(Icons.person, color: Colors.white),
+                              child:
+                                  const Icon(Icons.person, color: Colors.white),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -324,6 +329,75 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class WishlistHeartIcon extends StatelessWidget {
+  final Map<String, dynamic> data;
+
+  const WishlistHeartIcon({Key? key, required this.data}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final productId = data['productId'];
+
+    if (user == null) {
+      return const Icon(Icons.favorite_border, color: Colors.grey);
+    }
+
+    final wishlistRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('wishlist');
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: wishlistRef
+          .where('productId', isEqualTo: productId)
+          .limit(1)
+          .snapshots(),
+      builder: (context, snapshot) {
+        final isWishlisted = snapshot.hasData && snapshot.data!.docs.isNotEmpty;
+
+        return IconButton(
+          icon: Icon(
+            isWishlisted ? Icons.favorite : Icons.favorite_border,
+            color: isWishlisted ? Colors.red : Colors.black,
+          ),
+          onPressed: () async {
+            if (!isWishlisted) {
+              await wishlistRef.add({
+                'productId': productId,
+                'productName': data['productName'],
+                'price': data['price'],
+                'imageUrl': data['imageUrl'],
+                'timestamp': FieldValue.serverTimestamp(),
+              });
+
+              // 🔄 Update WishlistButton state (used in SearchPage)
+             WishlistButton.updateWishlistState(productId, true);  // for adding
+              if (WishlistButton.refreshCallback != null) {
+                WishlistButton.refreshCallback!();
+              }
+            } else {
+              final toRemove = await wishlistRef
+                  .where('productId', isEqualTo: productId)
+                  .get();
+
+              for (var doc in toRemove.docs) {
+                await wishlistRef.doc(doc.id).delete();
+              }
+
+              // 🔄 Sync state on removal
+              WishlistButton.updateWishlistState(productId, false); // for removing
+              if (WishlistButton.refreshCallback != null) {
+                WishlistButton.refreshCallback!();
+              }
+            }
+          },
+        );
+      },
     );
   }
 }

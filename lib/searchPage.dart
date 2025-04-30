@@ -593,6 +593,7 @@ class _WishlistButtonState extends State<WishlistButton> {
     setState(() {
       isWishlisted = !isWishlisted;
       WishlistButton.updateWishlistState(productId, isWishlisted);
+
     });
   }
 

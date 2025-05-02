@@ -61,7 +61,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   int quantity = 1;
   double rating = 0.0;
   int reviewsCount = 0;
-
+  String storeName = 'Loading...'; // Default or placeholder
   @override
   void initState() {
     super.initState();
@@ -77,13 +77,38 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
       if (productDoc.exists) {
         final data = productDoc.data()!;
+        final sellerId =
+            data['sellerId']; // This is the ID inside sellerInfo subcollection
+
+        final usersSnapshot =
+            await FirebaseFirestore.instance.collection('users').get();
+
+        for (var userDoc in usersSnapshot.docs) {
+          final sellerInfoSnapshot = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userDoc.id)
+              .collection('sellerInfo')
+              .doc(sellerId)
+              .get();
+
+          if (sellerInfoSnapshot.exists) {
+            final sellerData = sellerInfoSnapshot.data();
+            setState(() {
+              rating = data['rating'] ?? 0.0;
+              reviewsCount = data['reviewsCount'] ?? 0;
+              storeName = sellerData?['storeName'] ?? 'Unknown Seller';
+            });
+            return; // Exit loop once found
+          }
+        }
+
+        // If not found in any user document
         setState(() {
-          rating = data['rating'] ?? 0.0;
-          reviewsCount = data['reviewsCount'] ?? 0;
+          storeName = 'Unknown Seller';
         });
       }
     } catch (e) {
-      print("Error fetching product details: $e");
+      print("Error fetching product details or seller name: $e");
     }
   }
 
@@ -196,7 +221,12 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
               ),
             ),
             const SizedBox(height: 8),
-
+            // Store Name
+            Text(
+              "Product by: $storeName",
+              style: GoogleFonts.poppins(fontSize: 16, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 8),
             // Product Price
             Text(
               "₱${product['price']?.toString() ?? '0'}",
@@ -376,7 +406,7 @@ class WishlistHeartIcon extends StatelessWidget {
               });
 
               // 🔄 Update WishlistButton state (used in SearchPage)
-             WishlistButton.updateWishlistState(productId, true);  // for adding
+              WishlistButton.updateWishlistState(productId, true); // for adding
               if (WishlistButton.refreshCallback != null) {
                 WishlistButton.refreshCallback!();
               }
@@ -390,7 +420,8 @@ class WishlistHeartIcon extends StatelessWidget {
               }
 
               // 🔄 Sync state on removal
-              WishlistButton.updateWishlistState(productId, false); // for removing
+              WishlistButton.updateWishlistState(
+                  productId, false); // for removing
               if (WishlistButton.refreshCallback != null) {
                 WishlistButton.refreshCallback!();
               }

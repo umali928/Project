@@ -497,11 +497,11 @@ class WishlistButton extends StatefulWidget {
   const WishlistButton({Key? key, required this.data}) : super(key: key);
 
   static final Map<String, bool> _wishlistStates = {};
-  static Function()? refreshCallback; // ✅ Add this
+  static Function()? refreshCallback;
 
   static void updateWishlistState(String productId, bool value) {
     _wishlistStates[productId] = value;
-    if (refreshCallback != null) refreshCallback!(); // ✅ Trigger UI refresh
+    refreshCallback?.call();
   }
 
   @override
@@ -509,17 +509,16 @@ class WishlistButton extends StatefulWidget {
 }
 
 class _WishlistButtonState extends State<WishlistButton> {
-  late bool isWishlisted;
+  bool? isWishlisted; // nullable at start
+  bool loading = true;
 
   @override
   void initState() {
     super.initState();
-    final productId = widget.data['productId'];
-    isWishlisted = WishlistButton._wishlistStates[productId] ?? false;
     _checkIfWishlisted();
   }
 
-  void _checkIfWishlisted() async {
+  Future<void> _checkIfWishlisted() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
@@ -529,31 +528,32 @@ class _WishlistButtonState extends State<WishlistButton> {
         .collection('wishlist');
 
     final productId = widget.data['productId'];
+
     final snapshot = await wishlistRef
         .where('productId', isEqualTo: productId)
         .limit(1)
         .get();
 
-    if (snapshot.docs.isNotEmpty) {
-      setState(() {
-        isWishlisted = true;
-        WishlistButton._wishlistStates[productId] = true;
-      });
-    }
+    final result = snapshot.docs.isNotEmpty;
+
+    setState(() {
+      isWishlisted = result;
+      loading = false;
+      WishlistButton._wishlistStates[productId] = result;
+    });
   }
 
   void toggleWishlist() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
+    final productId = widget.data['productId'];
     final wishlistRef = FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .collection('wishlist');
 
-    final productId = widget.data['productId'];
-
-    if (!isWishlisted) {
+    if (isWishlisted == false) {
       await wishlistRef.add({
         'productId': productId,
         'productName': widget.data['productName'],
@@ -562,8 +562,9 @@ class _WishlistButtonState extends State<WishlistButton> {
         'timestamp': FieldValue.serverTimestamp(),
       });
     } else {
-      final snapshot =
-          await wishlistRef.where('productId', isEqualTo: productId).get();
+      final snapshot = await wishlistRef
+          .where('productId', isEqualTo: productId)
+          .get();
 
       for (var doc in snapshot.docs) {
         await wishlistRef.doc(doc.id).delete();
@@ -571,26 +572,29 @@ class _WishlistButtonState extends State<WishlistButton> {
     }
 
     setState(() {
-      isWishlisted = !isWishlisted;
-      WishlistButton.updateWishlistState(productId, isWishlisted);
-
+      isWishlisted = !isWishlisted!;
+      WishlistButton.updateWishlistState(productId, isWishlisted!);
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    if (loading || isWishlisted == null) {
+      return const CircularProgressIndicator(); // or a placeholder button
+    }
+
     return ElevatedButton(
       onPressed: toggleWishlist,
       style: ElevatedButton.styleFrom(
-        backgroundColor: isWishlisted ? Colors.grey[300] : Color(0xFF651D32),
-        foregroundColor: isWishlisted ? Colors.black : Colors.white,
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        backgroundColor: isWishlisted! ? Colors.grey[300] : const Color(0xFF651D32),
+        foregroundColor: isWishlisted! ? Colors.black : Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
       ),
       child: Text(
-        isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist',
+        isWishlisted! ? 'Remove from Wishlist' : 'Add to Wishlist',
         style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500),
       ),
     );

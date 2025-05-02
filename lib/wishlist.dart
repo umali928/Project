@@ -8,6 +8,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'product.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -90,8 +91,10 @@ class _WishlistScreenState extends State<Wishlist> {
         onTap: _onItemTapped,
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: "Wishlist"),
-          BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label: "Shop"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.favorite_border), label: "Wishlist"),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_bag), label: "Shop"),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
@@ -100,7 +103,8 @@ class _WishlistScreenState extends State<Wishlist> {
 }
 
 class WishlistScreen extends StatelessWidget {
-  Future<List<QueryDocumentSnapshot>> _cleanAndGetValidWishlistItems(List<QueryDocumentSnapshot> wishlistDocs) async {
+  Future<List<QueryDocumentSnapshot>> _cleanAndGetValidWishlistItems(
+      List<QueryDocumentSnapshot> wishlistDocs) async {
     List<QueryDocumentSnapshot> validItems = [];
 
     for (var doc in wishlistDocs) {
@@ -109,7 +113,10 @@ class WishlistScreen extends StatelessWidget {
 
       if (productId == null) continue;
 
-      final productDoc = await FirebaseFirestore.instance.collection('products').doc(productId).get();
+      final productDoc = await FirebaseFirestore.instance
+          .collection('products')
+          .doc(productId)
+          .get();
       if (productDoc.exists) {
         validItems.add(doc);
       } else {
@@ -127,8 +134,12 @@ class WishlistScreen extends StatelessWidget {
       return Center(child: Text('Please log in to view your wishlist.'));
     }
 
-    final wishlistCollection = FirebaseFirestore.instance.collection('users').doc(user.uid).collection('wishlist');
-    final wishlistQuery = wishlistCollection.orderBy('timestamp', descending: true);
+    final wishlistCollection = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('wishlist');
+    final wishlistQuery =
+        wishlistCollection.orderBy('timestamp', descending: true);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -137,7 +148,9 @@ class WishlistScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        title: Text('Wishlist', style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold)),
+        title: Text('Wishlist',
+            style: GoogleFonts.poppins(
+                color: Colors.black, fontWeight: FontWeight.bold)),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: wishlistQuery.snapshots(),
@@ -149,7 +162,8 @@ class WishlistScreen extends StatelessWidget {
             return Center(
               child: Text(
                 'Your wishlist is empty.',
-                style: GoogleFonts.poppins(fontSize: 18, color: Colors.grey[600]),
+                style:
+                    GoogleFonts.poppins(fontSize: 18, color: Colors.grey[600]),
               ),
             );
 
@@ -157,15 +171,18 @@ class WishlistScreen extends StatelessWidget {
 
           return FutureBuilder(
             future: _cleanAndGetValidWishlistItems(wishlistDocs),
-            builder: (context, AsyncSnapshot<List<QueryDocumentSnapshot>> validSnapshot) {
-              if (!validSnapshot.hasData) return Center(child: CircularProgressIndicator());
+            builder: (context,
+                AsyncSnapshot<List<QueryDocumentSnapshot>> validSnapshot) {
+              if (!validSnapshot.hasData)
+                return Center(child: CircularProgressIndicator());
 
               final validItems = validSnapshot.data!;
               if (validItems.isEmpty) {
                 return Center(
                   child: Text(
                     'Your wishlist is empty.',
-                    style: GoogleFonts.poppins(fontSize: 18, color: Colors.grey[600]),
+                    style: GoogleFonts.poppins(
+                        fontSize: 18, color: Colors.grey[600]),
                   ),
                 );
               }
@@ -177,53 +194,86 @@ class WishlistScreen extends StatelessWidget {
                   final data = validItems[index].data() as Map<String, dynamic>;
                   final docId = validItems[index].id;
 
-                  return Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    elevation: 3,
-                    margin: EdgeInsets.only(bottom: 12),
-                    color: Colors.white,
-                    child: ListTile(
-                      contentPadding: EdgeInsets.all(12),
-                      leading: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: Image.network(
-                          data['imageUrl'] ?? '',
-                          width: 60,
-                          height: 60,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Icon(Icons.broken_image, size: 40),
+                  return GestureDetector(
+                    onTap: () async {
+                      final productId = data['productId'];
+                      if (productId != null) {
+                        final productSnapshot = await FirebaseFirestore.instance
+                            .collection('products')
+                            .doc(productId)
+                            .get();
+
+                        if (productSnapshot.exists) {
+                          final fullProductData = productSnapshot.data()!;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProductDetailPage(
+                                productId: productId,
+                                productData: fullProductData,
+                              ),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text('Product no longer exists.')),
+                          );
+                        }
+                      }
+                    },  
+                    child: Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      elevation: 3,
+                      margin: EdgeInsets.only(bottom: 12),
+                      color: Colors.white,
+                      child: ListTile(
+                        contentPadding: EdgeInsets.all(12),
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: Image.network(
+                            data['imageUrl'] ?? '',
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Icon(Icons.broken_image, size: 40),
+                          ),
                         ),
-                      ),
-                      title: Text(data['productName'] ?? '', style: TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text(
-                        '₱${(data['price'] ?? 0).toStringAsFixed(2)}',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.add_shopping_cart, color: Color(0xFF651D32)),
-                            onPressed: () {
-                              // TODO: Add to cart logic
-                            },
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.delete, color: Colors.red),
-                            onPressed: () async {
-                              await wishlistCollection.doc(docId).delete();
-                              final productId = data['productId'];
-                              if (productId != null) {
-                                WishlistButton.updateWishlistState(productId, false);
-                                if (WishlistButton.refreshCallback != null) {
-                                  WishlistButton.refreshCallback!();
+                        title: Text(data['productName'] ?? '',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        subtitle: Text(
+                          '₱${(data['price'] ?? 0).toStringAsFixed(2)}',
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.add_shopping_cart,
+                                  color: Color(0xFF651D32)),
+                              onPressed: () {
+                                // TODO: Add to cart logic
+                              },
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.delete, color: Colors.red),
+                              onPressed: () async {
+                                await wishlistCollection.doc(docId).delete();
+                                final productId = data['productId'];
+                                if (productId != null) {
+                                  WishlistButton.updateWishlistState(
+                                      productId, false);
+                                  if (WishlistButton.refreshCallback != null) {
+                                    WishlistButton.refreshCallback!();
+                                  }
                                 }
-                              }
-                            },
-                          ),
-                        ],
+                              },
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   );

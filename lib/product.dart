@@ -58,7 +58,6 @@ class ProductDetailPage extends StatefulWidget {
 }
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
-  int quantity = 1;
   double rating = 0.0;
   int reviewsCount = 0;
   String storeName = 'Loading...'; // Default or placeholder
@@ -148,27 +147,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             horizontal: MediaQuery.of(context).size.width * 0.04, vertical: 12),
         child: Row(
           children: [
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade400),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.remove),
-                    onPressed:
-                        quantity > 1 ? () => setState(() => quantity--) : null,
-                  ),
-                  Text('$quantity',
-                      style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                  IconButton(
-                    icon: const Icon(Icons.add),
-                    onPressed: () => setState(() => quantity++),
-                  ),
-                ],
-              ),
-            ),
             const SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
@@ -179,9 +157,58 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                onPressed: () {},
+                onPressed: () async {
+                  final user = FirebaseAuth.instance.currentUser;
+                  if (user == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content:
+                              Text("Please log in to add items to your cart")),
+                    );
+                    return;
+                  }
+
+                  try {
+                    final cartRef = FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(user.uid)
+                        .collection('cart');
+
+                    final existing = await cartRef
+                        .where('productId', isEqualTo: widget.productId)
+                        .limit(1)
+                        .get();
+
+                    if (existing.docs.isNotEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Item already in cart")),
+                      );
+                    } else {
+                      await cartRef.add({
+                        'productId': widget.productId,
+                        'productName': widget.productData['productName'],
+                        'price': widget.productData['price'],
+                        'imageUrl': widget.productData['imageUrl'],
+                        'quantity': 1,
+                        'addedAt': Timestamp.now(),
+                      });
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Added to cart")),
+                      );
+                    }
+                  } catch (e) {
+                    print("Add to cart error: $e");
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Failed to add to cart")),
+                    );
+                  }
+                },
                 child: Text("Add to Cart",
-                    style: GoogleFonts.poppins(color: Colors.white)),
+                    style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold)),
               ),
             ),
           ],

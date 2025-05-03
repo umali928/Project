@@ -159,6 +159,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 ),
                 onPressed: () async {
                   final user = FirebaseAuth.instance.currentUser;
+
                   if (user == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -174,33 +175,37 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         .doc(user.uid)
                         .collection('cart');
 
-                    final existing = await cartRef
+                    // Check if the product already exists in the user's cart
+                    final querySnapshot = await cartRef
                         .where('productId', isEqualTo: widget.productId)
                         .limit(1)
                         .get();
 
-                    if (existing.docs.isNotEmpty) {
+                    if (querySnapshot.docs.isNotEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Item already in cart")),
+                        SnackBar(
+                            content: Text("Product is already in your cart")),
                       );
-                    } else {
-                      await cartRef.add({
-                        'productId': widget.productId,
-                        'productName': widget.productData['productName'],
-                        'price': widget.productData['price'],
-                        'imageUrl': widget.productData['imageUrl'],
-                        'quantity': 1,
-                        'addedAt': Timestamp.now(),
-                      });
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Added to cart")),
-                      );
+                      return;
                     }
-                  } catch (e) {
-                    print("Add to cart error: $e");
+
+                    // If not in cart, add it
+                    await cartRef.add({
+                      'productId': widget.productId,
+                      'productName': widget.productData['productName'],
+                      'price': widget.productData['price'],
+                      'imageUrl': widget.productData['imageUrl'],
+                      'quantity': 1, // default quantity
+                      'timestamp': FieldValue.serverTimestamp(),
+                    });
+
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Failed to add to cart")),
+                      SnackBar(content: Text("Product added to cart")),
+                    );
+                  } catch (e) {
+                    print("Error adding to cart: $e");
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Failed to add product to cart")),
                     );
                   }
                 },

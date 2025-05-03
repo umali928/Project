@@ -1,7 +1,35 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-void main() {
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+          apiKey: "AIzaSyBbSQOdsCh7ImLhewcIhHUTcj9-1xbShQk",
+          authDomain: "lspumart.firebaseapp.com",
+          databaseURL:
+              "https://lspumart-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "lspumart",
+          storageBucket: "lspumart.firebasestorage.app",
+          messagingSenderId: "533992551897",
+          appId: "1:533992551897:web:d04a482ad131a0700815c8"),
+    );
+  } else {
+    await Firebase.initializeApp(); // Mobile config
+  }
+  await Supabase.initialize(
+    url:
+        'https://haoiqctsijynxwfoaspm.supabase.co', // Replace with your Supabase URL
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhhb2lxY3RzaWp5bnh3Zm9hc3BtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxNzU3MDMsImV4cCI6MjA1OTc1MTcwM30.7kilmu9kxrABgg4ZMz9GIHm5Jv4LHLAIYR1_8q1eDEI', // Replace with your Supabase anon key
+  );
   runApp(MyApp());
 }
 
@@ -21,17 +49,20 @@ class MyApp extends StatelessWidget {
 class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return Scaffold(
+        body: Center(child: Text("You are not logged in")),
+      );
+    }
     double screenWidth = MediaQuery.of(context).size.width;
-
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, size: screenWidth * 0.07),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           "Your Cart",
@@ -39,70 +70,149 @@ class CartScreen extends StatelessWidget {
               fontSize: screenWidth * 0.05, fontWeight: FontWeight.bold),
         ),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              children: [
-                CartItem(),
-                CartItem(),
-                CartItem(),
-              ],
-            ),
-          ),
-          OrderSummary(),
-        ],
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('cart')
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(child: Text("Your cart is empty", style: GoogleFonts.poppins(
+                fontSize: screenWidth * 0.05, fontWeight: FontWeight.w500
+            ),));
+          }
+
+          final cartDocs = snapshot.data!.docs;
+
+          return Column(
+            children: [
+              
+              Expanded(
+                child: ListView.builder(
+                  
+                  itemCount: cartDocs.length,
+                  itemBuilder: (context, index) {
+                    final item = cartDocs[index];
+                    return CartItem(
+                      productName: item['productName'],
+                      imageUrl: item['imageUrl'],
+                      price: item['price'].toDouble(),
+                      quantity: item['quantity'],
+                      cartItemId: item.id,
+                      userId: user.uid,
+                    );
+                  },
+                ),
+              ),
+              OrderSummary(cartDocs: cartDocs),
+            ],
+          );
+        },
       ),
     );
   }
 }
 
+
+
 class CartItem extends StatelessWidget {
+  final String productName;
+  final String imageUrl;
+  final double price;
+  final int quantity;
+  final String cartItemId;
+  final String userId;
+
+  const CartItem({
+    required this.productName,
+    required this.imageUrl,
+    required this.price,
+    required this.quantity,
+    required this.cartItemId,
+    required this.userId,
+  });
+
+  void _updateQuantity(int newQuantity) {
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('cart')
+        .doc(cartItemId)
+        .update({'quantity': newQuantity});
+  }
+
+  void _deleteItem() {
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('cart')
+        .doc(cartItemId)
+        .delete();
+  }
+
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
-    double fontSize = screenWidth * 0.04;
-    double iconSize = screenWidth * 0.06;
-
     return Card(
       color: Colors.white,
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: screenWidth * 0.03),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 4,
+      margin: EdgeInsets.symmetric(vertical: 10, horizontal: 16),
       child: Padding(
-        padding: EdgeInsets.all(screenWidth * 0.03),
+        padding: EdgeInsets.all(12),
         child: Row(
           children: [
-            Container(
-              width: screenWidth * 0.15,
-              height: screenWidth * 0.15,
-              color: Colors.grey[300],
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.network(
+                imageUrl,
+                width: screenWidth * 0.2,
+                height: screenWidth * 0.2,
+                fit: BoxFit.cover,
+              ),
             ),
-            SizedBox(width: screenWidth * 0.03),
+            SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("Product Name",
+                  Text(productName,
                       style: GoogleFonts.poppins(
-                          fontSize: fontSize, fontWeight: FontWeight.bold)),
-                  Text("Variant: Grey",
-                      style: TextStyle(
-                          fontSize: fontSize * 0.8, color: Colors.grey)),
-                  Text("₱1999.99",
+                          fontSize: 16, fontWeight: FontWeight.w600)),
+                  SizedBox(height: 6),
+                  Text("₱${price.toStringAsFixed(2)}",
                       style: GoogleFonts.roboto(
-                          fontSize: fontSize, fontWeight: FontWeight.bold)),
+                          fontSize: 15, fontWeight: FontWeight.w500)),
+                  SizedBox(height: 10),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.remove_circle_outline),
+                        onPressed: quantity > 1
+                            ? () => _updateQuantity(quantity - 1)
+                            : null,
+                      ),
+                      Text('$quantity',
+                          style: GoogleFonts.poppins(
+                              fontSize: 16, fontWeight: FontWeight.w500)),
+                      IconButton(
+                        icon: Icon(Icons.add_circle_outline),
+                        onPressed: () => _updateQuantity(quantity + 1),
+                      ),
+                    ],
+                  )
                 ],
               ),
             ),
-            Row(
-              children: [
-                IconButton(icon: Icon(Icons.remove, size: iconSize), onPressed: () {}),
-                Text("1", style: GoogleFonts.poppins(fontSize: fontSize)),
-                IconButton(icon: Icon(Icons.add, size: iconSize), onPressed: () {}),
-              ],
-            ),
             IconButton(
-                icon: Icon(Icons.delete, color: Colors.red, size: iconSize),
-                onPressed: () {}),
+              icon: Icon(Icons.delete, color: Colors.red),
+              iconSize: screenWidth * 0.07,
+              onPressed: _deleteItem,
+            ),
           ],
         ),
       ),
@@ -111,11 +221,28 @@ class CartItem extends StatelessWidget {
 }
 
 class OrderSummary extends StatelessWidget {
+  final List<QueryDocumentSnapshot> cartDocs;
+
+  OrderSummary({required this.cartDocs});
+
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double fontSize = screenWidth * 0.04;
     double iconSize = screenWidth * 0.06;
+
+    int totalItems = 0;
+    double subtotal = 0;
+
+    for (var item in cartDocs) {
+      int quantity = item['quantity'] as int;
+      double price = (item['price'] as num).toDouble();
+      totalItems += quantity;
+      subtotal += price * quantity;
+    }
+
+    double deliveryCharges = 20;
+    double total = subtotal + deliveryCharges;
 
     return Container(
       padding: EdgeInsets.all(screenWidth * 0.04),
@@ -139,12 +266,11 @@ class OrderSummary extends StatelessWidget {
               style: GoogleFonts.notoSans(
                   fontSize: fontSize, fontWeight: FontWeight.bold)),
           Divider(),
-          _buildRow("Items", "3", fontSize),
-          _buildRow("Subtotal", "₱54", fontSize),
-          _buildRow("Discount", "₱4", fontSize),
-          _buildRow("Delivery Charges", "₱22", fontSize),
+          _buildRow("Items", "$totalItems", fontSize),
+          _buildRow("Subtotal", "₱${subtotal.toStringAsFixed(2)}", fontSize),
+          _buildRow("Delivery Charges", "₱${deliveryCharges.toStringAsFixed(2)}", fontSize),
           Divider(),
-          _buildRow("Total", "₱60", fontSize, bold: true),
+          _buildRow("Total", "₱${total.toStringAsFixed(2)}", fontSize, bold: true),
           SizedBox(height: screenWidth * 0.04),
           SizedBox(
             width: double.infinity,
@@ -156,7 +282,9 @@ class OrderSummary extends StatelessWidget {
                   borderRadius: BorderRadius.circular(25),
                 ),
               ),
-              onPressed: () {},
+              onPressed: () {
+                // Handle proceed to payment
+              },
               icon: Icon(Icons.payment, size: iconSize, color: Colors.white),
               label: Text(
                 "Proceed",
@@ -170,17 +298,17 @@ class OrderSummary extends StatelessWidget {
   }
 
   Widget _buildRow(String left, String right, double fontSize, {bool bold = false}) {
-  return Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      Text(left,
-          style: GoogleFonts.roboto(
-              fontSize: fontSize,
-              fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
-      Text(right,
-          style: GoogleFonts.roboto(
-              fontSize: fontSize,
-              fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(left,
+            style: GoogleFonts.roboto(
+                fontSize: fontSize,
+                fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
+        Text(right,
+            style: GoogleFonts.roboto(
+                fontSize: fontSize,
+                fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
       ],
     );
   }

@@ -180,7 +180,7 @@ class WishlistScreen extends StatelessWidget {
               if (validItems.isEmpty) {
                 return Center(
                   child: Text(
-                    'Your wishlist is empty.',
+                    'Your wishlist   is empty.',
                     style: GoogleFonts.poppins(
                         fontSize: 18, color: Colors.grey[600]),
                   ),
@@ -221,7 +221,7 @@ class WishlistScreen extends StatelessWidget {
                           );
                         }
                       }
-                    },  
+                    },
                     child: Card(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(15),
@@ -254,8 +254,39 @@ class WishlistScreen extends StatelessWidget {
                             IconButton(
                               icon: Icon(Icons.add_shopping_cart,
                                   color: Color(0xFF651D32)),
-                              onPressed: () {
-                                // TODO: Add to cart logic
+                              onPressed: () async {
+                                // Add to cart logic
+                                final cartRef = FirebaseFirestore.instance
+                                    .collection('users')
+                                    .doc(user.uid)
+                                    .collection('cart');
+
+                                final existing = await cartRef
+                                    .where('productId',
+                                        isEqualTo: data['productId'])
+                                    .get();
+
+                                if (existing.docs.isEmpty) {
+                                  await cartRef.add({
+                                    'productId': data['productId'],
+                                    'productName': data['productName'],
+                                    'price': data['price'],
+                                    'imageUrl': data['imageUrl'],
+                                    'quantity': 1,
+                                    'timestamp': FieldValue.serverTimestamp(),
+                                  });
+
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(
+                                    content: Text("Added to cart."),
+                                  ));
+                                } else {
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(SnackBar(
+                                    content:
+                                        Text("Item is already in your cart."),
+                                  ));
+                                }
                               },
                             ),
                             IconButton(
@@ -293,8 +324,56 @@ class WishlistScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
           ),
-          onPressed: () {
-            // TODO: Add all to cart functionality
+          onPressed: () async {
+            final user = FirebaseAuth.instance.currentUser;
+            if (user == null) return;
+
+            final wishlistSnapshot = await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .collection('wishlist')
+                .get();
+
+            final wishlistDocs = wishlistSnapshot.docs;
+            final validItems =
+                await _cleanAndGetValidWishlistItems(wishlistDocs);
+
+            final cartRef = FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .collection('cart');
+
+            int addedCount = 0;
+
+            for (var doc in validItems) {
+              final data = doc.data() as Map<String, dynamic>;
+              final productId = data['productId'];
+
+              if (productId == null) continue;
+
+              final existing =
+                  await cartRef.where('productId', isEqualTo: productId).get();
+
+              if (existing.docs.isEmpty) {
+                await cartRef.add({
+                  'productId': productId,
+                  'productName': data['productName'],
+                  'price': data['price'],
+                  'imageUrl': data['imageUrl'],
+                  'quantity': 1,
+                  'timestamp': FieldValue.serverTimestamp(),
+                });
+                addedCount++;
+              }
+            }
+
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(
+                addedCount == 0
+                    ? "All wishlist items are already in your cart."
+                    : "$addedCount item(s) added to cart.",
+              ),
+            ));
           },
           child: Text('Add All To Cart',
               style: GoogleFonts.poppins(

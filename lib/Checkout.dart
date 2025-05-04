@@ -1,45 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'cart.dart';
 
-void main() => runApp(MaterialApp(
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+        apiKey: "AIzaSyBbSQOdsCh7ImLhewcIhHUTcj9-1xbShQk",
+        authDomain: "lspumart.firebaseapp.com",
+        databaseURL:
+            "https://lspumart-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "lspumart",
+        storageBucket: "lspumart.firebasestorage.app",
+        messagingSenderId: "533992551897",
+        appId: "1:533992551897:web:d04a482ad131a0700815c8",
+      ),
+    );
+  } else {
+    await Firebase.initializeApp();
+  }
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: CheckoutPage(),
-    ));
+      theme: ThemeData(
+        scaffoldBackgroundColor: Colors.white,
+      ),
+      home: CartScreen(),
+    );
+  }
+}
 
 class CheckoutPage extends StatefulWidget {
+  final double totalPrice;
+  final String userId;
+
+  CheckoutPage({required this.totalPrice, required this.userId});
+
   @override
   _CheckoutPageState createState() => _CheckoutPageState();
 }
 
 class _CheckoutPageState extends State<CheckoutPage> {
-  String? selectedAddressName;
+  String? selectedAddressId;
   String selectedPaymentMethod = 'Credit/Debit Card';
+
+  List<Map<String, dynamic>> userAddresses = [];
+  bool isLoading = true;
 
   final cardNumberController = TextEditingController();
   final expiryController = TextEditingController();
   final cvvController = TextEditingController();
   final phonenumberController = TextEditingController();
-
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-
-  final Map<String, Map<String, String>> addressDetails = {
-    'Home': {
-      'addressType': 'Residential',
-      'barangay': 'Barangay 123',
-      'cityOrMunicipality': 'Quezon City',
-      'phoneNumber': '09171234567',
-      'province': 'Metro Manila',
-      'street': '123 Example St.',
-    },
-    'Work': {
-      'addressType': 'Commercial',
-      'barangay': 'Barangay 456',
-      'cityOrMunicipality': 'Makati',
-      'phoneNumber': '09981234567',
-      'province': 'Metro Manila',
-      'street': '456 Office Rd.',
-    },
-  };
 
   final paymentOptions = {
     'Credit/Debit Card': Icons.credit_card,
@@ -48,11 +69,39 @@ class _CheckoutPageState extends State<CheckoutPage> {
   };
 
   @override
-  Widget build(BuildContext context) {
-    final selectedDetails = selectedAddressName != null
-        ? addressDetails[selectedAddressName]
-        : null;
+  void initState() {
+    super.initState();
+    fetchUserAddresses();
+     phonenumberController.text = '09'; // Set default GCash prefix
+  }
 
+  Future<void> fetchUserAddresses() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.userId)
+          .collection('addresses')
+          .get();
+
+      setState(() {
+        userAddresses = snapshot.docs.map((doc) {
+          final data = doc.data();
+          data['id'] = doc.id;
+          data['name'] = data['name'] ?? 'Unnamed'; // ensure fallback
+          return data;
+        }).toList();
+        isLoading = false;
+      });
+    } catch (e) {
+      print("Error fetching addresses: $e");
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -69,137 +118,107 @@ class _CheckoutPageState extends State<CheckoutPage> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  labelText: 'Select Address Name',
-                  labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.bold),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  filled: true,
-                  fillColor: Colors.white,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
-                icon: Icon(Icons.arrow_drop_down, color: Colors.black54),
-                dropdownColor: Colors.white,
-                value: selectedAddressName,
-                validator: (value) =>
-                    value == null ? 'Please select address' : null,
-                items: addressDetails.keys.map((name) {
-                  return DropdownMenuItem(
-                    value: name,
-                    child: Text(name, style: TextStyle(fontSize: 16)),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    selectedAddressName = value;
-                  });
-                },
-              ),
-              SizedBox(height: 12),
-              if (selectedDetails != null)
-                Card(
-                  color: Colors.white,
-                  elevation: 2,
-                  margin: EdgeInsets.symmetric(vertical: 10),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        addressFieldRow(Icons.home,
-                            'Address Type: ${selectedDetails['addressType']}'),
-                        SizedBox(height: 8),
-                        addressFieldRow(Icons.location_city,
-                            'Barangay: ${selectedDetails['barangay']}'),
-                        SizedBox(height: 8),
-                        addressFieldRow(Icons.location_on,
-                            'City/Municipality: ${selectedDetails['cityOrMunicipality']}'),
-                        SizedBox(height: 8),
-                        addressFieldRow(Icons.phone,
-                            'Phone: ${selectedDetails['phoneNumber']}'),
-                        SizedBox(height: 8),
-                        addressFieldRow(Icons.map,
-                            'Province: ${selectedDetails['province']}'),
-                        SizedBox(height: 8),
-                        addressFieldRow(Icons.streetview,
-                            'Street: ${selectedDetails['street']}'),
-                      ],
-                    ),
-                  ),
-                ),
-              SizedBox(height: 10),
-              Text('Payment Method',
-                  style: GoogleFonts.poppins(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
-              SizedBox(height: 6),
-              ...paymentOptions.entries.map((entry) {
-                final isSelected = selectedPaymentMethod == entry.key;
-                return Container(
-                  margin: EdgeInsets.symmetric(vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.2),
-                        blurRadius: 6,
-                        offset: Offset(0, 3),
-                      )
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      ListTile(
-                        leading: entry.key == 'G-Cash'
-                            ? Image.asset(
-                                entry.value as String,
-                                width: 30,
-                                height: 30,
-                              )
-                            : Icon(entry.value as IconData,
-                                color: Color(0xFF651D32)),
-                        title: Text(entry.key,
-                            style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
-                        trailing: Radio<String>(
-                          value: entry.key,
-                          groupValue: selectedPaymentMethod,
-                          onChanged: (value) {
-                            setState(() {
-                              selectedPaymentMethod = value!;
-                            });
-                          },
-                        ),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      decoration: InputDecoration(
+                        labelText: 'Select Address',
+                        labelStyle:
+                            GoogleFonts.poppins(fontWeight: FontWeight.bold),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                       ),
-                      if (isSelected) buildPaymentInputForm(entry.key),
-                    ],
-                  ),
-                );
-              }).toList(),
-              SizedBox(height: 80), // For bottom bar space
-            ],
-          ),
-        ),
-      ),
+                      icon: Icon(Icons.arrow_drop_down, color: Colors.black54),
+                      value: selectedAddressId,
+                      validator: (value) =>
+                          value == null ? 'Please select address' : null,
+                      items: userAddresses.map((address) {
+                        return DropdownMenuItem(
+                          value: address['id'] as String,
+                          child: Text(address['name'] ?? 'name'),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedAddressId = value;
+                        });
+                      },
+                    ),
+                    SizedBox(height: 12),
+                    if (selectedAddressId != null)
+                      buildAddressCard(
+                        userAddresses.firstWhere(
+                            (addr) => addr['id'] == selectedAddressId),
+                      ),
+                    SizedBox(height: 10),
+                    Text('Payment Method',
+                        style: GoogleFonts.poppins(
+                            fontSize: 18, fontWeight: FontWeight.bold)),
+                    SizedBox(height: 6),
+                    ...paymentOptions.entries.map((entry) {
+                      final isSelected = selectedPaymentMethod == entry.key;
+                      return Container(
+                        margin: EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              blurRadius: 6,
+                              offset: Offset(0, 3),
+                            )
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            ListTile(
+                              leading: entry.key == 'G-Cash'
+                                  ? Image.asset(entry.value as String,
+                                      width: 30, height: 30)
+                                  : Icon(entry.value as IconData,
+                                      color: Color(0xFF651D32)),
+                              title: Text(entry.key,
+                                  style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16)),
+                              trailing: Radio<String>(
+                                value: entry.key,
+                                groupValue: selectedPaymentMethod,
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedPaymentMethod = value!;
+                                  });
+                                },
+                              ),
+                            ),
+                            if (isSelected) buildPaymentInputForm(entry.key),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                    SizedBox(height: 80),
+                  ],
+                ),
+              ),
+            ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
           color: Colors.white,
-          border: Border(
-            top: BorderSide(color: Colors.grey.shade300, width: 1),
-          ),
+          border:
+              Border(top: BorderSide(color: Colors.grey.shade300, width: 1)),
         ),
         child: Row(
           children: [
@@ -211,7 +230,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     style: GoogleFonts.poppins(
                         color: Colors.black54, fontSize: 14)),
                 SizedBox(height: 4),
-                Text('₱28.6',
+                Text('₱${widget.totalPrice.toStringAsFixed(2)}',
                     style: GoogleFonts.roboto(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -222,10 +241,17 @@ class _CheckoutPageState extends State<CheckoutPage> {
             Expanded(
               child: ElevatedButton(
                 onPressed: () {
+                  if (userAddresses.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(
+                          'Please add a delivery address before checkout.'),
+                    ));
+                    return;
+                  }
+
                   if (_formKey.currentState!.validate()) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Processing Payment...')),
-                    );
+                        SnackBar(content: Text('Processing Payment...')));
                   }
                 },
                 style: ElevatedButton.styleFrom(
@@ -247,6 +273,37 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
+  Widget buildAddressCard(Map<String, dynamic> address) {
+    return Card(
+      color: Colors.white,
+      elevation: 2,
+      margin: EdgeInsets.symmetric(vertical: 10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            addressFieldRow(
+                Icons.home, 'Address Type: ${address['addressType']}'),
+            SizedBox(height: 8),
+            addressFieldRow(
+                Icons.location_city, 'Barangay: ${address['barangay']}'),
+            SizedBox(height: 8),
+            addressFieldRow(Icons.location_on,
+                'City/Municipality: ${address['cityOrMunicipality']}'),
+            SizedBox(height: 8),
+            addressFieldRow(Icons.phone, 'Phone: ${address['phone']}'),
+            SizedBox(height: 8),
+            addressFieldRow(Icons.map, 'Province: ${address['province']}'),
+            SizedBox(height: 8),
+            addressFieldRow(Icons.streetview, 'Street: ${address['street']}'),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget addressFieldRow(IconData icon, String text) {
     return Row(
       children: [
@@ -261,7 +318,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     switch (method) {
       case 'Credit/Debit Card':
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
           child: Column(
             children: [
               TextFormField(
@@ -270,12 +327,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 maxLength: 16,
                 decoration: InputDecoration(labelText: 'Card Number'),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.isEmpty)
                     return 'Enter card number';
-                  } else if (value.length != 16 ||
-                      !RegExp(r'^[0-9]+$').hasMatch(value)) {
+                  if (value.length != 16)
                     return 'Card number must be 16 digits';
-                  }
                   return null;
                 },
               ),
@@ -284,12 +339,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 decoration: InputDecoration(labelText: 'Expiry Date (MM/YY)'),
                 keyboardType: TextInputType.datetime,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.isEmpty)
                     return 'Enter expiry date';
-                  } else if (!RegExp(r'^(0[1-9]|1[0-2])\/\d{2}$')
-                      .hasMatch(value)) {
-                    return 'Enter a valid date (MM/YY)';
-                  }
+                  if (!RegExp(r'^(0[1-9]|1[0-2])\/\d{2}$').hasMatch(value))
+                    return 'Invalid date format';
                   return null;
                 },
               ),
@@ -299,48 +352,42 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 maxLength: 3,
                 decoration: InputDecoration(labelText: 'CVV'),
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Enter CVV';
-                  } else if (value.length != 3 ||
-                      !RegExp(r'^[0-9]{3}$').hasMatch(value)) {
-                    return 'CVV must be 3 digits';
-                  }
+                  if (value == null || value.isEmpty) return 'Enter CVV';
+                  if (value.length != 3) return 'CVV must be 3 digits';
                   return null;
                 },
               ),
             ],
           ),
         );
-
       case 'G-Cash':
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
           child: TextFormField(
             controller: phonenumberController,
             keyboardType: TextInputType.phone,
             maxLength: 11,
             decoration: InputDecoration(labelText: 'Phone number'),
+            validator: (value) {
+              if (value == null || value.isEmpty) return 'Enter GCash number';
+              if (!RegExp(r'^09\d{9}$').hasMatch(value))
+                return 'Invalid phone number';
+              return null;
+            },
             onChanged: (value) {
-              if (value.isNotEmpty && !value.startsWith('09')) {
+              // Automatically prepend 09 if not already present
+              if (!value.startsWith('09')) {
                 phonenumberController.text = '09';
                 phonenumberController.selection = TextSelection.fromPosition(
                   TextPosition(offset: phonenumberController.text.length),
                 );
               }
             },
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Enter GCash number';
-              } else if (!RegExp(r'^09\d{9}$').hasMatch(value)) {
-                return 'Phone number must start with 09 and be 11 digits';
-              }
-              return null;
-            },
           ),
         );
       default:
         return Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: EdgeInsets.all(8.0),
           child: Text('No additional info required.'),
         );
     }

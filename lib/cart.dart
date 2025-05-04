@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'Checkout.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -349,7 +350,15 @@ class OrderSummary extends StatelessWidget {
                     ),
                   ),
                   onPressed: () {
-                    // Handle proceed to payment
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CheckoutPage(
+                          totalPrice: total,
+                          userId: FirebaseAuth.instance.currentUser!.uid,
+                        ),
+                      ),
+                    );
                   },
                   icon:
                       Icon(Icons.payment, size: iconSize, color: Colors.white),

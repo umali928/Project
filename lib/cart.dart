@@ -81,29 +81,62 @@ class CartScreen extends StatelessWidget {
             return Center(child: CircularProgressIndicator());
           }
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return Center(child: Text("Your cart is empty", style: GoogleFonts.poppins(
-                fontSize: screenWidth * 0.05, fontWeight: FontWeight.w500
-            ),));
+            return Center(
+                child: Text(
+              "Your cart is empty",
+              style: GoogleFonts.poppins(
+                  fontSize: screenWidth * 0.05, fontWeight: FontWeight.w500),
+            ));
           }
 
           final cartDocs = snapshot.data!.docs;
 
           return Column(
             children: [
-              
               Expanded(
                 child: ListView.builder(
-                  
                   itemCount: cartDocs.length,
                   itemBuilder: (context, index) {
                     final item = cartDocs[index];
-                    return CartItem(
-                      productName: item['productName'],
-                      imageUrl: item['imageUrl'],
-                      price: item['price'].toDouble(),
-                      quantity: item['quantity'],
-                      cartItemId: item.id,
-                      userId: user.uid,
+                    final productId = item['productId'];
+
+                    return StreamBuilder<DocumentSnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('products')
+                          .doc(productId)
+                          .snapshots(),
+                      builder: (context, productSnapshot) {
+                        if (productSnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Center(
+                              child:
+                                  CircularProgressIndicator()); // Or SizedBox.shrink()
+                        }
+
+                        if (!productSnapshot.hasData ||
+                            !productSnapshot.data!.exists) {
+                          // Product was deleted — remove from cart
+                          FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(user.uid)
+                              .collection('cart')
+                              .doc(item.id)
+                              .delete();
+                          return SizedBox.shrink();
+                        }
+
+                        final productData = productSnapshot.data!.data()
+                            as Map<String, dynamic>;
+
+                        return CartItem(
+                          productName: productData['productName'],
+                          imageUrl: productData['imageUrl'],
+                          price: (productData['price'] as num).toDouble(),
+                          quantity: item['quantity'],
+                          cartItemId: item.id,
+                          userId: user.uid,
+                        );
+                      },
                     );
                   },
                 ),
@@ -116,8 +149,6 @@ class CartScreen extends StatelessWidget {
     );
   }
 }
-
-
 
 class CartItem extends StatelessWidget {
   final String productName;
@@ -224,6 +255,29 @@ class OrderSummary extends StatelessWidget {
   final List<QueryDocumentSnapshot> cartDocs;
 
   OrderSummary({required this.cartDocs});
+  Future<List<Map<String, dynamic>>> _getLatestProductData() async {
+    List<Map<String, dynamic>> updatedCart = [];
+
+    for (var item in cartDocs) {
+      final productId = item['productId'];
+      final productSnapshot = await FirebaseFirestore.instance
+          .collection('products')
+          .doc(productId)
+          .get();
+
+      if (productSnapshot.exists) {
+        final productData = productSnapshot.data()!;
+        final double latestPrice = (productData['price'] as num).toDouble();
+        final int quantity = item['quantity'];
+        updatedCart.add({
+          'price': latestPrice,
+          'quantity': quantity,
+        });
+      }
+    }
+
+    return updatedCart;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -231,73 +285,90 @@ class OrderSummary extends StatelessWidget {
     double fontSize = screenWidth * 0.04;
     double iconSize = screenWidth * 0.06;
 
-    int totalItems = 0;
-    double subtotal = 0;
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _getLatestProductData(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    for (var item in cartDocs) {
-      int quantity = item['quantity'] as int;
-      double price = (item['price'] as num).toDouble();
-      totalItems += quantity;
-      subtotal += price * quantity;
-    }
+        final updatedCart = snapshot.data!;
+        int totalItems = 0;
+        double subtotal = 0;
 
-    double deliveryCharges = 20;
-    double total = subtotal + deliveryCharges;
+        for (var item in updatedCart) {
+          totalItems += (item['quantity'] as int);
+          subtotal += (item['price'] as double) * (item['quantity'] as int);
+        }
 
-    return Container(
-      padding: EdgeInsets.all(screenWidth * 0.04),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.3),
-            blurRadius: 5,
-            spreadRadius: 1,
-            offset: Offset(0, -2),
+        double deliveryCharges = 20;
+        double total = subtotal + deliveryCharges;
+
+        return Container(
+          padding: EdgeInsets.all(screenWidth * 0.04),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.3),
+                blurRadius: 5,
+                spreadRadius: 1,
+                offset: Offset(0, -2),
+              ),
+            ],
           ),
-        ],
-      ),
-      margin: EdgeInsets.all(screenWidth * 0.04),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("Order Summary",
-              style: GoogleFonts.notoSans(
-                  fontSize: fontSize, fontWeight: FontWeight.bold)),
-          Divider(),
-          _buildRow("Items", "$totalItems", fontSize),
-          _buildRow("Subtotal", "₱${subtotal.toStringAsFixed(2)}", fontSize),
-          _buildRow("Delivery Charges", "₱${deliveryCharges.toStringAsFixed(2)}", fontSize),
-          Divider(),
-          _buildRow("Total", "₱${total.toStringAsFixed(2)}", fontSize, bold: true),
-          SizedBox(height: screenWidth * 0.04),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF651D32),
-                padding: EdgeInsets.symmetric(vertical: screenWidth * 0.04),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
+          margin: EdgeInsets.all(screenWidth * 0.04),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Order Summary",
+                  style: GoogleFonts.notoSans(
+                      fontSize: fontSize, fontWeight: FontWeight.bold)),
+              Divider(),
+              _buildRow("Items", "$totalItems", fontSize),
+              _buildRow(
+                  "Subtotal", "₱${subtotal.toStringAsFixed(2)}", fontSize),
+              _buildRow("Delivery Charges",
+                  "₱${deliveryCharges.toStringAsFixed(2)}", fontSize),
+              Divider(),
+              _buildRow("Total", "₱${total.toStringAsFixed(2)}", fontSize,
+                  bold: true),
+              SizedBox(height: screenWidth * 0.04),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF651D32),
+                    padding: EdgeInsets.symmetric(vertical: screenWidth * 0.04),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                  ),
+                  onPressed: () {
+                    // Handle proceed to payment
+                  },
+                  icon:
+                      Icon(Icons.payment, size: iconSize, color: Colors.white),
+                  label: Text(
+                    "Proceed",
+                    style: GoogleFonts.poppins(
+                        fontSize: fontSize, color: Colors.white),
+                  ),
                 ),
               ),
-              onPressed: () {
-                // Handle proceed to payment
-              },
-              icon: Icon(Icons.payment, size: iconSize, color: Colors.white),
-              label: Text(
-                "Proceed",
-                style: GoogleFonts.poppins(fontSize: fontSize, color: Colors.white),
-              ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildRow(String left, String right, double fontSize, {bool bold = false}) {
+  Widget _buildRow(String left, String right, double fontSize,
+      {bool bold = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [

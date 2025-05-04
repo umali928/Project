@@ -145,19 +145,22 @@ class _SearchPageState extends State<SearchPage> {
                         context: context,
                         isScrollControlled: true, // ✅ allows full height scroll
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                          borderRadius:
+                              BorderRadius.vertical(top: Radius.circular(16)),
                         ),
                         builder: (context) {
                           return SafeArea(
                             child: Padding(
                               padding: EdgeInsets.only(
-                                  bottom: MediaQuery.of(context).viewInsets.bottom),
+                                  bottom:
+                                      MediaQuery.of(context).viewInsets.bottom),
                               child: SingleChildScrollView(
                                 child: Padding(
                                   padding: const EdgeInsets.all(16.0),
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Center(
                                         child: Container(
@@ -165,29 +168,47 @@ class _SearchPageState extends State<SearchPage> {
                                           height: 4,
                                           decoration: BoxDecoration(
                                             color: Colors.grey[300],
-                                            borderRadius: BorderRadius.circular(2),
+                                            borderRadius:
+                                                BorderRadius.circular(2),
                                           ),
                                         ),
                                       ),
                                       SizedBox(height: 16),
-                                      Text('Filter Options', style: GoogleFonts.poppins(
-                                        fontSize: 20, fontWeight: FontWeight.bold)),
+                                      Text('Filter Options',
+                                          style: GoogleFonts.poppins(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold)),
                                       SizedBox(height: 16),
-                                      Text('Category', style: GoogleFonts.poppins(
-                                        fontSize: 16, fontWeight: FontWeight.w500)),
+                                      Text('Category',
+                                          style: GoogleFonts.poppins(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w500)),
                                       Wrap(
-                                        spacing: 8, runSpacing: 8,
+                                        spacing: 8,
+                                        runSpacing: 8,
                                         children: [
-                                          FilterChip(label: Text('Clothes'), onSelected: (_) {}),
-                                          FilterChip(label: Text('School'), onSelected: (_) {}),
-                                          FilterChip(label: Text('Sports'), onSelected: (_) {}),
-                                          FilterChip(label: Text('Food'), onSelected: (_) {}),
-                                          FilterChip(label: Text('All'), onSelected: (_) {}),
+                                          FilterChip(
+                                              label: Text('Clothes'),
+                                              onSelected: (_) {}),
+                                          FilterChip(
+                                              label: Text('School'),
+                                              onSelected: (_) {}),
+                                          FilterChip(
+                                              label: Text('Sports'),
+                                              onSelected: (_) {}),
+                                          FilterChip(
+                                              label: Text('Food'),
+                                              onSelected: (_) {}),
+                                          FilterChip(
+                                              label: Text('All'),
+                                              onSelected: (_) {}),
                                         ],
                                       ),
                                       SizedBox(height: 16),
-                                      Text('Price Range', style: GoogleFonts.poppins(
-                                        fontSize: 16, fontWeight: FontWeight.w500)),
+                                      Text('Price Range',
+                                          style: GoogleFonts.poppins(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w500)),
                                       Row(
                                         children: [
                                           Expanded(
@@ -196,7 +217,8 @@ class _SearchPageState extends State<SearchPage> {
                                                 labelText: 'Min Price',
                                                 border: OutlineInputBorder(),
                                               ),
-                                              keyboardType: TextInputType.number,
+                                              keyboardType:
+                                                  TextInputType.number,
                                             ),
                                           ),
                                           SizedBox(width: 12),
@@ -206,20 +228,25 @@ class _SearchPageState extends State<SearchPage> {
                                                 labelText: 'Max Price',
                                                 border: OutlineInputBorder(),
                                               ),
-                                              keyboardType: TextInputType.number,
+                                              keyboardType:
+                                                  TextInputType.number,
                                             ),
                                           ),
                                         ],
                                       ),
                                       SizedBox(height: 16),
-                                      Text('Ratings', style: GoogleFonts.poppins(
-                                        fontSize: 16, fontWeight: FontWeight.w500)),
+                                      Text('Ratings',
+                                          style: GoogleFonts.poppins(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w500)),
                                       Row(
                                         children: List.generate(5, (index) {
                                           return IconButton(
                                             icon: Icon(
                                               Icons.star,
-                                              color: index < 4 ? Colors.amber : Colors.grey,
+                                              color: index < 4
+                                                  ? Colors.amber
+                                                  : Colors.grey,
                                             ),
                                             onPressed: () {},
                                           );
@@ -231,19 +258,21 @@ class _SearchPageState extends State<SearchPage> {
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: Color(0xFF651D32),
                                             shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(8),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                             ),
-                                            padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                                            padding: EdgeInsets.symmetric(
+                                                horizontal: 32, vertical: 12),
                                           ),
                                           onPressed: () {
                                             Navigator.pop(context);
                                           },
                                           child: Text('Apply Filters',
-                                            style: GoogleFonts.poppins(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            )),
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                              )),
                                         ),
                                       ),
                                     ],
@@ -256,37 +285,55 @@ class _SearchPageState extends State<SearchPage> {
                       );
                     },
                   ),
-                  Stack(
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.shopping_cart, size: 28),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => CartScreen()),
-                          );
-                        },
-                      ),
-                      Positioned(
-                        right: 6,
-                        top: 6,
-                        child: Container(
-                          padding: EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseAuth.instance.currentUser == null
+                        ? null
+                        : FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(FirebaseAuth.instance.currentUser!.uid)
+                            .collection('cart')
+                            .snapshots(),
+                    builder: (context, snapshot) {
+                      int cartCount = 0;
+                      if (snapshot.hasData) {
+                        cartCount = snapshot.data!.docs.length;
+                      }
+
+                      return Stack(
+                        children: [
+                          IconButton(
+                            icon: Icon(Icons.shopping_cart, size: 28),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => CartScreen()),
+                              );
+                            },
                           ),
-                          child: Text(
-                            '3',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
+                          if (cartCount > 0)
+                            Positioned(
+                              right: 6,
+                              top: 6,
+                              child: Container(
+                                padding: EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Text(
+                                  '$cartCount',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      ),
-                    ],
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -348,143 +395,143 @@ class _ProductVerticalListState extends State<ProductVerticalList> {
         final products = snapshot.data!.docs;
 
         return LayoutBuilder(
-  builder: (context, constraints) {
-    double screenWidth = constraints.maxWidth;
-    int crossAxisCount = 2;
-    if (screenWidth >= 600 && screenWidth < 900) {
-      crossAxisCount = 3;
-    } else if (screenWidth >= 900) {
-      crossAxisCount = 4;
-    }
+          builder: (context, constraints) {
+            double screenWidth = constraints.maxWidth;
+            int crossAxisCount = 2;
+            if (screenWidth >= 600 && screenWidth < 900) {
+              crossAxisCount = 3;
+            } else if (screenWidth >= 900) {
+              crossAxisCount = 4;
+            }
 
-    double childAspectRatio = screenWidth < 400 ? 0.55 : 0.66;
+            double childAspectRatio = screenWidth < 400 ? 0.55 : 0.66;
 
-    return GridView.builder(
-      itemCount: products.length,
-      padding: const EdgeInsets.all(12),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        mainAxisSpacing: 16,
-        crossAxisSpacing: 12,
-        childAspectRatio: childAspectRatio,
-      ),
-      itemBuilder: (context, index) {
-        final product = products[index];
-        final data = product.data() as Map<String, dynamic>;
-        data['productId'] = product.id;
-
-        return GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ProductDetailPage(
-                  productData: data,
-                  productId: product.id,
-                ),
+            return GridView.builder(
+              itemCount: products.length,
+              padding: const EdgeInsets.all(12),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 12,
+                childAspectRatio: childAspectRatio,
               ),
-            );
-          },
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.15),
-                  blurRadius: 3,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: screenWidth / crossAxisCount * 0.6,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(12),
+              itemBuilder: (context, index) {
+                final product = products[index];
+                final data = product.data() as Map<String, dynamic>;
+                data['productId'] = product.id;
+
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProductDetailPage(
+                          productData: data,
+                          productId: product.id,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.15),
+                          blurRadius: 3,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
                     ),
-                    image: data['imageUrl'] != null
-                        ? DecorationImage(
-                            image: NetworkImage(data['imageUrl']),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
-                  ),
-                  child: data['imageUrl'] == null
-                      ? const Center(
-                          child: Text('No Image',
-                              style: TextStyle(color: Colors.grey)),
-                        )
-                      : null,
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          data['productName'] ?? 'No name',
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 15),
-                        Text(
-                          '₱${data['price'].toString()}',
-                          style: GoogleFonts.roboto(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        Row(
-                          children: [
-                            const Icon(Icons.star,
-                                color: Colors.amber, size: 14),
-                            const SizedBox(width: 4),
-                            Text(
-                              '0.0',
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '(0)',
-                              style: GoogleFonts.poppins(
-                                color: Colors.grey,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const Spacer(),
-                        SizedBox(
+                        Container(
+                          height: screenWidth / crossAxisCount * 0.6,
                           width: double.infinity,
-                          child: WishlistButton(data: data),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[200],
+                            borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(12),
+                            ),
+                            image: data['imageUrl'] != null
+                                ? DecorationImage(
+                                    image: NetworkImage(data['imageUrl']),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
+                          ),
+                          child: data['imageUrl'] == null
+                              ? const Center(
+                                  child: Text('No Image',
+                                      style: TextStyle(color: Colors.grey)),
+                                )
+                              : null,
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  data['productName'] ?? 'No name',
+                                  style: GoogleFonts.poppins(
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 14,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 15),
+                                Text(
+                                  '₱${data['price'].toString()}',
+                                  style: GoogleFonts.roboto(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 15),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.star,
+                                        color: Colors.amber, size: 14),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '0.0',
+                                      style: GoogleFonts.poppins(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '(0)',
+                                      style: GoogleFonts.poppins(
+                                        color: Colors.grey,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const Spacer(),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: WishlistButton(data: data),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
+                );
+              },
+            );
+          },
         );
-      },
-    );
-  },
-);
       },
     );
   }
@@ -562,9 +609,8 @@ class _WishlistButtonState extends State<WishlistButton> {
         'timestamp': FieldValue.serverTimestamp(),
       });
     } else {
-      final snapshot = await wishlistRef
-          .where('productId', isEqualTo: productId)
-          .get();
+      final snapshot =
+          await wishlistRef.where('productId', isEqualTo: productId).get();
 
       for (var doc in snapshot.docs) {
         await wishlistRef.doc(doc.id).delete();
@@ -586,7 +632,8 @@ class _WishlistButtonState extends State<WishlistButton> {
     return ElevatedButton(
       onPressed: toggleWishlist,
       style: ElevatedButton.styleFrom(
-        backgroundColor: isWishlisted! ? Colors.grey[300] : const Color(0xFF651D32),
+        backgroundColor:
+            isWishlisted! ? Colors.grey[300] : const Color(0xFF651D32),
         foregroundColor: isWishlisted! ? Colors.black : Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         shape: RoundedRectangleBorder(

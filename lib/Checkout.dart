@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'cart.dart';
-
+import 'OrderConfirmation.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
@@ -72,7 +72,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   void initState() {
     super.initState();
     fetchUserAddresses();
-     phonenumberController.text = '09'; // Set default GCash prefix
+    phonenumberController.text = '09'; // Set default GCash prefix
   }
 
   Future<void> fetchUserAddresses() async {
@@ -250,8 +250,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
                   }
 
                   if (_formKey.currentState!.validate()) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Processing Payment...')));
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OrderConfirmationScreen(
+                          addressId: selectedAddressId!,
+                          paymentMethod: selectedPaymentMethod,
+                          gcashPhone: selectedPaymentMethod == 'G-Cash'
+                              ? phonenumberController.text
+                              : null,
+                          cardLast4:
+                              selectedPaymentMethod == 'Credit/Debit Card'
+                                  ? cardNumberController.text.substring(
+                                      cardNumberController.text.length - 4)
+                                  : null,
+                          totalAmount: widget.totalPrice,
+                        ),
+                      ),
+                    );
                   }
                 },
                 style: ElevatedButton.styleFrom(

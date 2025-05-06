@@ -256,6 +256,7 @@ class OrderSummary extends StatelessWidget {
   final List<QueryDocumentSnapshot> cartDocs;
 
   OrderSummary({required this.cartDocs});
+
   Future<List<Map<String, dynamic>>> _getLatestProductData() async {
     List<Map<String, dynamic>> updatedCart = [];
 
@@ -270,9 +271,13 @@ class OrderSummary extends StatelessWidget {
         final productData = productSnapshot.data()!;
         final double latestPrice = (productData['price'] as num).toDouble();
         final int quantity = item['quantity'];
+        final int stock = productData['stock'];
+
         updatedCart.add({
           'price': latestPrice,
           'quantity': quantity,
+          'stock': stock,
+          'productName': productData['productName'],
         });
       }
     }
@@ -284,7 +289,6 @@ class OrderSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
     double fontSize = screenWidth * 0.04;
-    double iconSize = screenWidth * 0.06;
 
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _getLatestProductData(),
@@ -299,10 +303,22 @@ class OrderSummary extends StatelessWidget {
         final updatedCart = snapshot.data!;
         int totalItems = 0;
         double subtotal = 0;
+        bool hasStockIssue = false;
+        String stockWarning = "";
 
         for (var item in updatedCart) {
-          totalItems += (item['quantity'] as int);
-          subtotal += (item['price'] as double) * (item['quantity'] as int);
+          int quantity = item['quantity'];
+          int stock = item['stock'];
+          String name = item['productName'];
+
+          if (quantity > stock) {
+            hasStockIssue = true;
+            stockWarning +=
+                "• '$name' exceeds stock (Available: $stock, In cart: $quantity)\n";
+          }
+
+          totalItems += quantity;
+          subtotal += item['price'] * quantity;
         }
 
         double deliveryCharges = 20;
@@ -310,6 +326,7 @@ class OrderSummary extends StatelessWidget {
 
         return Container(
           padding: EdgeInsets.all(screenWidth * 0.04),
+          margin: EdgeInsets.all(screenWidth * 0.04),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(10),
@@ -322,7 +339,6 @@ class OrderSummary extends StatelessWidget {
               ),
             ],
           ),
-          margin: EdgeInsets.all(screenWidth * 0.04),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -333,39 +349,54 @@ class OrderSummary extends StatelessWidget {
               _buildRow("Items", "$totalItems", fontSize),
               _buildRow(
                   "Subtotal", "₱${subtotal.toStringAsFixed(2)}", fontSize),
-              _buildRow("Delivery Charges",
-                  "₱${deliveryCharges.toStringAsFixed(2)}", fontSize),
+              _buildRow("Delivery", "₱${deliveryCharges.toStringAsFixed(2)}",
+                  fontSize),
               Divider(),
-              _buildRow("Total", "₱${total.toStringAsFixed(2)}", fontSize,
-                  bold: true),
-              SizedBox(height: screenWidth * 0.04),
+              _buildRow("Total", "₱${total.toStringAsFixed(2)}", fontSize),
+              if (hasStockIssue) ...[
+                SizedBox(height: 10),
+                Text("⚠ Stock issue:",
+                    style: TextStyle(
+                        color: Colors.red, fontWeight: FontWeight.bold)),
+                Text(stockWarning.trim(),
+                    style:
+                        TextStyle(color: Colors.red, fontSize: fontSize * 0.9)),
+              ],
+              SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF651D32),
-                    padding: EdgeInsets.symmetric(vertical: screenWidth * 0.04),
+                    backgroundColor: Color(0xFF651D32), // Maroon
+                    padding:
+                        EdgeInsets.symmetric(vertical: screenWidth * 0.045),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                     ),
+                    elevation: 3,
                   ),
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => CheckoutPage(
-                          totalPrice: total,
-                          userId: FirebaseAuth.instance.currentUser!.uid,
-                        ),
-                      ),
-                    );
-                  },
-                  icon:
-                      Icon(Icons.payment, size: iconSize, color: Colors.white),
+                  onPressed: hasStockIssue
+                      ? null
+                      : () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CheckoutPage(
+                                totalPrice: total,
+                                userId: FirebaseAuth.instance.currentUser!.uid,
+                              ),
+                            ),
+                          );
+                        },
+                  icon: Icon(Icons.payment,
+                      color: Colors.white, size: screenWidth * 0.06),
                   label: Text(
-                    "Proceed",
+                    "Proceed to Checkout",
                     style: GoogleFonts.poppins(
-                        fontSize: fontSize, color: Colors.white),
+                      fontSize: screenWidth * 0.045,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
@@ -376,20 +407,20 @@ class OrderSummary extends StatelessWidget {
     );
   }
 
-  Widget _buildRow(String left, String right, double fontSize,
-      {bool bold = false}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(left,
-            style: GoogleFonts.roboto(
-                fontSize: fontSize,
-                fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
-        Text(right,
-            style: GoogleFonts.roboto(
-                fontSize: fontSize,
-                fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
-      ],
+  Widget _buildRow(String label, String value, double fontSize) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label,
+              style: GoogleFonts.poppins(
+                  fontSize: fontSize, fontWeight: FontWeight.w500)),
+          Text(value,
+              style: GoogleFonts.poppins(
+                  fontSize: fontSize, fontWeight: FontWeight.w500)),
+        ],
+      ),
     );
   }
 }

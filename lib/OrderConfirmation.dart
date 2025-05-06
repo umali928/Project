@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'cart.dart';
+import 'dashboard.dart';
 
 class OrderConfirmationScreen extends StatefulWidget {
   final String addressId;
@@ -288,12 +288,32 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
                           if (productSnapshot.exists) {
                             final productData = productSnapshot.data()!;
+                            final currentStock = productData['stock'] ?? 0;
+                            final quantityOrdered = cartData['quantity'];
+
+                            // Check if stock is sufficient
+                            if (currentStock < quantityOrdered) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(
+                                        "Not enough stock for ${productData['productName']}.")),
+                              );
+                              return;
+                            }
+
+                            // Decrease the stock
+                            await FirebaseFirestore.instance
+                                .collection('products')
+                                .doc(productId)
+                                .update(
+                                    {'stock': currentStock - quantityOrdered});
+
                             orderItems.add({
                               'productId': productId,
                               'productName': productData['productName'],
                               'imageUrl': productData['imageUrl'],
                               'price': productData['price'],
-                              'quantity': cartData['quantity'],
+                              'quantity': quantityOrdered,
                               'sellerId': productData['sellerId'],
                               'status': 'Pending',
                             });
@@ -345,7 +365,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (context) => CartScreen()),
+                          MaterialPageRoute(builder: (context) => Dashboard()),
                         ); // Navigate away or show success
                       }),
                 ),

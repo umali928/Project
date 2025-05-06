@@ -392,7 +392,10 @@ class _ProductVerticalListState extends State<ProductVerticalList> {
           return const Center(child: Text('No products found.'));
         }
 
-        final products = snapshot.data!.docs;
+        final products = snapshot.data!.docs.where((product) {
+          final data = product.data() as Map<String, dynamic>;
+          return data['stock'] > 0; // Filter products with stock greater than 0
+        }).toList();
 
         return LayoutBuilder(
           builder: (context, constraints) {

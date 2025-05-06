@@ -160,6 +160,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 onPressed: () async {
                   final user = FirebaseAuth.instance.currentUser;
 
+                  // Check if stock is zero
+                  if (product['stock'] == 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("This product is out of stock")),
+                    );
+                    return;
+                  }
+
                   if (user == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(

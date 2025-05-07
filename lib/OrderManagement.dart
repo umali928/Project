@@ -2,8 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lspu/navigation_drawer.dart' as custom;
 import 'SellerOrderdetails.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+        apiKey: "AIzaSyBbSQOdsCh7ImLhewcIhHUTcj9-1xbShQk",
+        authDomain: "lspumart.firebaseapp.com",
+        databaseURL:
+            "https://lspumart-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "lspumart",
+        storageBucket: "lspumart.firebasestorage.app",
+        messagingSenderId: "533992551897",
+        appId: "1:533992551897:web:d04a482ad131a0700815c8",
+      ),
+    );
+  } else {
+    await Firebase.initializeApp();
+  }
+
   runApp(OrderManagementApp());
 }
 
@@ -12,23 +34,23 @@ class OrderManagementApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: OrderManagementPage(),
+      home: FirebaseAuth.instance.currentUser == null
+          ? Center(child: Text('Please log in'))
+          : OrderManagementPage(),
     );
   }
 }
 
 class OrderManagementPage extends StatelessWidget {
-  final List<OrderInfo> orders = [
-    OrderInfo(orderId: "ORD001", customerName: "John Doe", status: "Pending", color: Colors.orange),
-    OrderInfo(orderId: "ORD002", customerName: "Jane Smith", status: "Delivered", color: Colors.green),
-    OrderInfo(orderId: "ORD003", customerName: "Albert Reyes", status: "In Transit", color: Colors.blue),
-    OrderInfo(orderId: "ORD005", customerName: "Joey Marquez", status: "Pending", color: Colors.orange),
-  ];
+  const OrderManagementPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // ignore: unused_local_variable
-    final textScale = MediaQuery.of(context).textScaleFactor;
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (userId == null) {
+      return Center(child: Text("User not logged in"));
+    }
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
@@ -39,7 +61,7 @@ class OrderManagementPage extends StatelessWidget {
           style: GoogleFonts.poppins(
             color: Colors.black,
             fontWeight: FontWeight.bold,
-            fontSize: screenWidth * 0.045, // responsive title
+            fontSize: screenWidth * 0.045,
           ),
         ),
         backgroundColor: Colors.white,
@@ -47,67 +69,200 @@ class OrderManagementPage extends StatelessWidget {
         iconTheme: IconThemeData(color: Colors.black),
       ),
       drawer: custom.NavigationDrawer(),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                child: Card(
-                  elevation: 3,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  child: Padding(
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .collection('sellerInfo')
+            .limit(1)
+            .snapshots(),
+        builder: (context, sellerSnapshot) {
+          if (sellerSnapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+          if (!sellerSnapshot.hasData || sellerSnapshot.data!.docs.isEmpty) {
+            return Center(child: Text("No seller info found."));
+          }
+
+          final sellerId = sellerSnapshot.data!.docs.first.id;
+          print("Current seller ID: $sellerId");
+
+          return StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance.collection('orders').snapshots(),
+            builder: (context, orderSnapshot) {
+              if (orderSnapshot.hasError) {
+                print("Error fetching orders: ${orderSnapshot.error}");
+                return Center(child: Text("Error loading orders"));
+              }
+              if (orderSnapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
+
+              // Filter orders locally to find those containing items from this seller
+              final filteredOrders = orderSnapshot.data!.docs.where((order) {
+                final items =
+                    (order.data() as Map<String, dynamic>)['items'] as List;
+                return items.any((item) => item['sellerId'] == sellerId);
+              }).toList();
+
+              if (filteredOrders.isEmpty) {
+                print("No orders found for sellerId: $sellerId");
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text("No orders with your products found."),
+                      Text("Seller ID: $sellerId"),
+                    ],
+                  ),
+                );
+              }
+
+              print(
+                  "Found ${filteredOrders.length} orders for seller $sellerId");
+
+              return FutureBuilder<List<OrderInfo>>(
+                future: Future.wait(filteredOrders.map((doc) async {
+                  final data = doc.data() as Map<String, dynamic>;
+                  print("Order data: $data");
+                  final orderUserId = data['userId'];
+                  String customerName = "Unknown";
+
+                  if (orderUserId != null) {
+                    final userSnapshot = await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(orderUserId)
+                        .get();
+                    if (userSnapshot.exists) {
+                      customerName =
+                          userSnapshot.data()!['fullName'] ?? "Unknown";
+                    }
+                  }
+
+                  return OrderInfo(
+                    orderId: doc.id,
+                    customerName: customerName,
+                    status: data['status'] ?? 'Pending',
+                    color: _getStatusColor(data['status'] ?? 'Pending'),
+                  );
+                }).toList()),
+                builder: (context, asyncSnapshot) {
+                  if (!asyncSnapshot.hasData) {
+                    return Center(child: CircularProgressIndicator());
+                  }
+
+                  final orders = asyncSnapshot.data!;
+                  return Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Orders",
-                            style: GoogleFonts.poppins(
-                                fontSize: screenWidth * 0.045,
-                                fontWeight: FontWeight.bold)),
-                        SizedBox(height: 10),
-                        ...orders.map((order) => InkWell(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => OrderDetailsPage(),
-                                  ),
-                                );
-                              },
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return SingleChildScrollView(
+                          child: ConstrainedBox(
+                            constraints:
+                                BoxConstraints(minWidth: constraints.maxWidth),
+                            child: Card(
+                              elevation: 3,
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                child: Row(
+                                padding: const EdgeInsets.all(16.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(
-                                      flex: 2,
-                                      child: Text(order.orderId,
-                                          style: GoogleFonts.poppins(
-                                              fontSize: screenWidth * 0.035)),
-                                    ),
-                                    Expanded(
-                                      flex: 3,
-                                      child: Text(order.customerName,
-                                          style: GoogleFonts.poppins(
-                                              fontSize: screenWidth * 0.035,
-                                              fontWeight: FontWeight.w500)),
-                                    ),
-                                    StatusBadge(status: order.status, color: order.color),
+                                    Text("Your Orders",
+                                        style: GoogleFonts.poppins(
+                                            fontSize: screenWidth * 0.045,
+                                            fontWeight: FontWeight.bold)),
+                                    SizedBox(height: 10),
+                                    ...orders.map((order) => InkWell(
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    OrderDetailsPage(
+                                                  orderId: order.orderId,
+                                                  sellerId: sellerId,
+                                                  orderData: filteredOrders
+                                                          .firstWhere((doc) =>
+                                                              doc.id ==
+                                                              order.orderId)
+                                                          .data()
+                                                      as Map<String, dynamic>,
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          child: Padding(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      vertical: 8.0),
+                                              child: Row(
+                                                children: [
+                                                  Expanded(
+                                                    flex: 2,
+                                                    child: Text(
+                                                      order.orderId,
+                                                      style:
+                                                          GoogleFonts.poppins(
+                                                              fontSize:
+                                                                  screenWidth *
+                                                                      0.035),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  SizedBox(width: 10),
+                                                  Expanded(
+                                                    flex: 3,
+                                                    child: Text(
+                                                      order.customerName,
+                                                      style:
+                                                          GoogleFonts.poppins(
+                                                        fontSize:
+                                                            screenWidth * 0.035,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                      ),
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  StatusBadge(
+                                                      status: order.status,
+                                                      color: order.color),
+                                                ],
+                                              )),
+                                        )),
                                   ],
                                 ),
                               ),
-                            )),
-                      ],
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
+                  );
+                },
+              );
+            },
+          );
+        },
       ),
     );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Pending':
+        return Colors.orange;
+      case 'Shipped':
+        return Colors.blue;
+      case 'Delivered':
+        return Colors.green;
+      default:
+        return Colors.grey;
+    }
   }
 }
 

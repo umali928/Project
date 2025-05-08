@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'OrderDetails.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
@@ -24,10 +25,10 @@ void main() async {
   } else {
     await Firebase.initializeApp();
   }
-   await Supabase.initialize(
+  await Supabase.initialize(
     url: 'https://haoiqctsijynxwfoaspm.supabase.co',
     anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhhb2lxY3RzaWp5bnh3Zm9hc3BtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxNzU3MDMsImV4cCI6MjA1OTc1MTcwM30.7kilmu9kxrABgg4ZMz9GIHm5Jv4LHLAIYR1_8q1eDEI', // Replace with your Supabase anon key
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhhb2lxY3RzaWp5bnh3Zm9hc3BtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxNzU3MDMsImV4cCI6MjA1OTc1MTcwM30.7kilmu9kxrABgg4ZMz9GIHm5Jv4LHLAIYR1_8q1eDEI',
   );
   runApp(const MyApp());
 }
@@ -64,9 +65,9 @@ class OrderHistoryScreen extends StatelessWidget {
       return Scaffold(
         body: Center(
           child: Text(
-            'Please log in to view order history',
-            style: GoogleFonts.poppins(fontSize: 18),
-          ),
+        'Please log in to view order history',
+        style: GoogleFonts.poppins(fontSize: 18),
+      ),
         ),
       );
     }
@@ -95,15 +96,15 @@ class OrderHistoryScreen extends StatelessWidget {
 
           if (snapshot.hasError) {
             return Center(
-              child: Text('Error: ${snapshot.error}',
-                  style: GoogleFonts.poppins()),
+              child:
+                  Text('Error: ${snapshot.error}', style: GoogleFonts.poppins()),
             );
           }
 
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return Center(
-              child: Text('No orders found',
-                  style: GoogleFonts.poppins(fontSize: 18)),
+              child:
+                  Text('No orders found', style: GoogleFonts.poppins(fontSize: 18)),
             );
           }
 
@@ -155,35 +156,13 @@ class OrderHistoryScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Order #${order.id.substring(0, 8)}",
-                              style: GoogleFonts.poppins(
-                                fontSize: screenWidth * 0.05,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF800000),
-                              ),
-                            ),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: screenWidth * 0.02,
-                                  vertical: screenWidth * 0.01),
-                              decoration: BoxDecoration(
-                                color: _getStatusColor(data['status'] ?? 'Pending'),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                data['status'] ?? 'Pending',
-                                style: GoogleFonts.poppins(
-                                  color: Colors.white,
-                                  fontSize: screenWidth * 0.04,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
+                        Text(
+                          "Order #${order.id.substring(0, 8)}",
+                          style: GoogleFonts.poppins(
+                            fontSize: screenWidth * 0.05,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF800000),
+                          ),
                         ),
                         SizedBox(height: screenWidth * 0.02),
                         Text(
@@ -196,9 +175,9 @@ class OrderHistoryScreen extends StatelessWidget {
                         Text(
                           'Tap to view details',
                           style: GoogleFonts.poppins(
-                            color: Colors.grey,
-                            fontSize: screenWidth * 0.035,
-                            fontStyle: FontStyle.italic),
+                              color: Colors.grey,
+                              fontSize: screenWidth * 0.035,
+                              fontStyle: FontStyle.italic),
                         ),
                       ],
                     ),
@@ -210,18 +189,5 @@ class OrderHistoryScreen extends StatelessWidget {
         },
       ),
     );
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case "Delivered":
-        return Colors.green;
-      case "Shipped":
-        return Colors.blue;
-      case "Pending":
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
   }
 }

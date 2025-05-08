@@ -71,7 +71,6 @@ class OrderDetailsPage extends StatefulWidget {
 }
 
 class _OrderDetailsPageState extends State<OrderDetailsPage> {
-  String _selectedStatus = 'Pending';
   final List<String> _statusOptions = ['Pending', 'Shipped', 'Delivered'];
   Map<String, dynamic>? order;
   bool isLoading = true;
@@ -103,7 +102,6 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     // Initialize with passed data if available
     if (widget.orderData != null) {
       order = widget.orderData;
-      _selectedStatus = widget.orderData?['status'] ?? 'Pending';
       isLoading = false;
     }
     fetchOrderDetails();
@@ -121,7 +119,6 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
       if (docSnapshot.exists) {
         setState(() {
           order = docSnapshot.data();
-          _selectedStatus = order?['status'] ?? 'Pending';
           isLoading = false;
         });
       } else {
@@ -169,49 +166,6 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
             color: const Color.fromARGB(255, 0, 0, 0),
           ),
         ),
-        actions: [
-          Padding(
-            padding: EdgeInsets.only(right: 16.0),
-            child: Center(
-              child: Chip(
-                label: Text(
-                  _selectedStatus,
-                  style: GoogleFonts.poppins(color: Colors.white),
-                ),
-                backgroundColor: _getStatusColor(_selectedStatus),
-              ),
-            ),
-          ),
-          IconButton(
-            icon: Icon(Icons.save),
-            tooltip: 'Save Changes',
-            onPressed: () async {
-              if (order == null) return;
-
-              try {
-                await FirebaseFirestore.instance
-                    .collection('orders')
-                    .doc(widget.orderId)
-                    .update({'status': _selectedStatus});
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Order status updated to $_selectedStatus'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Failed to update order status: $e'),
-                    behavior: SnackBarBehavior.floating,
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-          ),
-        ],
       ),
       body: isLoading || order == null
           ? Center(child: CircularProgressIndicator())
@@ -225,8 +179,6 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildOrderHeader(),
-                    SizedBox(height: 16),
-                    _buildStatusDropdown(),
                     SizedBox(height: 16),
                     _buildProductsSection(isSmallScreen),
                     SizedBox(height: 16),
@@ -307,7 +259,12 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     );
   }
 
-  Widget _buildStatusDropdown() {
+  Widget _buildProductsSection(bool isSmallScreen) {
+    final allProducts = (order?['items'] as List<dynamic>?) ?? [];
+    final products = allProducts
+        .where((product) => product['sellerId'] == widget.sellerId)
+        .toList();
+
     return Card(
       child: Padding(
         padding: EdgeInsets.all(16.0),
@@ -315,7 +272,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'UPDATE ORDER STATUS',
+              'YOUR PRODUCTS',
               style: GoogleFonts.poppins(
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
@@ -324,136 +281,156 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
               ),
             ),
             SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _selectedStatus,
-              items: _statusOptions.map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: _getStatusColor(value),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      Text(value),
-                    ],
-                  ),
-                );
-              }).toList(),
-              onChanged: (newValue) {
-                setState(() {
-                  _selectedStatus = newValue!;
-                });
-              },
-              decoration: InputDecoration(
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
+            if (products.isEmpty)
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 16.0),
+                child: Text(
+                  'No products found for your store in this order',
+                  style: GoogleFonts.poppins(color: Colors.grey),
                 ),
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                filled: true,
-                fillColor: Colors.grey[50],
               ),
-              dropdownColor: Colors.white,
-              style: TextStyle(fontSize: 16),
-            ),
+            ...products.map<Widget>((product) {
+              final productId = product['productId'];
+              final currentStatus = product['status'] ?? 'Pending';
+
+              return Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.network(
+                            product['imageUrl'] ?? '',
+                            width: isSmallScreen ? 50 : 70,
+                            height: isSmallScreen ? 50 : 70,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                                Icons.image,
+                                size: isSmallScreen ? 50 : 70),
+                          ),
+                        ),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                product['productName'] ?? 'Unknown product',
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: isSmallScreen ? 14 : 16,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                'Qty: ${product['quantity'] ?? 0}',
+                                style: GoogleFonts.poppins(
+                                  color: Colors.grey[600],
+                                  fontSize: isSmallScreen ? 12 : 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          '₱${(product['price'] ?? 0).toStringAsFixed(2)}',
+                          style: GoogleFonts.roboto(
+                            fontWeight: FontWeight.bold,
+                            fontSize: isSmallScreen ? 14 : 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 12),
+                    DropdownButtonFormField<String>(
+                      value: currentStatus,
+                      items: _statusOptions.map((String value) {
+                        return DropdownMenuItem<String>(
+                          value: value,
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 10,
+                                height: 10,
+                                decoration: BoxDecoration(
+                                  color: _getStatusColor(value),
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              SizedBox(width: 12),
+                              Text(value),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (newValue) async {
+                        if (newValue == null) return;
+
+                        try {
+                          // Find the index of this product in the items array
+                          final items = List.from(order?['items'] ?? []);
+                          final index = items.indexWhere((item) =>
+                              item['productId'] == productId &&
+                              item['sellerId'] == widget.sellerId);
+
+                          if (index != -1) {
+                            // Update the status for this specific product
+                            items[index]['status'] = newValue;
+
+                            await FirebaseFirestore.instance
+                                .collection('orders')
+                                .doc(widget.orderId)
+                                .update({'items': items});
+
+                            setState(() {
+                              order?['items'] = items;
+                            });
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content:
+                                    Text('Product status updated to $newValue'),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content:
+                                  Text('Failed to update product status: $e'),
+                              behavior: SnackBarBehavior.floating,
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        filled: true,
+                        fillColor: Colors.grey[50],
+                        labelText: 'Product Status',
+                      ),
+                      dropdownColor: Colors.white,
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    Divider(),
+                  ],
+                ),
+              );
+            }).toList(),
           ],
         ),
       ),
     );
   }
-
- Widget _buildProductsSection(bool isSmallScreen) {
-  // Filter products by sellerId
-  final allProducts = (order?['items'] as List<dynamic>?) ?? [];
-  final products = allProducts.where((product) => 
-      product['sellerId'] == widget.sellerId).toList();
-
-  return Card(
-    child: Padding(
-      padding: EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'YOUR PRODUCTS',  // Changed from 'PRODUCTS'
-            style: GoogleFonts.poppins(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
-              letterSpacing: 0.5,
-            ),
-          ),
-          SizedBox(height: 12),
-          if (products.isEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.0),
-              child: Text(
-                'No products found for your store in this order',
-                style: GoogleFonts.poppins(color: Colors.grey),
-              ),
-            ),
-          ...products.map<Widget>((product) {
-            return Padding(
-              padding: EdgeInsets.symmetric(vertical: 8.0),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      product['imageUrl'] ?? '',
-                      width: isSmallScreen ? 50 : 70,
-                      height: isSmallScreen ? 50 : 70,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          Icon(Icons.image, size: isSmallScreen ? 50 : 70),
-                    ),
-                  ),
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          product['productName'] ?? 'Unknown product',
-                          style: GoogleFonts.poppins(
-                            fontWeight: FontWeight.bold,
-                            fontSize: isSmallScreen ? 14 : 16,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Qty: ${product['quantity'] ?? 0}',
-                          style: GoogleFonts.poppins(
-                            color: Colors.grey[600],
-                            fontSize: isSmallScreen ? 12 : 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    '₱${(product['price'] ?? 0).toStringAsFixed(2)}',
-                    style: GoogleFonts.roboto(
-                      fontWeight: FontWeight.bold,
-                      fontSize: isSmallScreen ? 14 : 16,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-        ],
-      ),
-    ),
-  );
-}
 
   Widget _buildAddressSection() {
     final address = order?['shippingAddress'] ?? {};
@@ -572,87 +549,87 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
   }
 
   Widget _buildOrderSummary() {
-  // Calculate totals only for seller's products
-  final allProducts = (order?['items'] as List<dynamic>?) ?? [];
-  final sellerProducts = allProducts.where((product) => 
-      product['sellerId'] == widget.sellerId).toList();
-  
-  double subtotal = sellerProducts.fold(0, (sum, product) {
-    return sum + ((product['price'] ?? 0) * (product['quantity'] ?? 1));
-  });
-  
+    // Calculate totals only for seller's products
+    final allProducts = (order?['items'] as List<dynamic>?) ?? [];
+    final sellerProducts = allProducts
+        .where((product) => product['sellerId'] == widget.sellerId)
+        .toList();
 
-  double total = subtotal;
+    double subtotal = sellerProducts.fold(0, (sum, product) {
+      return sum + ((product['price'] ?? 0) * (product['quantity'] ?? 1));
+    });
 
-  return Card(
-    child: Padding(
-      padding: EdgeInsets.all(16.0),
-      child: Column(
-        children: [
-          SizedBox(height: 8),
-          Divider(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Your Total',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+    double total = subtotal;
+
+    return Card(
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            SizedBox(height: 8),
+            Divider(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Your Total',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
-              ),
-              Text(
-                '₱${total.toStringAsFixed(2)}',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Color(0xFF651D32),
+                Text(
+                  '₱${total.toStringAsFixed(2)}',
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Color(0xFF651D32),
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-String _formatOrderDate(dynamic date) {
-  if (date == null) return 'Unknown date';
+  String _formatOrderDate(dynamic date) {
+    if (date == null) return 'Unknown date';
 
-  try {
-    DateTime dateTime;
+    try {
+      DateTime dateTime;
 
-    if (date is Timestamp) {
-      dateTime = date.toDate();
-    } else if (date is String) {
-      // Try parsing if it's an ISO string
-      dateTime = DateTime.parse(date);
-    } else if (date is DateTime) {
-      dateTime = date;
-    } else {
+      if (date is Timestamp) {
+        dateTime = date.toDate();
+      } else if (date is String) {
+        // Try parsing if it's an ISO string
+        dateTime = DateTime.parse(date);
+      } else if (date is DateTime) {
+        dateTime = date;
+      } else {
+        return 'Unknown date';
+      }
+
+      final months = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December'
+      ];
+
+      return '${dateTime.day} ${months[dateTime.month - 1]} ${dateTime.year}';
+    } catch (e) {
+      print('Error formatting date: $e');
       return 'Unknown date';
     }
-
-    final months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December'
-    ];
-
-    return '${dateTime.day} ${months[dateTime.month - 1]} ${dateTime.year}';
-  } catch (e) {
-    print('Error formatting date: $e');
-    return 'Unknown date';
   }
-}
 }

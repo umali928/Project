@@ -139,11 +139,17 @@ class OrderManagementPage extends StatelessWidget {
                     }
                   }
 
+                  // Get order date (assuming it's stored as a Timestamp)
+                  final orderDate = data['orderDate'] as Timestamp?;
+                  final formattedDate = orderDate != null
+                      ? "${orderDate.toDate().year}-${orderDate.toDate().month.toString().padLeft(2, '0')}-${orderDate.toDate().day.toString().padLeft(2, '0')}"
+                      : "No date";
+
                   return OrderInfo(
                     orderId: doc.id,
                     customerName: customerName,
-                    status: data['status'] ?? 'Pending',
-                    color: _getStatusColor(data['status'] ?? 'Pending'),
+                    orderDate: formattedDate,
+                    timestamp: orderDate?.toDate() ?? DateTime(0),
                   );
                 }).toList()),
                 builder: (context, asyncSnapshot) {
@@ -151,7 +157,10 @@ class OrderManagementPage extends StatelessWidget {
                     return Center(child: CircularProgressIndicator());
                   }
 
+                  // Sort orders by date (newest first)
                   final orders = asyncSnapshot.data!;
+                  orders.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
                   return Padding(
                     padding: const EdgeInsets.all(16.0),
                     child: LayoutBuilder(
@@ -228,9 +237,8 @@ class OrderManagementPage extends StatelessWidget {
                                                           TextOverflow.ellipsis,
                                                     ),
                                                   ),
-                                                  StatusBadge(
-                                                      status: order.status,
-                                                      color: order.color),
+                                                  DateBadge(
+                                                      date: order.orderDate),
                                                 ],
                                               )),
                                         )),
@@ -251,40 +259,26 @@ class OrderManagementPage extends StatelessWidget {
       ),
     );
   }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'Pending':
-        return Colors.orange;
-      case 'Shipped':
-        return Colors.blue;
-      case 'Delivered':
-        return Colors.green;
-      default:
-        return Colors.grey;
-    }
-  }
 }
 
 class OrderInfo {
   final String orderId;
   final String customerName;
-  final String status;
-  final Color color;
+  final String orderDate;
+  final DateTime timestamp;
 
   OrderInfo({
     required this.orderId,
     required this.customerName,
-    required this.status,
-    required this.color,
+    required this.orderDate,
+    required this.timestamp,
   });
 }
 
-class StatusBadge extends StatelessWidget {
-  final String status;
-  final Color color;
+class DateBadge extends StatelessWidget {
+  final String date;
 
-  const StatusBadge({required this.status, required this.color});
+  const DateBadge({required this.date});
 
   @override
   Widget build(BuildContext context) {
@@ -292,15 +286,15 @@ class StatusBadge extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
+        color: Colors.blue.withOpacity(0.2),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        status,
+        date,
         style: GoogleFonts.poppins(
           fontSize: screenWidth * 0.03,
           fontWeight: FontWeight.bold,
-          color: color,
+          color: Colors.blue,
         ),
       ),
     );

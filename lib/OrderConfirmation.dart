@@ -331,7 +331,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                           'items': orderItems,
                           'totalAmount': widget.totalAmount,
                           'orderDate': timestamp,
-                          'status': 'Pending',
 
                           // Full address info for seller
                           'shippingAddress': {

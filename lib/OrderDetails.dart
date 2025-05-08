@@ -58,46 +58,14 @@ class OrderDetailsPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          "Order #${orderId.substring(0, 8)}",
-                          style: GoogleFonts.poppins(
-                            fontSize: 18 * textScale,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF800000),
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 12 * textScale,
-                            vertical: 6 * textScale),
-                        decoration: BoxDecoration(
-                          color:
-                              _getStatusColor(orderData['status'] ?? 'Pending')
-                                  .withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: _getStatusColor(
-                                orderData['status'] ?? 'Pending'),
-                            width: 1,
-                          ),
-                        ),
-                        child: Text(
-                          orderData['status'] ?? 'Pending',
-                          style: GoogleFonts.poppins(
-                            color: _getStatusColor(
-                                orderData['status'] ?? 'Pending'),
-                            fontSize: 14 * textScale,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
+                  Text(
+                    "Order #${orderId.substring(0, 8)}",
+                    style: GoogleFonts.poppins(
+                      fontSize: 18 * textScale,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF800000),
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: 12 * textScale),
                   Row(
@@ -340,65 +308,92 @@ class OrderDetailsPage extends StatelessWidget {
       ),
       child: Padding(
         padding: EdgeInsets.all(12),
-        child: Row(
+        child: Column(
           children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                color: theme.colorScheme.surfaceVariant,
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: item['imageUrl'] != null
-                    ? Image.network(
-                        item['imageUrl'],
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Icon(
-                            Icons.broken_image,
-                            size: 30,
-                            color: theme.colorScheme.error),
-                      )
-                    : Icon(Icons.image,
-                        size: 30, color: theme.colorScheme.secondary),
-              ),
+            Row(
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    color: theme.colorScheme.surfaceVariant,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: item['imageUrl'] != null
+                        ? Image.network(
+                            item['imageUrl'],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                                Icons.broken_image,
+                                size: 30,
+                                color: theme.colorScheme.error),
+                          )
+                        : Icon(Icons.image,
+                            size: 30, color: theme.colorScheme.secondary),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item['productName'] ?? 'Unknown Product',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Quantity: ${item['quantity']}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          color: theme.colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        '\u20B1${item['price']}',
+                        style: GoogleFonts.poppins(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF800000),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item['productName'] ?? 'Unknown Product',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+            SizedBox(height: 8),
+            // Product status indicator
+            if (item['status'] != null)
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _getStatusColor(item['status'] ?? 'Pending')
+                      .withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: _getStatusColor(item['status'] ?? 'Pending'),
+                    width: 1,
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    'Quantity: ${item['quantity']}',
-                    style: GoogleFonts.poppins(
-                      fontSize: 14,
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
-                    ),
+                ),
+                child: Text(
+                  'Status: ${item['status'] ?? 'Pending'}',
+                  style: GoogleFonts.poppins(
+                    color: _getStatusColor(item['status'] ?? 'Pending'),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    '\u20B1${item['price']}',
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF800000),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
           ],
         ),
       ),

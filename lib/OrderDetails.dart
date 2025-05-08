@@ -34,7 +34,7 @@ class OrderDetailsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,  
       appBar: AppBar(
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),

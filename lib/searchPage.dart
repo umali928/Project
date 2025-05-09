@@ -502,7 +502,8 @@ class _ProductVerticalListState extends State<ProductVerticalList> {
                                         color: Colors.amber, size: 14),
                                     const SizedBox(width: 4),
                                     Text(
-                                      '0.0',
+                                      (data['rating'] ?? 0.0)
+                                          .toStringAsFixed(1),
                                       style: GoogleFonts.poppins(
                                         fontWeight: FontWeight.bold,
                                         fontSize: 12,
@@ -510,7 +511,7 @@ class _ProductVerticalListState extends State<ProductVerticalList> {
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
-                                      '(0)',
+                                      '(${data['reviewsCount'] ?? 0})',
                                       style: GoogleFonts.poppins(
                                         color: Colors.grey,
                                         fontSize: 12,

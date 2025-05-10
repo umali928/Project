@@ -30,13 +30,16 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   late Future<List<Map<String, dynamic>>> cartItemsFuture;
   late Future<Map<String, dynamic>> addressFuture;
 
-  final double deliveryFee = 20;
-
   @override
   void initState() {
     super.initState();
     cartItemsFuture = fetchCartItems();
     addressFuture = fetchAddress();
+  }
+
+  double calculateSubtotal(List<Map<String, dynamic>> cartItems) {
+    return cartItems.fold(
+        0.0, (sum, item) => sum + (item['price'] * item['quantity']));
   }
 
   Future<List<Map<String, dynamic>>> fetchCartItems() async {
@@ -99,6 +102,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
 
           final cartItems = snapshot.data![0] as List<Map<String, dynamic>>;
           final address = snapshot.data![1] as Map<String, dynamic>;
+
+          final subtotal = calculateSubtotal(cartItems);
+          final deliveryFee = subtotal * 0.05;
 
           return Container(
             width: double.infinity,

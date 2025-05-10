@@ -32,7 +32,7 @@ class OrderDetailsPage extends StatelessWidget {
     final payment = orderData['payment'] as Map<String, dynamic>?;
 
     return Scaffold(
-      backgroundColor: Colors.white,  
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -202,7 +202,8 @@ class OrderDetailsPage extends StatelessWidget {
                   _buildSummaryRow(
                     context,
                     label: 'Shipping',
-                    value: '\u20B120.00',
+                    value:
+                        '\u20B1${(total * 0.05).toStringAsFixed(2)}', // Changed to 5% of total
                   ),
                   Divider(
                     color: theme.dividerColor,
@@ -212,7 +213,8 @@ class OrderDetailsPage extends StatelessWidget {
                   _buildSummaryRow(
                     context,
                     label: 'Total',
-                    value: '\u20B1${(total + 20).toStringAsFixed(2)}',
+                    value:
+                        '\u20B1${(total * 1.05).toStringAsFixed(2)}', // Changed to total + 5%
                     isTotal: true,
                   ),
                 ],

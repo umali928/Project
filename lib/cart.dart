@@ -321,7 +321,8 @@ class OrderSummary extends StatelessWidget {
           subtotal += item['price'] * quantity;
         }
 
-        double deliveryCharges = 20;
+        double deliveryCharges = 0.05 * subtotal;
+
         double total = subtotal + deliveryCharges;
 
         return Container(

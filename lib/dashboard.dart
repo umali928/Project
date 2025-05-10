@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -152,12 +153,52 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(LucideIcons.bell, color: Colors.black),
             onPressed: () {},
           ),
-          IconButton(
-            icon: Icon(LucideIcons.shoppingCart, color: Colors.black),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => CartScreen()),
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseAuth.instance.currentUser == null
+                ? null
+                : FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(FirebaseAuth.instance.currentUser!.uid)
+                    .collection('cart')
+                    .snapshots(),
+            builder: (context, snapshot) {
+              int cartCount = 0;
+              if (snapshot.hasData) {
+                cartCount = snapshot.data!.docs.length;
+              }
+
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.shopping_cart, size: 28),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => CartScreen()),
+                      );
+                    },
+                  ),
+                  if (cartCount > 0)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          '$cartCount',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               );
             },
           ),

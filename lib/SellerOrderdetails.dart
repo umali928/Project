@@ -292,138 +292,226 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
             ...products.map<Widget>((product) {
               final productId = product['productId'];
               final currentStatus = product['status'] ?? 'Pending';
+              final isDelivered = currentStatus == 'Delivered';
 
-              return Padding(
-                padding: EdgeInsets.symmetric(vertical: 8.0),
-                child: Column(
-                  children: [
-                    Row(
+              return StatefulBuilder(
+                builder: (BuildContext context, StateSetter setState) {
+                  // Local state for the dropdown value
+                  String dropdownValue = currentStatus;
+
+                  return Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                    child: Column(
                       children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            product['imageUrl'] ?? '',
-                            width: isSmallScreen ? 50 : 70,
-                            height: isSmallScreen ? 50 : 70,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) => Icon(
-                                Icons.image,
-                                size: isSmallScreen ? 50 : 70),
-                          ),
-                        ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                product['productName'] ?? 'Unknown product',
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: isSmallScreen ? 14 : 16,
-                                ),
+                        // Product display row (unchanged)
+                        Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                product['imageUrl'] ?? '',
+                                width: isSmallScreen ? 50 : 70,
+                                height: isSmallScreen ? 50 : 70,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Icon(Icons.image,
+                                        size: isSmallScreen ? 50 : 70),
                               ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Qty: ${product['quantity'] ?? 0}',
-                                style: GoogleFonts.poppins(
-                                  color: Colors.grey[600],
-                                  fontSize: isSmallScreen ? 12 : 14,
-                                ),
+                            ),
+                            SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    product['productName'] ?? 'Unknown product',
+                                    style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: isSmallScreen ? 14 : 16,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Qty: ${product['quantity'] ?? 0}',
+                                    style: GoogleFonts.poppins(
+                                      color: Colors.grey[600],
+                                      fontSize: isSmallScreen ? 12 : 14,
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
+                            Text(
+                              '₱${(product['price'] ?? 0).toStringAsFixed(2)}',
+                              style: GoogleFonts.roboto(
+                                fontWeight: FontWeight.bold,
+                                fontSize: isSmallScreen ? 14 : 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 12),
+                        // Status dropdown
+                        AbsorbPointer(
+                          absorbing: isDelivered,
+                          child: DropdownButtonFormField<String>(
+                            value: dropdownValue,
+                            items: _statusOptions.map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: BoxDecoration(
+                                        color: _getStatusColor(value),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    Text(value),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: isDelivered
+                                ? null
+                                : (newValue) async {
+                                    if (newValue == null ||
+                                        newValue == dropdownValue) {
+                                      return;
+                                    }
+
+                                    // Store the previous value
+                                    final previousValue = dropdownValue;
+
+                                    // Immediately update the UI to show the new selection
+                                    setState(() {
+                                      dropdownValue = newValue;
+                                    });
+
+                                    // Show confirmation dialog
+                                    final confirmed = await showDialog<bool>(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: Text('Confirm Status Change'),
+                                        content: Text(
+                                            'Are you sure you want to change the status from $previousValue to $newValue?'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.of(context)
+                                                    .pop(false),
+                                            child: Text('Cancel'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.of(context).pop(true),
+                                            child: Text('Confirm'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+
+                                    if (confirmed != true) {
+                                      // Revert to previous value if cancelled
+                                      setState(() {
+                                        dropdownValue = previousValue;
+                                      });
+                                      return;
+                                    }
+
+                                    try {
+                                      final items =
+                                          List.from(order?['items'] ?? []);
+                                      final index = items.indexWhere((item) =>
+                                          item['productId'] == productId &&
+                                          item['sellerId'] == widget.sellerId);
+
+                                      if (index != -1) {
+                                        // Final validation - prevent changing delivered status
+                                        if (items[index]['status'] ==
+                                            'Delivered') {
+                                          setState(() {
+                                            dropdownValue = 'Delivered';
+                                          });
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                  'Delivered products cannot be modified'),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                          return;
+                                        }
+
+                                        items[index]['status'] = newValue;
+                                        await FirebaseFirestore.instance
+                                            .collection('orders')
+                                            .doc(widget.orderId)
+                                            .update({'items': items});
+
+                                        if (mounted) {
+                                          setState(() {
+                                            order?['items'] = items;
+                                          });
+                                        }
+
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                                'Status updated to $newValue'),
+                                          ),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      // Revert on error
+                                      setState(() {
+                                        dropdownValue = previousValue;
+                                      });
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                              'Failed to update status: $e'),
+                                          backgroundColor: Colors.red,
+                                        ),
+                                      );
+                                    }
+                                  },
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide:
+                                    BorderSide(color: Colors.grey[300]!),
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                              filled: true,
+                              fillColor: isDelivered
+                                  ? Colors.grey[200]
+                                  : Colors.grey[50],
+                              labelText: 'Product Status',
+                              labelStyle: isDelivered
+                                  ? TextStyle(color: Colors.grey[600])
+                                  : null,
+                            ),
+                            dropdownColor: Colors.white,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color:
+                                  isDelivered ? Colors.grey[600] : Colors.black,
+                            ),
                           ),
                         ),
-                        Text(
-                          '₱${(product['price'] ?? 0).toStringAsFixed(2)}',
-                          style: GoogleFonts.roboto(
-                            fontWeight: FontWeight.bold,
-                            fontSize: isSmallScreen ? 14 : 16,
-                          ),
-                        ),
+                        Divider(),
                       ],
                     ),
-                    SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      value: currentStatus,
-                      items: _statusOptions.map((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 10,
-                                height: 10,
-                                decoration: BoxDecoration(
-                                  color: _getStatusColor(value),
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              SizedBox(width: 12),
-                              Text(value),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (newValue) async {
-                        if (newValue == null) return;
-
-                        try {
-                          // Find the index of this product in the items array
-                          final items = List.from(order?['items'] ?? []);
-                          final index = items.indexWhere((item) =>
-                              item['productId'] == productId &&
-                              item['sellerId'] == widget.sellerId);
-
-                          if (index != -1) {
-                            // Update the status for this specific product
-                            items[index]['status'] = newValue;
-
-                            await FirebaseFirestore.instance
-                                .collection('orders')
-                                .doc(widget.orderId)
-                                .update({'items': items});
-
-                            setState(() {
-                              order?['items'] = items;
-                            });
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content:
-                                    Text('Product status updated to $newValue'),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          }
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content:
-                                  Text('Failed to update product status: $e'),
-                              behavior: SnackBarBehavior.floating,
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
-                      },
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        filled: true,
-                        fillColor: Colors.grey[50],
-                        labelText: 'Product Status',
-                      ),
-                      dropdownColor: Colors.white,
-                      style: TextStyle(fontSize: 14),
-                    ),
-                    Divider(),
-                  ],
-                ),
+                  );
+                },
               );
             }).toList(),
           ],

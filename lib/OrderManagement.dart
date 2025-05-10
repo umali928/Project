@@ -111,8 +111,10 @@ class OrderManagementPage extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text("No orders with your products found."),
-                      Text("Seller ID: $sellerId"),
+                      Text("No orders with your products found.", 
+                          style: GoogleFonts.poppins(
+                              fontSize: screenWidth * 0.04,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                 );

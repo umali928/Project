@@ -239,7 +239,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   Future<void> submitReview() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null || !canReview || userRating == 0.0) return;
-
+    // Validation: Check if rating is at least 1 star
+    if (userRating == 0.0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please select a rating (1-5 stars)")),
+      );
+      return;
+    }
     try {
       // Get user details from Firestore
       final userDoc = await FirebaseFirestore.instance

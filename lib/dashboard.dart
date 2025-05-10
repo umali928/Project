@@ -1,13 +1,38 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'wishlist.dart'; // Import WishlistScreen
+import 'wishlist.dart';
 import 'profile.dart';
-import 'cart.dart'; // Import CartScreen
+import 'cart.dart';
 import 'searchPage.dart';
 import 'product.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+          apiKey: "AIzaSyBbSQOdsCh7ImLhewcIhHUTcj9-1xbShQk",
+          authDomain: "lspumart.firebaseapp.com",
+          databaseURL:
+              "https://lspumart-default-rtdb.asia-southeast1.firebasedatabase.app",
+          projectId: "lspumart",
+          storageBucket: "lspumart.firebasestorage.app",
+          messagingSenderId: "533992551897",
+          appId: "1:533992551897:web:d04a482ad131a0700815c8"),
+    );
+  } else {
+    await Firebase.initializeApp();
+  }
+  await Supabase.initialize(
+    url: 'https://haoiqctsijynxwfoaspm.supabase.co',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhhb2lxY3RzaWp5bnh3Zm9hc3BtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxNzU3MDMsImV4cCI6MjA1OTc1MTcwM30.7kilmu9kxrABgg4ZMz9GIHm5Jv4LHLAIYR1_8q1eDEI',
+  );
   runApp(EcommerceApp());
 }
 
@@ -28,16 +53,23 @@ class Dashboard extends StatefulWidget {
 
 class _DashboardState extends State<Dashboard> {
   int _selectedIndex = 0;
-  late final List<Widget> _pages; // ✅ Persistent tabs
+  late final List<Widget> _pages;
+
   @override
   void initState() {
     super.initState();
+
     _pages = [
       HomeScreen(),
       WishlistScreen(),
       SearchPage(),
       SettingsPage(),
     ];
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   void _onItemTapped(int index) {
@@ -73,7 +105,29 @@ class _DashboardState extends State<Dashboard> {
   }
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
+  @override
+  _HomeScreenState createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _selectedCategory = 'All'; // Default selected category
+  String _searchQuery = ''; // Add this to track the search query
+  final List<String> _categories = [
+    'All',
+    'Clothes',
+    'School',
+    'Sports',
+    'Foods'
+  ];
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -122,6 +176,7 @@ class HomeScreen extends StatelessWidget {
                 children: [
                   SizedBox(height: 10),
                   TextField(
+                    controller: _searchController,
                     decoration: InputDecoration(
                       hintText: "Search here ...",
                       prefixIcon: Icon(Icons.search),
@@ -132,6 +187,11 @@ class HomeScreen extends StatelessWidget {
                         borderSide: BorderSide.none,
                       ),
                     ),
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value.toLowerCase();
+                      });
+                    },
                   ),
                   SizedBox(height: 20),
 
@@ -167,42 +227,57 @@ class HomeScreen extends StatelessWidget {
                       physics: NeverScrollableScrollPhysics(),
                       crossAxisCount: 5,
                       childAspectRatio: 1,
-                      children: [
-                        CategoryItem(icon: Icons.checkroom, label: "Clothes"),
-                        CategoryItem(
-                            icon: Icons.school, label: "School"),
-                        CategoryItem(icon: Icons.sports, label: "Sports"),
-                        CategoryItem(icon: Icons.fastfood, label: "Foods"),
-                        CategoryItem(icon: Icons.grid_view, label: "All"),
-                      ],
+                      children: _categories.map((category) {
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _selectedCategory = category;
+                            });
+                          },
+                          child: CategoryItem(
+                            icon: _getIconForCategory(category),
+                            label: category,
+                            isSelected: _selectedCategory == category,
+                          ),
+                        );
+                      }).toList(),
                     )
                   else
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
-                        children: [
-                          CategoryItem(icon: Icons.checkroom, label: "Clothes"),
-                          CategoryItem(icon: Icons.school, label: "School"),
-                          CategoryItem(icon: Icons.sports, label: "Sports"),
-                          CategoryItem(icon: Icons.fastfood, label: "Foods"),
-                          CategoryItem(icon: Icons.grid_view, label: "All"),
-                        ]
-                            .map((item) => Padding(
-                                  padding: EdgeInsets.only(right: 32),
-                                  child: item,
-                                ))
-                            .toList(),
+                        children: _categories.map((category) {
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _selectedCategory = category;
+                              });
+                            },
+                            child: Padding(
+                              padding: EdgeInsets.only(right: 32),
+                              child: CategoryItem(
+                                icon: _getIconForCategory(category),
+                                label: category,
+                                isSelected: _selectedCategory == category,
+                              ),
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ),
 
                   SizedBox(height: 20),
-                  Text("Top Products",
+                  Text("Products",
                       style:
                           TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   SizedBox(height: 10),
 
                   /// Top Products
-                  ProductHorizontalList(),
+                  ProductHorizontalList(
+                    category:
+                        _selectedCategory == 'All' ? null : _selectedCategory,
+                    searchQuery: _searchQuery,
+                  ),
 
                   SizedBox(height: 30),
                   Text("You May Also Like",
@@ -211,7 +286,9 @@ class HomeScreen extends StatelessWidget {
                   SizedBox(height: 10),
 
                   /// You May Also Like
-                  ProductHorizontalList(),
+                  ProductHorizontalList(
+                    customStream: getRandomProducts(),
+                  ),
                 ],
               ),
             ),
@@ -220,106 +297,206 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
+
+  IconData _getIconForCategory(String category) {
+    switch (category) {
+      case 'Clothes':
+        return Icons.checkroom;
+      case 'School':
+        return Icons.school;
+      case 'Sports':
+        return Icons.sports;
+      case 'Foods':
+        return Icons.fastfood;
+      case 'All':
+      default:
+        return Icons.grid_view;
+    }
+  }
+}
+
+// Add this method to fetch random products
+Stream<List<QueryDocumentSnapshot>> getRandomProducts() {
+  return FirebaseFirestore.instance
+      .collection('products')
+      .snapshots()
+      .map((querySnapshot) {
+    final allProducts = querySnapshot.docs;
+    allProducts.shuffle(); // Shuffle to get random order
+    return allProducts.take(10).toList(); // Take first 10 after shuffle
+  });
 }
 
 class ProductHorizontalList extends StatelessWidget {
+  final Stream<List<QueryDocumentSnapshot>>? customStream;
+  final String? category;
+  final String? searchQuery;
+  const ProductHorizontalList({
+    Key? key,
+    this.customStream,
+    this.category,
+    this.searchQuery,
+  }) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     double cardWidth = MediaQuery.of(context).size.width /
         (MediaQuery.of(context).size.width > 600 ? 4 : 2.5);
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: List.generate(10, (index) {
-          return Padding(
-            padding: const EdgeInsets.only(right: 12.0),
-            child: GestureDetector(
-              onTap: () {
-                // Navigator.push(
-                //   context,
-                //   // MaterialPageRoute(builder: (context) =>ProductDetailPage()), // Replace with actual product page widget
-                // );
-              },
-              child: Container(
-                width: cardWidth,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.15),
-                      blurRadius: 3,
-                      offset: Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Stack(
-                      children: [
-                        Container(
-                          height: 100,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius:
-                                BorderRadius.vertical(top: Radius.circular(12)),
-                          ),
-                          child: Center(
-                            child: Text(
-                              'Image',
-                              style: GoogleFonts.poppins(color: Colors.grey),
-                            ),
-                          ),
+    Stream<List<QueryDocumentSnapshot>> stream;
+
+    if (customStream != null) {
+      stream = customStream!;
+    } else if (category != null) {
+      stream = FirebaseFirestore.instance
+          .collection('products')
+          .where('category', isEqualTo: category)
+          .limit(10)
+          .snapshots()
+          .map((querySnapshot) => querySnapshot.docs);
+    } else {
+      stream = FirebaseFirestore.instance
+          .collection('products')
+          .limit(10)
+          .snapshots()
+          .map((querySnapshot) => querySnapshot.docs);
+    }
+
+    return StreamBuilder<List<QueryDocumentSnapshot>>(
+      stream: stream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Center(child: Text('No products found.'));
+        }
+
+        final products = snapshot.data!.where((product) {
+          final data = product.data() as Map<String, dynamic>;
+
+          // First check stock
+          if (data['stock'] <= 0) return false;
+
+          // Then check search query if it exists
+          if (searchQuery != null && searchQuery!.isNotEmpty) {
+            final productName =
+                data['productName']?.toString().toLowerCase() ?? '';
+            return productName.contains(searchQuery!);
+          }
+          return true;
+        }).toList();
+        if (products.isEmpty) {
+          return Center(child: Text('No products match your search.'));
+        }
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: products.map((product) {
+              final data = product.data() as Map<String, dynamic>;
+              data['productId'] = product.id;
+
+              return Padding(
+                padding: const EdgeInsets.only(right: 12.0),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProductDetailPage(
+                          productData: data,
+                          productId: product.id,
                         ),
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: Icon(Icons.favorite_border, color: Colors.red),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: cardWidth,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.15),
+                          blurRadius: 3,
+                          offset: Offset(0, 1),
                         ),
                       ],
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        'Product Name',
-                        style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Text(
-                        '\₱68',
-                        style: GoogleFonts.roboto(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Stack(
+                          children: [
+                            Container(
+                              height: 100,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(12)),
+                                image: data['imageUrl'] != null
+                                    ? DecorationImage(
+                                        image: NetworkImage(data['imageUrl']),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
+                              ),
+                              child: data['imageUrl'] == null
+                                  ? Center(
+                                      child: Text(
+                                        'No Image',
+                                        style: GoogleFonts.poppins(
+                                            color: Colors.grey),
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                          ],
                         ),
-                      ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Text(
+                            data['productName'] ?? 'No name',
+                            style: GoogleFonts.poppins(
+                                fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Text(
+                            '₱${data['price'].toString()}',
+                            style: GoogleFonts.roboto(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+                          child: Row(
+                            children: [
+                              Icon(Icons.star, color: Colors.amber, size: 14),
+                              SizedBox(width: 4),
+                              Text((data['rating'] ?? 0.0).toStringAsFixed(1),
+                                  style: GoogleFonts.poppins(
+                                      fontWeight: FontWeight.bold)),
+                              SizedBox(width: 4),
+                              Text('(${data['reviewsCount'] ?? 0})',
+                                  style:
+                                      GoogleFonts.poppins(color: Colors.grey)),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-                      child: Row(
-                        children: [
-                          Icon(Icons.star, color: Colors.amber, size: 14),
-                          SizedBox(width: 4),
-                          Text('4.8',
-                              style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.bold)),
-                          SizedBox(width: 4),
-                          Text('(692)',
-                              style: GoogleFonts.poppins(color: Colors.grey)),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          );
-        }),
-      ),
+              );
+            }).toList(),
+          ),
+        );
+      },
     );
   }
 }
@@ -327,8 +504,10 @@ class ProductHorizontalList extends StatelessWidget {
 class CategoryItem extends StatelessWidget {
   final IconData icon;
   final String label;
+  final bool isSelected;
 
-  CategoryItem({required this.icon, required this.label});
+  CategoryItem(
+      {required this.icon, required this.label, this.isSelected = false});
 
   @override
   Widget build(BuildContext context) {
@@ -336,8 +515,8 @@ class CategoryItem extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 25,
-          backgroundColor: Colors.grey[200],
-          child: Icon(icon, color: Colors.black),
+          backgroundColor: isSelected ? Color(0xFF651D32) : Colors.grey[200],
+          child: Icon(icon, color: isSelected ? Colors.white : Colors.black),
         ),
         SizedBox(height: 5),
         Text(label, style: TextStyle(fontSize: 12)),

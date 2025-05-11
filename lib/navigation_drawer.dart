@@ -4,6 +4,7 @@ import 'Sellerlogin.dart';
 import 'sellerdashboard.dart';
 import 'ManageProduct.dart';
 import 'OrderManagement.dart';
+import 'SellerProfile.dart';
 class NavigationDrawer extends StatefulWidget {
   @override
   State<NavigationDrawer> createState() => _NavigationDrawerState();
@@ -67,7 +68,7 @@ class _NavigationDrawerState extends State<NavigationDrawer> {
                 DrawerItem(icon: Icons.shopping_cart, text: "Manage Orders", destination: OrderManagementPage()),
                 DrawerItem(icon: Icons.bar_chart, text: "View Sales"),
                 // DrawerItem(icon: Icons.message, text: "Message Users"),
-                DrawerItem(icon: Icons.person, text: "Profile"),
+                DrawerItem(icon: Icons.person, text: "Profile", destination: SellerProfile(),),
                 Divider(),
                 DrawerItem(icon: Icons.logout, text: "Log Out", isLogout: true),
               ],

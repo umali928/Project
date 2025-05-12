@@ -11,6 +11,7 @@ import 'product.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:intl/intl.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -150,8 +151,50 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           IconButton(
-            icon: Icon(LucideIcons.bell, color: Colors.black),
-            onPressed: () {},
+            icon: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseAuth.instance.currentUser == null
+                  ? null
+                  : FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(FirebaseAuth.instance.currentUser!.uid)
+                      .collection('notifications')
+                      .where('read', isEqualTo: false)
+                      .snapshots(),
+              builder: (context, snapshot) {
+                int unreadCount =
+                    snapshot.hasData ? snapshot.data!.docs.length : 0;
+                return Stack(
+                  children: [
+                    Icon(LucideIcons.bell, color: Colors.black),
+                    if (unreadCount > 0)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            '$unreadCount',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+            onPressed: () {
+              if (FirebaseAuth.instance.currentUser != null) {
+                _showNotificationsDialog(context);
+              }
+            },
           ),
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseAuth.instance.currentUser == null
@@ -586,4 +629,58 @@ class AdBanner extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _showNotificationsDialog(BuildContext context) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
+
+  final notifications = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .collection('notifications')
+      .orderBy('timestamp', descending: true)
+      .get();
+
+  // Mark all as read when opened
+  final batch = FirebaseFirestore.instance.batch();
+  for (final doc in notifications.docs) {
+    if (!doc['read']) {
+      batch.update(doc.reference, {'read': true});
+    }
+  }
+  await batch.commit();
+
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Notifications'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: ListView(
+          shrinkWrap: true,
+          children: notifications.docs.map((doc) {
+            final data = doc.data();
+            return ListTile(
+              title: Text(data['title'] ?? 'Notification'),
+              subtitle: Text(data['message'] ?? ''),
+              trailing: Text(
+                data['timestamp'] != null
+                    ? DateFormat('MMM dd, hh:mm a')
+                        .format((data['timestamp'] as Timestamp).toDate())
+                    : '',
+                style: TextStyle(fontSize: 12),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text('Close'),
+        ),
+      ],
+    ),
+  );
 }

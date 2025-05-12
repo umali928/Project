@@ -452,6 +452,15 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                                             .collection('orders')
                                             .doc(widget.orderId)
                                             .update({'items': items});
+                                        // Send notification to user
+                                        await _sendStatusChangeNotification(
+                                          orderId: widget.orderId,
+                                          productName: product['productName'] ??
+                                              'product',
+                                          oldStatus: previousValue,
+                                          newStatus: newValue,
+                                          userId: order?['userId'],
+                                        );
 
                                         if (mounted) {
                                           setState(() {
@@ -719,5 +728,37 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
       print('Error formatting date: $e');
       return 'Unknown date';
     }
+  }
+}
+
+Future<void> _sendStatusChangeNotification({
+  required String orderId,
+  required String productName,
+  required String oldStatus,
+  required String newStatus,
+  required String? userId,
+}) async {
+  if (userId == null) return;
+
+  try {
+    // Create a notification document in the user's notifications collection
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('notifications')
+        .add({
+      'type': 'order_status',
+      'orderId': orderId,
+      'productName': productName,
+      'oldStatus': oldStatus,
+      'newStatus': newStatus,
+      'timestamp': FieldValue.serverTimestamp(),
+      'read': false,
+      'title': 'Order Status Updated',
+      'message':
+          'Your order #$orderId for $productName has changed from $oldStatus to $newStatus',
+    });
+  } catch (e) {
+    print('Error sending notification: $e');
   }
 }

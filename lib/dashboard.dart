@@ -635,52 +635,211 @@ Future<void> _showNotificationsDialog(BuildContext context) async {
   final user = FirebaseAuth.instance.currentUser;
   if (user == null) return;
 
-  final notifications = await FirebaseFirestore.instance
+  // First mark all as read
+  final notificationsQuery = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .collection('notifications')
+      .where('read', isEqualTo: false)
+      .get();
+
+  final batch = FirebaseFirestore.instance.batch();
+  for (final doc in notificationsQuery.docs) {
+    batch.update(doc.reference, {'read': true});
+  }
+  await batch.commit();
+
+  // Then get all notifications
+  final allNotificationsSnapshot = await FirebaseFirestore.instance
       .collection('users')
       .doc(user.uid)
       .collection('notifications')
       .orderBy('timestamp', descending: true)
       .get();
 
-  // Mark all as read when opened
-  final batch = FirebaseFirestore.instance.batch();
-  for (final doc in notifications.docs) {
-    if (!doc['read']) {
-      batch.update(doc.reference, {'read': true});
-    }
-  }
-  await batch.commit();
+  // Create a mutable list
+  final List<QueryDocumentSnapshot> notificationDocs =
+      allNotificationsSnapshot.docs.toList();
 
   showDialog(
     context: context,
-    builder: (context) => AlertDialog(
-      title: Text('Notifications'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: ListView(
-          shrinkWrap: true,
-          children: notifications.docs.map((doc) {
-            final data = doc.data();
-            return ListTile(
-              title: Text(data['title'] ?? 'Notification'),
-              subtitle: Text(data['message'] ?? ''),
-              trailing: Text(
-                data['timestamp'] != null
-                    ? DateFormat('MMM dd, hh:mm a')
-                        .format((data['timestamp'] as Timestamp).toDate())
-                    : '',
-                style: TextStyle(fontSize: 12),
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.notifications, color: Color(0xFF651D32)),
+                SizedBox(width: 10),
+                Text('Notifications'),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: notificationDocs.isEmpty
+                  ? Center(child: Text('No notifications'))
+                  : ListView(
+                      shrinkWrap: true,
+                      children: notificationDocs.map((doc) {
+                        final data = doc.data() as Map<String, dynamic>;
+                        return Dismissible(
+                          key: Key(doc.id),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: EdgeInsets.only(right: 20),
+                            color: Colors.red,
+                            child: Icon(Icons.delete, color: Colors.white),
+                          ),
+                          confirmDismiss: (direction) async {
+                            return await showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text('Delete Notification'),
+                                content: Text(
+                                    'Are you sure you want to delete this notification?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(false),
+                                    child: Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.of(context).pop(true),
+                                    child: Text('Delete'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          onDismissed: (direction) async {
+                            await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(user.uid)
+                                .collection('notifications')
+                                .doc(doc.id)
+                                .delete();
+                            setState(() {
+                              notificationDocs
+                                  .removeWhere((d) => d.id == doc.id);
+                            });
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            decoration: BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(
+                                  color: Colors.grey.shade200,
+                                  width: 1,
+                                ),
+                              ),
+                            ),
+                            child: ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(
+                                data['title'] ?? 'Notification',
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(height: 4),
+                                  Text(
+                                    data['message'] ?? '',
+                                    style: GoogleFonts.poppins(),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.access_time,
+                                          size: 14, color: Colors.grey),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        data['timestamp'] != null
+                                            ? DateFormat('MMM dd, hh:mm a')
+                                                .format((data['timestamp']
+                                                        as Timestamp)
+                                                    .toDate())
+                                            : '',
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 12,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  if (data['orderId'] != null) ...[
+                                    SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.receipt,
+                                            size: 14, color: Colors.grey),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          'Order #${data['orderId']}',
+                                          style: GoogleFonts.poppins(
+                                            fontSize: 12,
+                                            color: Colors.blue,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Close'),
               ),
-            );
-          }).toList(),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text('Close'),
-        ),
-      ],
-    ),
+              if (notificationDocs.isNotEmpty)
+                TextButton(
+                  onPressed: () async {
+                    final confirm = await showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text('Clear All Notifications'),
+                        content: Text(
+                            'Are you sure you want to delete all notifications?'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: Text('Delete All'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true) {
+                      final batch = FirebaseFirestore.instance.batch();
+                      for (final doc in notificationDocs) {
+                        batch.delete(doc.reference);
+                      }
+                      await batch.commit();
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                      }
+                    }
+                  },
+                  child: Text('Clear All'),
+                ),
+            ],
+          );
+        },
+      );
+    },
   );
 }

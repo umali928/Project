@@ -437,11 +437,11 @@ class SellerViewSales extends StatelessWidget {
       for (var item in items) {
         if (item['sellerId'] == sellerId &&
             item['productName'] == productName) {
-          return item['imageUrl'] ?? 'https://via.placeholder.com/60';
+          return item['imageUrl'] ?? 'assets/defaultprofile.jpg';
         }
       }
     }
-    return 'https://via.placeholder.com/60';
+    return 'assets/defaultprofile.jpg';
   }
 
   Widget _buildStatCard({
@@ -510,6 +510,7 @@ class SellerViewSales extends StatelessWidget {
     required String image,
   }) {
     return Card(
+    
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
       shape: RoundedRectangleBorder(

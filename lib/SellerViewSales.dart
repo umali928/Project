@@ -309,7 +309,7 @@ class SellerViewSales extends StatelessWidget {
                                             getTitlesWidget: (value, meta) {
                                               return Text(
                                                 '₱${value.toInt()}',
-                                                style: GoogleFonts.poppins(
+                                                style: GoogleFonts.roboto(
                                                   color: Colors.grey[600],
                                                   fontSize: 12,
                                                 ),
@@ -491,7 +491,7 @@ class SellerViewSales extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               value,
-              style: GoogleFonts.poppins(
+              style: GoogleFonts.roboto(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.black87,

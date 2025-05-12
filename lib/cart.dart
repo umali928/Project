@@ -53,7 +53,9 @@ class CartScreen extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       return Scaffold(
-        body: Center(child: Text("You are not logged in")),
+        body: Center(
+            child: Text("You are not logged in",
+                style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold))),
       );
     }
     double screenWidth = MediaQuery.of(context).size.width;

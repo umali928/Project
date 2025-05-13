@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'sellerRegister.dart';
 import 'sellerdashboard.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'profile.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -32,61 +34,62 @@ class _SellerLoginScreenState extends State<SellerLoginScreen> {
   bool isPasswordHidden = true; // Added state for password visibility
 
   void loginSeller() async {
-  setState(() => isLoading = true);
+    setState(() => isLoading = true);
 
-  final storeName = storeNameController.text.trim();
-  final password = passwordController.text.trim();
-  final hashedInputPassword = sha256.convert(utf8.encode(password)).toString();
+    final storeName = storeNameController.text.trim();
+    final password = passwordController.text.trim();
+    final hashedInputPassword =
+        sha256.convert(utf8.encode(password)).toString();
 
-  try {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please login as user first.")),
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please login as user first.")),
+        );
+        return;
+      }
+
+      // 🔥 Only check inside the current logged-in user's sellerInfo
+      final sellerInfoSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('sellerInfo')
+          .where('storeName', isEqualTo: storeName)
+          .get();
+
+      if (sellerInfoSnapshot.docs.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Seller info not found")),
+        );
+        return;
+      }
+
+      final data = sellerInfoSnapshot.docs.first.data();
+      if (data['password'] != hashedInputPassword) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Invalid password")),
+        );
+        return;
+      }
+
+      // ✅ Save session
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('sellerStoreName', storeName);
+
+      // ✅ Navigate to dashboard
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => DashboardScreen()),
       );
-      return;
-    }
-
-    // 🔥 Only check inside the current logged-in user's sellerInfo
-    final sellerInfoSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(currentUser.uid)
-        .collection('sellerInfo')
-        .where('storeName', isEqualTo: storeName)
-        .get();
-
-    if (sellerInfoSnapshot.docs.isEmpty) {
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Seller info not found")),
+        SnackBar(content: Text("Login failed: $e")),
       );
-      return;
+    } finally {
+      setState(() => isLoading = false);
     }
-
-    final data = sellerInfoSnapshot.docs.first.data();
-    if (data['password'] != hashedInputPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Invalid password")),
-      );
-      return;
-    }
-
-    // ✅ Save session
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('sellerStoreName', storeName);
-
-    // ✅ Navigate to dashboard
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => DashboardScreen()),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Login failed: $e")),
-    );
-  } finally {
-    setState(() => isLoading = false);
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -180,6 +183,25 @@ class _SellerLoginScreenState extends State<SellerLoginScreen> {
                                 style: GoogleFonts.poppins(color: Colors.blue)),
                           ),
                         ],
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Center(
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => ProfilePage()),
+                          );
+                        },
+                        child: Text(
+                          'Return to Profile',
+                          style: GoogleFonts.poppins(
+                            color: const Color(0xFF651D32),
+                            fontSize: 16,
+                          ),
+                        ),
                       ),
                     ),
                   ],

@@ -82,8 +82,11 @@ class SellerViewSales extends StatelessWidget {
 
               int totalOrders = filteredOrders.length;
 
-              // Get top products
-              final productSales = <String, double>{};
+              // Get top products by quantity sold
+              final productQuantities = <String, int>{};
+              final productImages = <String, String>{};
+              final productPrices = <String, double>{};
+
               for (var order in filteredOrders) {
                 final items =
                     (order.data() as Map<String, dynamic>)['items'] as List;
@@ -91,25 +94,36 @@ class SellerViewSales extends StatelessWidget {
                   if (item['sellerId'] == sellerId) {
                     final productName =
                         item['productName'] ?? 'Unknown Product';
-                    final value = (item['price'] * item['quantity']) as double;
-                    productSales.update(
-                        productName, (existing) => existing + value,
-                        ifAbsent: () => value);
+                    final quantity = item['quantity'] as int;
+                    final price = (item['price'] as num).toDouble();
+                    final imageUrl =
+                        item['imageUrl'] ?? 'assets/defaultprofile.jpg';
+
+                    productQuantities.update(
+                        productName, (existing) => existing + quantity,
+                        ifAbsent: () => quantity);
+                    productPrices[productName] = price;
+                    // Update image only if not already set or if we have a new image
+                    if (!productImages.containsKey(productName)) {
+                      productImages[productName] = imageUrl;
+                    }
                   }
                 }
               }
 
-              // Sort products by sales
-              final sortedProducts = productSales.entries.toList()
+              // Sort products by quantity sold
+              final sortedProductsByQuantity = productQuantities.entries
+                  .toList()
                 ..sort((a, b) => b.value.compareTo(a.value));
-              final topProduct = sortedProducts.isNotEmpty
-                  ? sortedProducts.first.key
+              final topProductByQuantity = sortedProductsByQuantity.isNotEmpty
+                  ? sortedProductsByQuantity.first.key
                   : 'No products';
 
               // Prepare weekly sales data
               final now = DateTime.now();
               final weekAgo = now.subtract(Duration(days: 7));
               final dailySales = List<double>.filled(7, 0);
+              final dailyQuantities = List<int>.filled(7, 0);
 
               for (var order in filteredOrders) {
                 final orderDate = (order.data()
@@ -122,21 +136,29 @@ class SellerViewSales extends StatelessWidget {
                     final sellerItems =
                         items.where((item) => item['sellerId'] == sellerId);
                     final dayIndex = date.weekday - 1; // Monday = 0, Sunday = 6
+
+                    // Calculate sales amount
                     dailySales[dayIndex] += sellerItems.fold(0.0, (sum, item) {
                       return sum + (item['price'] * item['quantity']);
+                    });
+
+                    // Calculate quantities
+                    dailyQuantities[dayIndex] +=
+                        sellerItems.fold(0, (sum, item) {
+                      return sum + (item['quantity'] as int);
                     });
                   }
                 }
               }
 
               final chartData = [
-                SalesData('Mon', dailySales[0]),
-                SalesData('Tue', dailySales[1]),
-                SalesData('Wed', dailySales[2]),
-                SalesData('Thu', dailySales[3]),
-                SalesData('Fri', dailySales[4]),
-                SalesData('Sat', dailySales[5]),
-                SalesData('Sun', dailySales[6]),
+                SalesData('Mon', dailySales[0], dailyQuantities[0]),
+                SalesData('Tue', dailySales[1], dailyQuantities[1]),
+                SalesData('Wed', dailySales[2], dailyQuantities[2]),
+                SalesData('Thu', dailySales[3], dailyQuantities[3]),
+                SalesData('Fri', dailySales[4], dailyQuantities[4]),
+                SalesData('Sat', dailySales[5], dailyQuantities[5]),
+                SalesData('Sun', dailySales[6], dailyQuantities[6]),
               ];
 
               final maxY = (dailySales.reduce((a, b) => a > b ? a : b) * 1.2)
@@ -145,8 +167,6 @@ class SellerViewSales extends StatelessWidget {
               return LayoutBuilder(
                 builder: (context, constraints) {
                   final bool isWideScreen = constraints.maxWidth > 600;
-                  // ignore: unused_local_variable
-                  final double cardWidth = isWideScreen ? 300 : double.infinity;
                   final double graphHeight = isWideScreen ? 300 : 220;
 
                   return SingleChildScrollView(
@@ -201,7 +221,7 @@ class SellerViewSales extends StatelessWidget {
                                   icon: Icons.star_rounded,
                                   iconColor: Colors.amber[600],
                                   title: 'Top Product',
-                                  value: topProduct,
+                                  value: topProductByQuantity,
                                   context: context,
                                 ),
                               ),
@@ -229,8 +249,8 @@ class SellerViewSales extends StatelessWidget {
                               _buildStatCard(
                                 icon: Icons.star_rounded,
                                 iconColor: Colors.amber[600],
-                                title: 'Top Product',
-                                value: topProduct,
+                                title: 'Top Product (Qty)',
+                                value: topProductByQuantity,
                                 context: context,
                               ),
                             ],
@@ -250,7 +270,7 @@ class SellerViewSales extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Weekly Sales',
+                                  'Weekly Sales (Last 7 Days)',
                                   style: GoogleFonts.poppins(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -274,8 +294,13 @@ class SellerViewSales extends StatelessWidget {
                                           tooltipMargin: 8.0,
                                           getTooltipItem: (group, groupIndex,
                                               rod, rodIndex) {
+                                            final day =
+                                                chartData[groupIndex].day;
+                                            final amount = rod.toY.toInt();
+                                            final qty =
+                                                chartData[groupIndex].quantity;
                                             return BarTooltipItem(
-                                              '${chartData[groupIndex].day}\n₱${rod.toY.toInt()}',
+                                              '$day\n₱$amount\n$qty sold',
                                               const TextStyle(
                                                   color: Colors.white),
                                             );
@@ -373,9 +398,9 @@ class SellerViewSales extends StatelessWidget {
 
                         const SizedBox(height: 32),
 
-                        // Sales Breakdown Section
+                        // Sales Breakdown Section by Quantity
                         Text(
-                          'Sales Breakdown',
+                          'Top Products by Quantity Sold',
                           style: GoogleFonts.poppins(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -383,7 +408,7 @@ class SellerViewSales extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        if (sortedProducts.isEmpty)
+                        if (sortedProductsByQuantity.isEmpty)
                           Padding(
                             padding: const EdgeInsets.all(16.0),
                             child: Text(
@@ -393,15 +418,15 @@ class SellerViewSales extends StatelessWidget {
                             ),
                           )
                         else
-                          ...sortedProducts
+                          ...sortedProductsByQuantity
                               .take(3)
                               .map((entry) => _buildSalesItem(
                                     product: entry.key,
-                                    price: '₱${entry.value.toStringAsFixed(2)}',
-                                    quantity:
-                                        '${_getProductCount(filteredOrders, sellerId, entry.key)} sold',
-                                    image: _getProductImage(
-                                        filteredOrders, sellerId, entry.key),
+                                    price:
+                                        '₱${(productPrices[entry.key] ?? 0).toStringAsFixed(2)}',
+                                    quantity: '${entry.value} sold',
+                                    image: productImages[entry.key] ??
+                                        'assets/defaultprofile.jpg',
                                   )),
                       ],
                     ),
@@ -413,35 +438,6 @@ class SellerViewSales extends StatelessWidget {
         },
       ),
     );
-  }
-
-  int _getProductCount(
-      List<QueryDocumentSnapshot> orders, String sellerId, String productName) {
-    int count = 0;
-    for (var order in orders) {
-      final items = (order.data() as Map<String, dynamic>)['items'] as List;
-      for (var item in items) {
-        if (item['sellerId'] == sellerId &&
-            item['productName'] == productName) {
-          count += item['quantity'] as int;
-        }
-      }
-    }
-    return count;
-  }
-
-  String _getProductImage(
-      List<QueryDocumentSnapshot> orders, String sellerId, String productName) {
-    for (var order in orders) {
-      final items = (order.data() as Map<String, dynamic>)['items'] as List;
-      for (var item in items) {
-        if (item['sellerId'] == sellerId &&
-            item['productName'] == productName) {
-          return item['imageUrl'] ?? 'assets/defaultprofile.jpg';
-        }
-      }
-    }
-    return 'assets/defaultprofile.jpg';
   }
 
   Widget _buildStatCard({
@@ -510,7 +506,6 @@ class SellerViewSales extends StatelessWidget {
     required String image,
   }) {
     return Card(
-    
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -531,6 +526,14 @@ class SellerViewSales extends StatelessWidget {
                 width: 60,
                 height: 60,
                 fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Image.asset(
+                    'assets/defaultprofile.jpg',
+                    width: 60,
+                    height: 60,
+                    fit: BoxFit.cover,
+                  );
+                },
               ),
             ),
             const SizedBox(width: 16),
@@ -571,7 +574,8 @@ class SellerViewSales extends StatelessWidget {
 }
 
 class SalesData {
-  SalesData(this.day, this.amount);
+  SalesData(this.day, this.amount, this.quantity);
   final String day;
   final double amount;
+  final int quantity;
 }

@@ -181,8 +181,8 @@ class _EditProductScreenState extends State<EditProductScreen> {
           }
         }
 
-        final newFileName =
-            'products/${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+        // Use product ID as the filename
+        final newFileName = 'products/${widget.productId}.$fileExtension';
         final contentType = fileExtension == 'png' ? 'image/png' : 'image/jpeg';
 
         await supabase.storage.from('uploads').uploadBinary(
@@ -200,7 +200,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
             '$rawUrl?t=${DateTime.now().millisecondsSinceEpoch}'; // to avoid cache
       }
 
-      // 🔥 Update Firestore with new product data
+      // Update Firestore with new product data
       await FirebaseFirestore.instance
           .collection('products')
           .doc(widget.productId)

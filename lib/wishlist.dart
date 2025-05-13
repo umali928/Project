@@ -131,7 +131,37 @@ class WishlistScreen extends StatelessWidget {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      return Center(child: Text('Please log in to view your wishlist.'));
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.favorite_border, size: 60, color: Colors.grey[400]),
+              SizedBox(height: 20),
+              Text('Please log in to view your wishlist',
+                  style: GoogleFonts.poppins(
+                      fontSize: 18, color: Colors.grey[600])),
+              SizedBox(height: 20),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFF651D32),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                ),
+                onPressed: () {
+                  // Add login navigation here
+                },
+                child: Text('Login',
+                    style: GoogleFonts.poppins(
+                        color: Colors.white, fontWeight: FontWeight.w500)),
+              ),
+            ],
+          ),
+        ),
+      );
     }
 
     final wishlistCollection = FirebaseFirestore.instance
@@ -142,30 +172,48 @@ class WishlistScreen extends StatelessWidget {
         wishlistCollection.orderBy('timestamp', descending: true);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: Colors.white,
-        elevation: 0,
+        elevation: 0.5,
         centerTitle: true,
-        title: Text('Wishlist',
+        title: Text('My Wishlist',
             style: GoogleFonts.poppins(
-                color: Colors.black, fontWeight: FontWeight.bold)),
+                color: Color(0xFF651D32),
+                fontWeight: FontWeight.w600,
+                fontSize: 20)),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: wishlistQuery.snapshots(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting)
-            return Center(child: CircularProgressIndicator());
-
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty)
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
-              child: Text(
-                'Your wishlist is empty.',
-                style:
-                    GoogleFonts.poppins(fontSize: 18, color: Colors.grey[600]),
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF651D32)),
               ),
             );
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.favorite_border,
+                      size: 60, color: Colors.grey[400]),
+                  SizedBox(height: 20),
+                  Text('Your wishlist is empty',
+                      style: GoogleFonts.poppins(
+                          fontSize: 18, color: Colors.grey[600])),
+                  SizedBox(height: 10),
+                  Text('Start adding items you love!',
+                      style: GoogleFonts.poppins(
+                          fontSize: 14, color: Colors.grey[500])),
+                ],
+              ),
+            );
+          }
 
           final wishlistDocs = snapshot.data!.docs;
 
@@ -173,214 +221,446 @@ class WishlistScreen extends StatelessWidget {
             future: _cleanAndGetValidWishlistItems(wishlistDocs),
             builder: (context,
                 AsyncSnapshot<List<QueryDocumentSnapshot>> validSnapshot) {
-              if (!validSnapshot.hasData)
-                return Center(child: CircularProgressIndicator());
-
-              final validItems = validSnapshot.data!;
-              if (validItems.isEmpty) {
+              if (!validSnapshot.hasData) {
                 return Center(
-                  child: Text(
-                    'Your wishlist   is empty.',
-                    style: GoogleFonts.poppins(
-                        fontSize: 18, color: Colors.grey[600]),
+                  child: CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(Color(0xFF651D32)),
                   ),
                 );
               }
 
-              return ListView.builder(
-                padding: EdgeInsets.all(16),
-                itemCount: validItems.length,
-                itemBuilder: (context, index) {
-                  final data = validItems[index].data() as Map<String, dynamic>;
-                  final docId = validItems[index].id;
-                  final productId = data['productId'];
+              final validItems = validSnapshot.data!;
+              if (validItems.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.favorite_border,
+                          size: 60, color: Colors.grey[400]),
+                      SizedBox(height: 20),
+                      Text('Your wishlist is empty',
+                          style: GoogleFonts.poppins(
+                              fontSize: 18, color: Colors.grey[600])),
+                    ],
+                  ),
+                );
+              }
 
-                  return StreamBuilder<DocumentSnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('products')
-                        .doc(productId)
-                        .snapshots(),
-                    builder: (context, productSnapshot) {
-                      if (!productSnapshot.hasData ||
-                          !productSnapshot.data!.exists) {
-                        return SizedBox(); // Optionally show "product deleted"
-                      }
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(
+                        left: 16.0, right: 16.0, top: 16.0, bottom: 8.0),
+                    child: Row(
+                      children: [
+                        Text('${validItems.length} items',
+                            style: GoogleFonts.poppins(
+                                color: Colors.grey[600], fontSize: 14)),
+                        Spacer(),
+                        Text('Swipe left to remove',
+                            style: GoogleFonts.poppins(
+                                color: Colors.grey[500], fontSize: 12)),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      itemCount: validItems.length,
+                      itemBuilder: (context, index) {
+                        final data =
+                            validItems[index].data() as Map<String, dynamic>;
+                        final docId = validItems[index].id;
+                        final productId = data['productId'];
 
-                      final productData =
-                          productSnapshot.data!.data() as Map<String, dynamic>;
-
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ProductDetailPage(
-                                productId: productId,
-                                productData: productData,
-                              ),
+                        return Dismissible(
+                          key: Key(docId),
+                          direction: DismissDirection.endToStart,
+                          background: Container(
+                            margin: EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.red[100],
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          );
-                        },
-                        child: Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
+                            alignment: Alignment.centerRight,
+                            padding: EdgeInsets.only(right: 20),
+                            child: Icon(Icons.delete, color: Colors.red),
                           ),
-                          elevation: 3,
-                          margin: EdgeInsets.only(bottom: 12),
-                          color: Colors.white,
-                          child: ListTile(
-                            contentPadding: EdgeInsets.all(12),
-                            leading: ClipRRect(
-                              borderRadius: BorderRadius.circular(10),
-                              child: Image.network(
-                                productData['imageUrl'] ?? '',
-                                width: 60,
-                                height: 60,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Icon(Icons.broken_image, size: 40),
+                          confirmDismiss: (direction) async {
+                            // Show confirmation dialog
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text('Remove from wishlist?',
+                                    style: GoogleFonts.poppins()),
+                                content: Text(
+                                    'Are you sure you want to remove this item?',
+                                    style: GoogleFonts.poppins()),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: Text('Cancel',
+                                        style: GoogleFonts.poppins(
+                                          color: Colors.grey[600],
+                                        )),
+                                  ),
+                                  TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, true),
+                                      child: Text(
+                                        'Remove',
+                                        style: GoogleFonts.poppins(
+                                          color: Color(0xFF651D32),
+                                        ),
+                                      )),
+                                ],
                               ),
-                            ),
-                            title: Text(productData['productName'] ?? '',
-                                style: TextStyle(fontWeight: FontWeight.bold)),
-                            subtitle: Text(
-                              '₱${(productData['price'] ?? 0).toStringAsFixed(2)}',
-                              style: TextStyle(color: Colors.grey[600]),
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: Icon(Icons.add_shopping_cart,
-                                      color: Color(0xFF651D32)),
-                                  onPressed: () async {
-                                    final cartRef = FirebaseFirestore.instance
-                                        .collection('users')
-                                        .doc(user.uid)
-                                        .collection('cart');
+                            );
+                            return confirmed ?? false;
+                          },
+                          onDismissed: (direction) async {
+                            final deletedData = Map<String, dynamic>.from(data);
 
-                                    final existing = await cartRef
-                                        .where('productId',
-                                            isEqualTo: productId)
-                                        .get();
+                            // Store the context before any async operations
+                            final currentContext = context;
 
-                                    if (existing.docs.isEmpty) {
-                                      await cartRef.add({
-                                        'productId': productId,
-                                        'productName': productData['name'],
-                                        'price': productData['price'],
-                                        'imageUrl': productData['imageUrl'],
-                                        'quantity': 1,
-                                        'timestamp':
-                                            FieldValue.serverTimestamp(),
-                                      });
+                            await wishlistCollection.doc(docId).delete();
+                            WishlistButton.updateWishlistState(
+                                productId, false);
+                            if (WishlistButton.refreshCallback != null) {
+                              WishlistButton.refreshCallback!();
+                            }
 
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(SnackBar(
-                                        content: Text("Added to cart."),
-                                      ));
-                                    } else {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(SnackBar(
-                                        content: Text(
-                                            "Item is already in your cart."),
-                                      ));
-                                    }
-                                  },
+                            // Show the Snackbar using the stored context
+                            if (currentContext.mounted) {
+                              ScaffoldMessenger.of(currentContext).showSnackBar(
+                                SnackBar(
+                                  content: Text('Item removed from wishlist'),
+                                  action: SnackBarAction(
+                                    label: 'UNDO',
+                                    textColor: Colors.white,
+                                    onPressed: () async {
+                                      // Re-add the deleted item
+                                      await wishlistCollection
+                                          .doc(docId)
+                                          .set(deletedData);
+                                      WishlistButton.updateWishlistState(
+                                          productId, true);
+                                      if (WishlistButton.refreshCallback !=
+                                          null) {
+                                        WishlistButton.refreshCallback!();
+                                      }
+                                    },
+                                  ),
                                 ),
-                                IconButton(
-                                  icon: Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () async {
-                                    await wishlistCollection
-                                        .doc(docId)
-                                        .delete();
-                                    WishlistButton.updateWishlistState(
-                                        productId, false);
-                                    if (WishlistButton.refreshCallback !=
-                                        null) {
-                                      WishlistButton.refreshCallback!();
-                                    }
-                                  },
-                                ),
-                              ],
+                              );
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8.0, vertical: 4.0),
+                            child: StreamBuilder<DocumentSnapshot>(
+                              stream: FirebaseFirestore.instance
+                                  .collection('products')
+                                  .doc(productId)
+                                  .snapshots(),
+                              builder: (context, productSnapshot) {
+                                if (!productSnapshot.hasData ||
+                                    !productSnapshot.data!.exists) {
+                                  return SizedBox.shrink();
+                                }
+
+                                final productData = productSnapshot.data!.data()
+                                    as Map<String, dynamic>;
+
+                                return Card(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                  margin: EdgeInsets.zero,
+                                  color: Colors.white,
+                                  child: InkWell(
+                                    borderRadius: BorderRadius.circular(12),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              ProductDetailPage(
+                                            productId: productId,
+                                            productData: productData,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12.0),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            child: Container(
+                                              width: 80,
+                                              height: 80,
+                                              color: Colors.grey[100],
+                                              child: Image.network(
+                                                productData['imageUrl'] ?? '',
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (context, error,
+                                                        stackTrace) =>
+                                                    Center(
+                                                        child: Icon(
+                                                            Icons.broken_image,
+                                                            size: 30,
+                                                            color: Colors
+                                                                .grey[300])),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                    productData[
+                                                            'productName'] ??
+                                                        '',
+                                                    style: GoogleFonts.poppins(
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        fontSize: 15)),
+                                                SizedBox(height: 4),
+                                                Text(
+                                                  productData['category'] ?? '',
+                                                  style: GoogleFonts.poppins(
+                                                      color: Colors.grey[600],
+                                                      fontSize: 12),
+                                                ),
+                                                SizedBox(height: 8),
+                                                Text(
+                                                  '₱${(productData['price'] ?? 0).toStringAsFixed(2)}',
+                                                  style: GoogleFonts.poppins(
+                                                      color: Color(0xFF651D32),
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontSize: 16),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              IconButton(
+                                                icon: Icon(Icons.favorite,
+                                                    color: Color(0xFF651D32)),
+                                                onPressed: () async {
+                                                  await wishlistCollection
+                                                      .doc(docId)
+                                                      .delete();
+                                                  WishlistButton
+                                                      .updateWishlistState(
+                                                          productId, false);
+                                                  if (WishlistButton
+                                                          .refreshCallback !=
+                                                      null) {
+                                                    WishlistButton
+                                                        .refreshCallback!();
+                                                  }
+                                                },
+                                              ),
+                                              SizedBox(height: 20),
+                                              Container(
+                                                decoration: BoxDecoration(
+                                                  color: Color(0xFF651D32),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
+                                                child: IconButton(
+                                                  icon: Icon(
+                                                      Icons.add_shopping_cart,
+                                                      color: Colors.white,
+                                                      size: 20),
+                                                  onPressed: () async {
+                                                    final cartRef =
+                                                        FirebaseFirestore
+                                                            .instance
+                                                            .collection('users')
+                                                            .doc(user.uid)
+                                                            .collection('cart');
+
+                                                    final existing =
+                                                        await cartRef
+                                                            .where('productId',
+                                                                isEqualTo:
+                                                                    productId)
+                                                            .get();
+
+                                                    if (existing.docs.isEmpty) {
+                                                      await cartRef.add({
+                                                        'productId': productId,
+                                                        'productName':
+                                                            productData[
+                                                                'productName'],
+                                                        'price': productData[
+                                                            'price'],
+                                                        'imageUrl': productData[
+                                                            'imageUrl'],
+                                                        'quantity': 1,
+                                                        'timestamp': FieldValue
+                                                            .serverTimestamp(),
+                                                      });
+
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                              SnackBar(
+                                                        content: Text(
+                                                            "Added to cart"),
+                                                        behavior:
+                                                            SnackBarBehavior
+                                                                .floating,
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(10),
+                                                        ),
+                                                      ));
+                                                    } else {
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                              SnackBar(
+                                                        content: Text(
+                                                            "Item is already in your cart"),
+                                                        behavior:
+                                                            SnackBarBehavior
+                                                                .floating,
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(10),
+                                                        ),
+                                                      ));
+                                                    }
+                                                  },
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  );
-                },
+                        );
+                      },
+                    ),
+                  ),
+                ],
               );
             },
           );
         },
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ElevatedButton(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Color(0xFF651D32),
-            padding: EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFF651D32),
+              padding: EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 2,
+              shadowColor: Color(0xFF651D32).withOpacity(0.3),
+            ),
+            onPressed: () async {
+              final user = FirebaseAuth.instance.currentUser;
+              if (user == null) return;
+
+              final wishlistSnapshot = await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.uid)
+                  .collection('wishlist')
+                  .get();
+
+              final wishlistDocs = wishlistSnapshot.docs;
+              final validItems =
+                  await _cleanAndGetValidWishlistItems(wishlistDocs);
+
+              final cartRef = FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user.uid)
+                  .collection('cart');
+
+              int addedCount = 0;
+
+              for (var doc in validItems) {
+                final data = doc.data() as Map<String, dynamic>;
+                final productId = data['productId'];
+
+                if (productId == null) continue;
+
+                final existing = await cartRef
+                    .where('productId', isEqualTo: productId)
+                    .get();
+
+                if (existing.docs.isEmpty) {
+                  await cartRef.add({
+                    'productId': productId,
+                    'productName': data['productName'],
+                    'price': data['price'],
+                    'imageUrl': data['imageUrl'],
+                    'quantity': 1,
+                    'timestamp': FieldValue.serverTimestamp(),
+                  });
+                  addedCount++;
+                }
+              }
+
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                content: Text(
+                  addedCount == 0
+                      ? "All wishlist items are already in your cart"
+                      : "$addedCount item(s) added to cart",
+                  style: GoogleFonts.poppins(),
+                ),
+              ));
+            },
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.shopping_cart, color: Colors.white),
+                SizedBox(width: 10),
+                Text('Add All To Cart',
+                    style: GoogleFonts.poppins(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600)),
+              ],
             ),
           ),
-          onPressed: () async {
-            final user = FirebaseAuth.instance.currentUser;
-            if (user == null) return;
-
-            final wishlistSnapshot = await FirebaseFirestore.instance
-                .collection('users')
-                .doc(user.uid)
-                .collection('wishlist')
-                .get();
-
-            final wishlistDocs = wishlistSnapshot.docs;
-            final validItems =
-                await _cleanAndGetValidWishlistItems(wishlistDocs);
-
-            final cartRef = FirebaseFirestore.instance
-                .collection('users')
-                .doc(user.uid)
-                .collection('cart');
-
-            int addedCount = 0;
-
-            for (var doc in validItems) {
-              final data = doc.data() as Map<String, dynamic>;
-              final productId = data['productId'];
-
-              if (productId == null) continue;
-
-              final existing =
-                  await cartRef.where('productId', isEqualTo: productId).get();
-
-              if (existing.docs.isEmpty) {
-                await cartRef.add({
-                  'productId': productId,
-                  'productName': data['productName'],
-                  'price': data['price'],
-                  'imageUrl': data['imageUrl'],
-                  'quantity': 1,
-                  'timestamp': FieldValue.serverTimestamp(),
-                });
-                addedCount++;
-              }
-            }
-
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(
-                addedCount == 0
-                    ? "All wishlist items are already in your cart."
-                    : "$addedCount item(s) added to cart.",
-              ),
-            ));
-          },
-          child: Text('Add All To Cart',
-              style: GoogleFonts.poppins(
-                  fontSize: 20,
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold)),
         ),
       ),
     );

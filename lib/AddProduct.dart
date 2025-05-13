@@ -76,6 +76,52 @@ Future<String?> uploadProductImageToSupabase(
   }
 }
 
+Future<void> sendNewProductNotification(
+    String productName, String productId) async {
+  try {
+    // Get all users who should receive the notification
+    final usersSnapshot =
+        await FirebaseFirestore.instance.collection('users').get();
+
+    // Get seller info
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+    final sellerDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('sellerInfo')
+        .get();
+    final sellerData = sellerDoc.docs.first.data();
+    final sellerName = sellerData['storeName'] ?? 'A seller';
+
+    // Create a batch write for efficiency
+    final batch = FirebaseFirestore.instance.batch();
+
+    for (final userDoc in usersSnapshot.docs) {
+      if (userDoc.id != userId) {
+        // Don't notify yourself
+        final notificationRef = FirebaseFirestore.instance
+            .collection('users')
+            .doc(userDoc.id)
+            .collection('notifications')
+            .doc();
+
+        batch.set(notificationRef, {
+          'title': 'New Product Available!',
+          'message': '$sellerName added a new product: $productName',
+          'type': 'new_product',
+          'productId': productId,
+          'read': false,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+      }
+    }
+
+    await batch.commit();
+  } catch (e) {
+    debugPrint('Error sending notifications: $e');
+  }
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -417,6 +463,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                 'sellerId': sellerId,
                                 'createdAt': FieldValue.serverTimestamp(),
                               });
+                              // Send notifications to all users about the new product
+                              await sendNewProductNotification(
+                                  _productName, productId);
                               Navigator.of(context)
                                   .pop(); // Close loading dialog
 

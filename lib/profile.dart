@@ -314,7 +314,14 @@ class _SettingsPageState extends State<SettingsPage> {
                         builder: (context) => AddressListScreen()),
                   );
                 }),
-                // buildListTile(Icons.message, "Messages"),
+                // buildListTile(Icons.message, "Messages", onTap: () {
+                //   Navigator.push(
+                //     context,
+                //     MaterialPageRoute(
+                 
+                //     ),
+                //   );
+                // }),
                 Divider(),
                 buildListTile(Icons.privacy_tip, "Privacy Policy", onTap: () {
                   Navigator.pushReplacement(

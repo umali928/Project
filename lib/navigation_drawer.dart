@@ -6,7 +6,6 @@ import 'ManageProduct.dart';
 import 'OrderManagement.dart';
 import 'SellerProfile.dart';
 import 'SellerViewSales.dart';
-
 class NavigationDrawer extends StatefulWidget {
   @override
   State<NavigationDrawer> createState() => _NavigationDrawerState();
@@ -81,7 +80,19 @@ class _NavigationDrawerState extends State<NavigationDrawer> {
                     icon: Icons.bar_chart,
                     text: "View Sales",
                     destination: SellerViewSales()),
-                // DrawerItem(icon: Icons.message, text: "Message Users"),
+                // DrawerItem(
+                //   icon: Icons.message,
+                //   text: "Message Users",
+                //   onTap: () {
+                //     Navigator.push(
+                //       context,
+                //       MaterialPageRoute(
+                //         builder: (context) =>
+                       
+                //       ),
+                //     );
+                //   },
+                // ),
                 DrawerItem(
                   icon: Icons.person,
                   text: "Profile",
@@ -103,12 +114,14 @@ class DrawerItem extends StatelessWidget {
   final String text;
   final bool isLogout;
   final Widget? destination;
+  final VoidCallback? onTap;
 
   const DrawerItem({
     required this.icon,
     required this.text,
     this.isLogout = false,
     this.destination,
+    this.onTap,
   });
 
   @override
@@ -137,6 +150,8 @@ class DrawerItem extends StatelessWidget {
             context,
             MaterialPageRoute(builder: (context) => SellerLoginScreen()),
           );
+        } else if (onTap != null) {
+          onTap!();
         } else if (destination != null) {
           Navigator.push(
             context,

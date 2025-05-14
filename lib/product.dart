@@ -115,6 +115,91 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     checkIfUserCanReview();
   }
 
+  // void _startChatWithSeller(BuildContext context) async {
+  //   final user = FirebaseAuth.instance.currentUser;
+  //   if (user == null) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text("Please log in to message the seller")),
+  //     );
+  //     return;
+  //   }
+
+  //   try {
+  //     // Get product document
+  //     final productDoc = await FirebaseFirestore.instance
+  //         .collection('products')
+  //         .doc(widget.productId)
+  //         .get();
+
+  //     if (!productDoc.exists || !productDoc.data()!.containsKey('sellerId')) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text("Product or seller information not found")),
+  //       );
+  //       return;
+  //     }
+
+  //     final sellerId = productDoc['sellerId'];
+  //     if (sellerId == null || sellerId.isEmpty) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text("Seller ID is missing")),
+  //       );
+  //       return;
+  //     }
+
+  //     // Find the user document that contains the seller ID in its sellerInfo subcollection
+  //     final usersSnapshot =
+  //         await FirebaseFirestore.instance.collection('users').get();
+
+  //     String? userDocId;
+  //     Map<String, dynamic>? sellerData;
+
+  //     for (var userDoc in usersSnapshot.docs) {
+  //       // Retrieve all documents from the sellerInfo subcollection
+  //       final sellerInfoSnapshot = await FirebaseFirestore.instance
+  //           .collection('users')
+  //           .doc(userDoc.id)
+  //           .collection('sellerInfo')
+  //           .get();
+
+  //       for (var doc in sellerInfoSnapshot.docs) {
+  //         if (doc.id == sellerId) {
+  //           userDocId = userDoc.id;
+  //           sellerData = doc.data();
+  //           break;
+  //         }
+  //       }
+
+  //       if (sellerData != null) break;
+  //     }
+
+  //     if (sellerData == null) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text("Unable to retrieve seller information")),
+  //       );
+  //       return;
+  //     }
+
+  //     final sellerName = sellerData['storeName'] ?? 'Unknown Seller';
+
+  //     Navigator.push(
+  //       context,
+  //       MaterialPageRoute(
+  //         builder: (context) => MessageScreen(
+  //           otherUserId: userDocId!,
+  //           otherUserName: sellerName,
+  //           otherUserType: 'seller',
+  //           currentUserType: 'user',
+  //         ),
+  //       ),
+  //     );
+  //   } catch (e) {
+  //     print("Error starting chat: $e");
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text("Failed to start chat with seller: $e")),
+  //     );
+  //   }
+  // }
+
   void checkIfUserCanReview() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -349,7 +434,27 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             horizontal: MediaQuery.of(context).size.width * 0.04, vertical: 12),
         child: Row(
           children: [
-            const SizedBox(width: 16),
+            // Expanded(
+            //   child: OutlinedButton(
+            //     style: OutlinedButton.styleFrom(
+            //       padding: EdgeInsets.symmetric(vertical: 16),
+            //       side: BorderSide(color: Color(0xFF651D32)),
+            //       shape: RoundedRectangleBorder(
+            //         borderRadius: BorderRadius.circular(8),
+            //       ),
+            //     ),
+            //     onPressed: () => _startChatWithSeller(context),
+            //     child: Text(
+            //       "Message Seller",
+            //       style: GoogleFonts.poppins(
+            //         color: Color(0xFF651D32),
+            //         fontSize: 16,
+            //         fontWeight: FontWeight.bold,
+            //       ),
+            //     ),
+            //   ),
+            // ),
+            // SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(

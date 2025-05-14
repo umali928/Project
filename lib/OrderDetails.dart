@@ -236,7 +236,7 @@ class OrderDetailsPage extends StatelessWidget {
           width: 1,
         ),
       ),
-      color: Theme.of(context).colorScheme.surface,
+      color: Colors.white,
       child: Padding(
         padding: EdgeInsets.all(16),
         child: child,
@@ -262,6 +262,7 @@ class OrderDetailsPage extends StatelessWidget {
     required String value,
   }) {
     final theme = Theme.of(context);
+
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -298,6 +299,7 @@ class OrderDetailsPage extends StatelessWidget {
   Widget _buildOrderItemCard(
       BuildContext context, dynamic item, double textScale) {
     final theme = Theme.of(context);
+
     return Card(
       elevation: 0,
       margin: EdgeInsets.only(bottom: 12),
@@ -308,6 +310,7 @@ class OrderDetailsPage extends StatelessWidget {
           width: 1,
         ),
       ),
+      color: Colors.white,
       child: Padding(
         padding: EdgeInsets.all(12),
         child: Column(

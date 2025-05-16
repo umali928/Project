@@ -434,27 +434,6 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
             horizontal: MediaQuery.of(context).size.width * 0.04, vertical: 12),
         child: Row(
           children: [
-            // Expanded(
-            //   child: OutlinedButton(
-            //     style: OutlinedButton.styleFrom(
-            //       padding: EdgeInsets.symmetric(vertical: 16),
-            //       side: BorderSide(color: Color(0xFF651D32)),
-            //       shape: RoundedRectangleBorder(
-            //         borderRadius: BorderRadius.circular(8),
-            //       ),
-            //     ),
-            //     onPressed: () => _startChatWithSeller(context),
-            //     child: Text(
-            //       "Message Seller",
-            //       style: GoogleFonts.poppins(
-            //         color: Color(0xFF651D32),
-            //         fontSize: 16,
-            //         fontWeight: FontWeight.bold,
-            //       ),
-            //     ),
-            //   ),
-            // ),
-            // SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(

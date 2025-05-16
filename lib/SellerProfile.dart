@@ -44,22 +44,17 @@ class _SellerProfileState extends State<SellerProfile> {
     _streetController = TextEditingController(text: street);
     _cityMunicipalController = TextEditingController(text: cityMunicipal);
 
-    // Add listener to phone number controller
     _phoneNumberController.addListener(_handlePhoneNumberInput);
   }
 
   void _handlePhoneNumberInput() {
     final text = _phoneNumberController.text;
-
-    // Remove any non-digit characters except the + at the start
     String digitsOnly = text.replaceAll(RegExp(r'[^0-9+]'), '');
 
-    // Ensure it starts with +63
     if (!digitsOnly.startsWith('+63') && digitsOnly.isNotEmpty) {
       digitsOnly = '+63${digitsOnly.replaceAll('+63', '')}';
     }
 
-    // Limit to 13 characters (including +63)
     if (digitsOnly.length > 13) {
       digitsOnly = digitsOnly.substring(0, 13);
     }
@@ -93,7 +88,6 @@ class _SellerProfileState extends State<SellerProfile> {
             street = data['street'] ?? '';
             cityMunicipal = data['city'] ?? '';
 
-            // Update controllers with fetched data
             _barangayController.text = barangay;
             _phoneNumberController.text = phoneNumber;
             _provinceController.text = province;
@@ -120,7 +114,6 @@ class _SellerProfileState extends State<SellerProfile> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        // Get the existing document ID or create new if needed
         final query = await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
@@ -137,7 +130,7 @@ class _SellerProfileState extends State<SellerProfile> {
                 .doc();
 
         await docRef.set({
-          'storeName': storeName, // Preserve existing store name
+          'storeName': storeName,
           'barangay': _barangayController.text,
           'phone': _phoneNumberController.text,
           'province': _provinceController.text,
@@ -146,12 +139,20 @@ class _SellerProfileState extends State<SellerProfile> {
         }, SetOptions(merge: true));
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Profile updated successfully')),
+          SnackBar(
+            content: Text('Profile updated successfully'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.green,
+          ),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update profile: $e')),
+        SnackBar(
+          content: Text('Failed to update profile: $e'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -191,159 +192,305 @@ class _SellerProfileState extends State<SellerProfile> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.grey[50],
       drawer: custom.NavigationDrawer(),
       appBar: AppBar(
         title: Text(
           'Seller Profile',
           style: GoogleFonts.poppins(
             fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: const Color.fromARGB(255, 0, 0, 0),
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
           ),
         ),
         backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.black87),
         actions: [
           if (!_isLoading)
-            IconButton(
-              icon: Icon(_isEditing ? Icons.save : Icons.edit),
+            TextButton(
               onPressed: _toggleEdit,
-              color: Colors.black,
+              child: Text(
+                _isEditing ? 'SAVE' : 'EDIT',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF651D32),
+                ),
+              ),
             ),
         ],
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : Container(
-              color: Colors.white,
+          ? Center(child: CircularProgressIndicator(color: Color(0xFF651D32)))
+          : SingleChildScrollView(
               padding: const EdgeInsets.all(16.0),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.only(bottom: 16.0),
-                        child: Text(
-                          'Home / Profile',
-                          style: GoogleFonts.poppins(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black54,
-                          ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Store Information',
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Card(
+                      elevation: 2,
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          children: [
+                            _buildProfileHeader(),
+                            SizedBox(height: 16),
+                            Divider(height: 1, color: Colors.grey[300]),
+                            SizedBox(height: 16),
+                            _buildProfileItem(
+                              icon: Icons.store,
+                              label: 'Store Name',
+                              value: storeName,
+                              isEditable: false,
+                            ),
+                            _buildProfileItem(
+                              icon: Icons.location_on,
+                              label: 'Street',
+                              value: street,
+                              isEditable: _isEditing,
+                              controller: _streetController,
+                            ),
+                            _buildProfileItem(
+                              icon: Icons.house,
+                              label: 'Barangay',
+                              value: barangay,
+                              isEditable: _isEditing,
+                              controller: _barangayController,
+                            ),
+                            _buildProfileItem(
+                              icon: Icons.location_city,
+                              label: 'City/Municipal',
+                              value: cityMunicipal,
+                              isEditable: _isEditing,
+                              controller: _cityMunicipalController,
+                            ),
+                            _buildProfileItem(
+                              icon: Icons.map,
+                              label: 'Province',
+                              value: province,
+                              isEditable: _isEditing,
+                              controller: _provinceController,
+                            ),
+                            _buildProfileItem(
+                              icon: Icons.phone,
+                              label: 'Phone Number',
+                              value: phoneNumber,
+                              isEditable: _isEditing,
+                              controller: _phoneNumberController,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter phone number';
+                                }
+                                if (!value.startsWith('+63')) {
+                                  return 'Phone number must start with +63';
+                                }
+                                if (value.length != 13) {
+                                  return 'Phone number must be 13 characters';
+                                }
+                                final numberPart = value.substring(3);
+                                if (!RegExp(r'^[0-9]+$').hasMatch(numberPart)) {
+                                  return 'Only numbers after +63';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
                         ),
                       ),
-                      Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Padding(
-                        
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _buildProfileItem('Store Name', storeName, false),
-                              _buildProfileItem(
-                                  'Barangay', barangay, _isEditing,
-                                  controller: _barangayController),
-                              _buildProfileItem(
-                                'Phone Number',
-                                phoneNumber,
-                                _isEditing,
-                                controller: _phoneNumberController,
-                                validator: (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Please enter phone number';
-                                  }
-                                  if (!value.startsWith('+63')) {
-                                    return 'Phone number must start with +63';
-                                  }
-                                  if (value.length != 13) {
-                                    return 'Phone number must be 13 characters (including +63)';
-                                  }
-                                  // Additional validation to ensure only numbers after +63
-                                  final numberPart = value.substring(3);
-                                  if (!RegExp(r'^[0-9]+$')
-                                      .hasMatch(numberPart)) {
-                                    return 'Phone number can only contain numbers after +63';
-                                  }
-                                  return null;
-                                },
+                    ),
+                    if (_isEditing) ...[
+                      SizedBox(height: 20),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _isEditing = false;
+                                  // Reset controllers to original values
+                                  _barangayController.text = barangay;
+                                  _phoneNumberController.text = phoneNumber;
+                                  _provinceController.text = province;
+                                  _streetController.text = street;
+                                  _cityMunicipalController.text = cityMunicipal;
+                                });
+                              },
+                              style: OutlinedButton.styleFrom(
+                                padding: EdgeInsets.symmetric(vertical: 16),
+                                side: BorderSide(color: Color(0xFF651D32)),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
                               ),
-                              _buildProfileItem(
-                                  'Province', province, _isEditing,
-                                  controller: _provinceController),
-                              _buildProfileItem('Street', street, _isEditing,
-                                  controller: _streetController),
-                              _buildProfileItem(
-                                  'City/Municipal', cityMunicipal, _isEditing,
-                                  controller: _cityMunicipalController),
-                            ],
+                              child: Text(
+                                'CANCEL',
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF651D32),
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _toggleEdit,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Color(0xFF651D32),
+                                padding: EdgeInsets.symmetric(vertical: 16),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                              child: Text(
+                                'SAVE CHANGES',
+                                style: GoogleFonts.poppins(
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
-                  ),
+                  ],
                 ),
               ),
             ),
     );
   }
 
-  Widget _buildProfileItem(
-    String label,
-    String value,
-    bool isEditable, {
+  Widget _buildProfileHeader() {
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 30,
+          backgroundColor: Color(0xFF651D32).withOpacity(0.1),
+          child: Icon(
+            Icons.person,
+            size: 30,
+            color: Color(0xFF651D32),
+          ),
+        ),
+        SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                storeName.isEmpty ? 'Your Store' : storeName,
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black87,
+                ),
+              ),
+              SizedBox(height: 4),
+              Text(
+                'Seller Account',
+                style: GoogleFonts.poppins(
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfileItem({
+    required IconData icon,
+    required String label,
+    required String value,
+    required bool isEditable,
     TextEditingController? controller,
     String? Function(String?)? validator,
   }) {
-    
     return Padding(
-  
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
       child: Column(
-        
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: GoogleFonts.poppins(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: const Color.fromARGB(255, 0, 0, 0),
-            ),
-          ),
-          SizedBox(height: 4),
-          if (!isEditable)
-            Text(
-              value.isEmpty ? 'Not set' : value,
-              style: TextStyle(
-                fontSize: 16,
+          Row(
+            children: [
+              Icon(
+                icon,
+                size: 20,
                 color: Color(0xFF651D32),
+              ),
+              SizedBox(width: 12),
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          if (!isEditable)
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                value.isEmpty ? 'Not provided' : value,
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  color: value.isEmpty ? Colors.grey[500] : Colors.black87,
+                ),
               ),
             ),
           if (isEditable)
             TextFormField(
               controller: controller,
-              keyboardType: TextInputType.phone,
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9+]')),
-              ],
-              style: TextStyle(
+              style: GoogleFonts.poppins(
                 fontSize: 16,
-                color: Color(0xFF651D32),
+                color: Colors.black87,
               ),
               decoration: InputDecoration(
-                contentPadding: EdgeInsets.zero,
-                border: InputBorder.none,
+                contentPadding: EdgeInsets.all(12),
+                filled: true,
+                fillColor: Colors.grey[50],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide.none,
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.red),
+                ),
                 errorStyle: TextStyle(fontSize: 12),
               ),
               validator: validator,
+              keyboardType: label == 'Phone Number'
+                  ? TextInputType.phone
+                  : TextInputType.text,
+              inputFormatters: label == 'Phone Number'
+                  ? [FilteringTextInputFormatter.allow(RegExp(r'[0-9+]'))]
+                  : null,
             ),
-          Divider(thickness: 1),
         ],
       ),
     );

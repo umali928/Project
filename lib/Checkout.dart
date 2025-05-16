@@ -110,6 +110,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
           style: GoogleFonts.poppins(
               fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black),
         ),
+      
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,

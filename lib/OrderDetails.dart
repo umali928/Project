@@ -365,7 +365,7 @@ class OrderDetailsPage extends StatelessWidget {
                       SizedBox(height: 4),
                       Text(
                         '\u20B1${item['price']}',
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.roboto(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Color(0xFF800000),
@@ -427,7 +427,7 @@ class OrderDetailsPage extends StatelessWidget {
         ),
         Text(
           value,
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.roboto(
             fontSize: isTotal ? 16 : 14,
             fontWeight: isTotal ? FontWeight.w600 : FontWeight.normal,
             color: isTotal

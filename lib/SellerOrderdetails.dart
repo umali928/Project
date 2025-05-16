@@ -670,7 +670,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
               children: [
                 Text(
                   'Your Total',
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.roboto(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
                   ),

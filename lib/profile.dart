@@ -314,7 +314,6 @@ class _SettingsPageState extends State<SettingsPage> {
                         builder: (context) => AddressListScreen()),
                   );
                 }),
-                
                 Divider(),
                 buildListTile(Icons.privacy_tip, "Privacy Policy", onTap: () {
                   Navigator.pushReplacement(

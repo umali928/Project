@@ -420,7 +420,7 @@ class OrderSummary extends StatelessWidget {
               style: GoogleFonts.poppins(
                   fontSize: fontSize, fontWeight: FontWeight.w500)),
           Text(value,
-              style: GoogleFonts.poppins(
+              style: GoogleFonts.roboto(
                   fontSize: fontSize, fontWeight: FontWeight.w500)),
         ],
       ),

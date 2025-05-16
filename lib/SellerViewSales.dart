@@ -506,6 +506,7 @@ class SellerViewSales extends StatelessWidget {
     required String image,
   }) {
     return Card(
+      color: Colors.white,
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 0,
       shape: RoundedRectangleBorder(

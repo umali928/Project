@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:flutter/services.dart';
-
+import 'addressList.dart'; // Import your address list page
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
@@ -326,7 +326,11 @@ class _AddAddressPageState extends State<AddAddressPage> {
                                             onPressed: () {
                                               Navigator.pop(
                                                   context); // Close dialog
-                                              Navigator.pop(context); // Go back
+                                              Navigator.push(context, 
+                                                  MaterialPageRoute(
+                                                builder: (context) =>
+                                                    const AddressListScreen(),
+                                              )); // Navigate to the same page    
                                             },
                                             style: ElevatedButton.styleFrom(
                                               backgroundColor:

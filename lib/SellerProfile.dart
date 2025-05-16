@@ -191,6 +191,7 @@ class _SellerProfileState extends State<SellerProfile> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       drawer: custom.NavigationDrawer(),
       appBar: AppBar(
         title: Text(
@@ -239,6 +240,7 @@ class _SellerProfileState extends State<SellerProfile> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Padding(
+                        
                           padding: const EdgeInsets.all(16.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -298,9 +300,12 @@ class _SellerProfileState extends State<SellerProfile> {
     TextEditingController? controller,
     String? Function(String?)? validator,
   }) {
+    
     return Padding(
+  
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Column(
+        
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(

@@ -247,6 +247,40 @@ class Manageproduct extends StatelessWidget {
                                           SizedBox(width: 10),
                                           TextButton.icon(
                                             onPressed: () async {
+                                              // Show confirmation dialog
+                                              bool confirmDelete =
+                                                  await showDialog(
+                                                context: context,
+                                                builder: (context) =>
+                                                    AlertDialog(
+                                                  title: Text('Confirm Delete'),
+                                                  content: Text(
+                                                      'Are you sure you want to delete this product?'),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(context)
+                                                              .pop(false),
+                                                      child: Text('Cancel'),
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: () =>
+                                                          Navigator.of(context)
+                                                              .pop(true),
+                                                      child: Text(
+                                                        'Delete',
+                                                        style: TextStyle(
+                                                            color: Colors.red),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+
+                                              if (confirmDelete != true) {
+                                                return; // User canceled the deletion
+                                              }
+
                                               final productId = products[index]
                                                   .id; // Get the Firestore doc ID
                                               final imageUrl =

@@ -1,20 +1,16 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'wishlist.dart';
-import 'profile.dart';
-import 'cart.dart';
-import 'searchPage.dart';
+import 'login.dart';
 import 'product.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:intl/intl.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   if (kIsWeb) {
     await Firebase.initializeApp(
       options: FirebaseOptions(
@@ -30,30 +26,34 @@ void main() async {
   } else {
     await Firebase.initializeApp();
   }
+
   await Supabase.initialize(
     url: 'https://haoiqctsijynxwfoaspm.supabase.co',
     anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhhb2lxY3RzaWp5bnh3Zm9hc3BtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxNzU3MDMsImV4cCI6MjA1OTc1MTcwM30.7kilmu9kxrABgg4ZMz9GIHm5Jv4LHLAIYR1_8q1eDEI',
   );
-  runApp(EcommerceApp());
+
+  runApp(MyApp());
 }
 
-class EcommerceApp extends StatelessWidget {
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Dashboard(),
+      home: GuestDashboard(),
     );
   }
 }
 
-class Dashboard extends StatefulWidget {
+class GuestDashboard extends StatefulWidget {
   @override
-  _DashboardState createState() => _DashboardState();
+  _GuestDashboardState createState() => _GuestDashboardState();
 }
 
-class _DashboardState extends State<Dashboard> {
+class _GuestDashboardState extends State<GuestDashboard> {
   int _selectedIndex = 0;
   late final List<Widget> _pages;
 
@@ -62,22 +62,48 @@ class _DashboardState extends State<Dashboard> {
     super.initState();
 
     _pages = [
-      HomeScreen(),
-      WishlistScreen(),
-      SearchPage(),
-      SettingsPage(),
+      GuestHomeScreen(),
+      GuestPlaceholderScreen(title: "Wishlist"),
+      GuestPlaceholderScreen(title: "Shop"), // Changed to require login
+      GuestPlaceholderScreen(title: "Login"),
     ];
   }
 
-  @override
-  void dispose() {
-    super.dispose();
+  void _onItemTapped(int index) {
+    if (index != 0) {
+      // Only Home is accessible without login
+      _showLoginPrompt(context);
+    } else {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
   }
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+  void _showLoginPrompt(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Login Required"),
+        content: Text("Please login to access this feature."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => LoginScreen()),
+              );
+            },
+            child: Text("Login"),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -100,22 +126,22 @@ class _DashboardState extends State<Dashboard> {
               icon: Icon(Icons.favorite_border), label: "Wishlist"),
           BottomNavigationBarItem(
               icon: Icon(Icons.shopping_bag), label: "Shop"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+          BottomNavigationBarItem(icon: Icon(Icons.login), label: "Login"),
         ],
       ),
     );
   }
 }
 
-class HomeScreen extends StatefulWidget {
+class GuestHomeScreen extends StatefulWidget {
   @override
-  _HomeScreenState createState() => _HomeScreenState();
+  _GuestHomeScreenState createState() => _GuestHomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _GuestHomeScreenState extends State<GuestHomeScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedCategory = 'All'; // Default selected category
-  String _searchQuery = ''; // Add this to track the search query
+  String _selectedCategory = 'All';
+  String _searchQuery = '';
   final List<String> _categories = [
     'All',
     'Clothes',
@@ -141,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("LSPU-MART",
+            Text("LSPU-MART (Guest)",
                 style: GoogleFonts.poppins(
                   fontSize: 23,
                   fontWeight: FontWeight.bold,
@@ -151,98 +177,15 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           IconButton(
-            icon: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseAuth.instance.currentUser == null
-                  ? null
-                  : FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(FirebaseAuth.instance.currentUser!.uid)
-                      .collection('notifications')
-                      .where('read', isEqualTo: false)
-                      .snapshots(),
-              builder: (context, snapshot) {
-                int unreadCount =
-                    snapshot.hasData ? snapshot.data!.docs.length : 0;
-                return Stack(
-                  children: [
-                    Icon(LucideIcons.bell, color: Colors.black),
-                    if (unreadCount > 0)
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          padding: EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            '$unreadCount',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                );
-              },
-            ),
+            icon: Icon(LucideIcons.bell, color: Colors.black),
             onPressed: () {
-              if (FirebaseAuth.instance.currentUser != null) {
-                _showNotificationsDialog(context);
-              }
+              _showLoginPrompt(context);
             },
           ),
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseAuth.instance.currentUser == null
-                ? null
-                : FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(FirebaseAuth.instance.currentUser!.uid)
-                    .collection('cart')
-                    .snapshots(),
-            builder: (context, snapshot) {
-              int cartCount = 0;
-              if (snapshot.hasData) {
-                cartCount = snapshot.data!.docs.length;
-              }
-
-              return Stack(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.shopping_cart, size: 28),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => CartScreen()),
-                      );
-                    },
-                  ),
-                  if (cartCount > 0)
-                    Positioned(
-                      right: 6,
-                      top: 6,
-                      child: Container(
-                        padding: EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Text(
-                          '$cartCount',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              );
+          IconButton(
+            icon: Icon(Icons.shopping_cart, size: 28),
+            onPressed: () {
+              _showLoginPrompt(context);
             },
           ),
         ],
@@ -357,10 +300,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   SizedBox(height: 10),
 
                   /// Top Products
-                  ProductHorizontalList(
+                  GuestProductHorizontalList(
                     category:
                         _selectedCategory == 'All' ? null : _selectedCategory,
                     searchQuery: _searchQuery,
+                    onActionRequiresLogin: () => _showLoginPrompt(context),
                   ),
 
                   SizedBox(height: 30),
@@ -370,14 +314,41 @@ class _HomeScreenState extends State<HomeScreen> {
                   SizedBox(height: 10),
 
                   /// You May Also Like
-                  ProductHorizontalList(
+                  GuestProductHorizontalList(
                     customStream: getRandomProducts(),
+                    onActionRequiresLogin: () => _showLoginPrompt(context),
                   ),
                 ],
               ),
             ),
           );
         },
+      ),
+    );
+  }
+
+  void _showLoginPrompt(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Login Required"),
+        content: Text("Please login to access this feature."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => LoginScreen()),
+              );
+            },
+            child: Text("Login"),
+          ),
+        ],
       ),
     );
   }
@@ -399,27 +370,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Add this method to fetch random products
-Stream<List<QueryDocumentSnapshot>> getRandomProducts() {
-  return FirebaseFirestore.instance
-      .collection('products')
-      .snapshots()
-      .map((querySnapshot) {
-    final allProducts = querySnapshot.docs;
-    allProducts.shuffle(); // Shuffle to get random order
-    return allProducts.take(10).toList(); // Take first 10 after shuffle
-  });
-}
-
-class ProductHorizontalList extends StatelessWidget {
+class GuestProductHorizontalList extends StatelessWidget {
   final Stream<List<QueryDocumentSnapshot>>? customStream;
   final String? category;
   final String? searchQuery;
-  const ProductHorizontalList({
+  final VoidCallback onActionRequiresLogin;
+
+  const GuestProductHorizontalList({
     Key? key,
     this.customStream,
     this.category,
     this.searchQuery,
+    required this.onActionRequiresLogin,
   }) : super(key: key);
 
   @override
@@ -470,9 +432,11 @@ class ProductHorizontalList extends StatelessWidget {
           }
           return true;
         }).toList();
+
         if (products.isEmpty) {
           return Center(child: Text('No products match your search.'));
         }
+
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -536,6 +500,13 @@ class ProductHorizontalList extends StatelessWidget {
                                     )
                                   : null,
                             ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: GestureDetector(
+                                onTap: onActionRequiresLogin,
+                              ),
+                            ),
                           ],
                         ),
                         Padding(
@@ -581,6 +552,53 @@ class ProductHorizontalList extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class GuestPlaceholderScreen extends StatelessWidget {
+  final String title;
+
+  const GuestPlaceholderScreen({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(title),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.lock, size: 50, color: Colors.grey),
+            SizedBox(height: 20),
+            Text(
+              "Login Required",
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            Text(
+              "Please login to access $title",
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                );
+              },
+              child: Text("Login"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Color(0xFF651D32),
+                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -631,215 +649,13 @@ class AdBanner extends StatelessWidget {
   }
 }
 
-Future<void> _showNotificationsDialog(BuildContext context) async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null) return;
-
-  // First mark all as read
-  final notificationsQuery = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .collection('notifications')
-      .where('read', isEqualTo: false)
-      .get();
-
-  final batch = FirebaseFirestore.instance.batch();
-  for (final doc in notificationsQuery.docs) {
-    batch.update(doc.reference, {'read': true});
-  }
-  await batch.commit();
-
-  // Then get all notifications
-  final allNotificationsSnapshot = await FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .collection('notifications')
-      .orderBy('timestamp', descending: true)
-      .get();
-
-  // Create a mutable list
-  final List<QueryDocumentSnapshot> notificationDocs =
-      allNotificationsSnapshot.docs.toList();
-
-  showDialog(
-    context: context,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: Row(
-              children: [
-                Icon(Icons.notifications, color: Color(0xFF651D32)),
-                SizedBox(width: 10),
-                Text('Notifications'),
-              ],
-            ),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: notificationDocs.isEmpty
-                  ? Center(child: Text('No notifications'))
-                  : ListView(
-                      shrinkWrap: true,
-                      children: notificationDocs.map((doc) {
-                        final data = doc.data() as Map<String, dynamic>;
-                        return Dismissible(
-                          key: Key(doc.id),
-                          direction: DismissDirection.endToStart,
-                          background: Container(
-                            alignment: Alignment.centerRight,
-                            padding: EdgeInsets.only(right: 20),
-                            color: Colors.red,
-                            child: Icon(Icons.delete, color: Colors.white),
-                          ),
-                          confirmDismiss: (direction) async {
-                            return await showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: Text('Delete Notification'),
-                                content: Text(
-                                    'Are you sure you want to delete this notification?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(false),
-                                    child: Text('Cancel'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(true),
-                                    child: Text('Delete'),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                          onDismissed: (direction) async {
-                            await FirebaseFirestore.instance
-                                .collection('users')
-                                .doc(user.uid)
-                                .collection('notifications')
-                                .doc(doc.id)
-                                .delete();
-                            setState(() {
-                              notificationDocs
-                                  .removeWhere((d) => d.id == doc.id);
-                            });
-                          },
-                          child: Container(
-                            padding: EdgeInsets.symmetric(vertical: 8),
-                            decoration: BoxDecoration(
-                              border: Border(
-                                bottom: BorderSide(
-                                  color: Colors.grey.shade200,
-                                  width: 1,
-                                ),
-                              ),
-                            ),
-                            child: ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              title: Text(
-                                data['title'] ?? 'Notification',
-                                style: GoogleFonts.poppins(
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  SizedBox(height: 4),
-                                  Text(
-                                    data['message'] ?? '',
-                                    style: GoogleFonts.poppins(),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.access_time,
-                                          size: 14, color: Colors.grey),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        data['timestamp'] != null
-                                            ? DateFormat('MMM dd, hh:mm a')
-                                                .format((data['timestamp']
-                                                        as Timestamp)
-                                                    .toDate())
-                                            : '',
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  if (data['orderId'] != null) ...[
-                                    SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        Icon(Icons.receipt,
-                                            size: 14, color: Colors.grey),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          'Order #${data['orderId']}',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 12,
-                                            color: Colors.blue,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Close'),
-              ),
-              if (notificationDocs.isNotEmpty)
-                TextButton(
-                  onPressed: () async {
-                    final confirm = await showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: Text('Clear All Notifications'),
-                        content: Text(
-                            'Are you sure you want to delete all notifications?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(false),
-                            child: Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.of(context).pop(true),
-                            child: Text('Delete All'),
-                          ),
-                        ],
-                      ),
-                    );
-
-                    if (confirm == true) {
-                      final batch = FirebaseFirestore.instance.batch();
-                      for (final doc in notificationDocs) {
-                        batch.delete(doc.reference);
-                      }
-                      await batch.commit();
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                      }
-                    }
-                  },
-                  child: Text('Clear All'),
-                ),
-            ],
-          );
-        },
-      );
-    },
-  );
+Stream<List<QueryDocumentSnapshot>> getRandomProducts() {
+  return FirebaseFirestore.instance
+      .collection('products')
+      .snapshots()
+      .map((querySnapshot) {
+    final allProducts = querySnapshot.docs;
+    allProducts.shuffle(); // Shuffle to get random order
+    return allProducts.take(10).toList(); // Take first 10 after shuffle
+  });
 }

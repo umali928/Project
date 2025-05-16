@@ -34,7 +34,7 @@ void main() async {
 
   // 🔑 Check for existing session
   firebase_auth.User? user = firebase_auth.FirebaseAuth.instance.currentUser;
-   runApp(
+  runApp(
     MaterialApp(
       debugShowCheckedModeBanner: false,
       home: user != null ? Dashboard() : const MyApp(),
@@ -64,8 +64,11 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-
+  bool isLoading = false;
   void loginUser() async {
+    setState(() {
+      isLoading = true; // Start loading
+    });
     try {
       final credential =
           await firebase_auth.FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -81,6 +84,13 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Login failed: Incorrect Email Or Password")),
       );
+    } finally {
+      if (mounted) {
+        // Check if widget is still mounted before calling setState
+        setState(() {
+          isLoading = false; // Stop loading
+        });
+      }
     }
   }
 
@@ -163,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     SizedBox(
                       width: textFieldWidth,
                       child: ElevatedButton(
-                        onPressed: loginUser,
+                        onPressed: isLoading ? null : loginUser,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF651D32),
                           foregroundColor: Colors.white,
@@ -172,11 +182,21 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: Text(
-                          'Login',
-                          style: GoogleFonts.poppins(
-                              fontSize: 25, fontWeight: FontWeight.bold),
-                        ),
+                        child: isLoading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 3,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
+                                ),
+                              )
+                            : Text(
+                                'Login',
+                                style: GoogleFonts.poppins(
+                                    fontSize: 25, fontWeight: FontWeight.bold),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 36),
@@ -209,7 +229,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-                
                   ],
                 ),
               ),
@@ -259,6 +278,7 @@ class _PasswordFieldState extends State<PasswordField> {
     );
   }
 }
+
 class ForgotPasswordDialog extends StatefulWidget {
   const ForgotPasswordDialog({super.key});
 
@@ -323,7 +343,8 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             ),
           ),
           const SizedBox(height: 12),
@@ -348,7 +369,8 @@ class _ForgotPasswordDialogState extends State<ForgotPasswordDialog> {
         ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: Color(0xFF651D32),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
           onPressed: isLoading ? null : sendPasswordResetEmail,

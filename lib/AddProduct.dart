@@ -76,6 +76,52 @@ Future<String?> uploadProductImageToSupabase(
   }
 }
 
+Future<void> sendNewProductNotification(
+    String productName, String productId) async {
+  try {
+    // Get all users who should receive the notification
+    final usersSnapshot =
+        await FirebaseFirestore.instance.collection('users').get();
+
+    // Get seller info
+    final userId = FirebaseAuth.instance.currentUser!.uid;
+    final sellerDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('sellerInfo')
+        .get();
+    final sellerData = sellerDoc.docs.first.data();
+    final sellerName = sellerData['storeName'] ?? 'A seller';
+
+    // Create a batch write for efficiency
+    final batch = FirebaseFirestore.instance.batch();
+
+    for (final userDoc in usersSnapshot.docs) {
+      if (userDoc.id != userId) {
+        // Don't notify yourself
+        final notificationRef = FirebaseFirestore.instance
+            .collection('users')
+            .doc(userDoc.id)
+            .collection('notifications')
+            .doc();
+
+        batch.set(notificationRef, {
+          'title': 'New Product Available!',
+          'message': '$sellerName added a new product: $productName',
+          'type': 'new_product',
+          'productId': productId,
+          'read': false,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+      }
+    }
+
+    await batch.commit();
+  } catch (e) {
+    debugPrint('Error sending notifications: $e');
+  }
+}
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -114,19 +160,23 @@ class AddProductScreen extends StatefulWidget {
 
 class _AddProductScreenState extends State<AddProductScreen> {
   final _formKey = GlobalKey<FormState>();
-  // ignore: unused_field
+  final TextEditingController _descriptionController = TextEditingController();
+
   String _productName = '';
-  // ignore: unused_field
   String _productDescription = '';
-  // ignore: unused_field
   double _productPrice = 0;
-  // ignore: unused_field
   int _productStock = 0;
   String _selectedCategory = 'Clothes';
   final List<String> _categories = ['Clothes', 'School', 'Sports', 'Foods'];
 
   String? _productImage;
   Uint8List? _webImage;
+
+  @override
+  void dispose() {
+    _descriptionController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickImage() async {
     try {
@@ -298,74 +348,13 @@ class _AddProductScreenState extends State<AddProductScreen> {
                             ],
                           ),
                   ),
-                  _buildFormField(
-                    label: 'Product Name',
-                    hint: 'Enter product name',
-                    validator: (value) => value == null || value.isEmpty
-                        ? 'Please enter product name'
-                        : null,
-                    onSaved: (value) => _productName = value!,
-                  ),
-                  _buildFormField(
-                    label: 'Description',
-                    hint: 'Enter product description',
-                    maxLines: 3,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter product description';
-                      }
-                      if (value.length < 20) {
-                        return 'Description should be at least 20 characters';
-                      }
-                      return null;
-                    },
-                    onSaved: (value) => _productDescription = value!,
-                  ),
+                  _buildProductNameField(),
+                  _buildDescriptionField(),
                   Row(
                     children: [
-                      Expanded(
-                        child: _buildFormField(
-                          label: 'Price (PHP)',
-                          hint: '0.00',
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                                RegExp(r'^\d+\.?\d{0,2}')),
-                          ],
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Enter price';
-                            }
-                            if (double.tryParse(value) == null) {
-                              return 'Invalid price';
-                            }
-                            return null;
-                          },
-                          onSaved: (value) =>
-                              _productPrice = double.parse(value!),
-                        ),
-                      ),
+                      Expanded(child: _buildPriceField()),
                       const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildFormField(
-                          label: 'Stock',
-                          hint: '0',
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly
-                          ],
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Enter stock';
-                            }
-                            if (int.tryParse(value) == null) {
-                              return 'Invalid number';
-                            }
-                            return null;
-                          },
-                          onSaved: (value) => _productStock = int.parse(value!),
-                        ),
-                      ),
+                      Expanded(child: _buildStockField()),
                     ],
                   ),
                   _buildDropdownField(
@@ -474,6 +463,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                 'sellerId': sellerId,
                                 'createdAt': FieldValue.serverTimestamp(),
                               });
+                              // Send notifications to all users about the new product
+                              await sendNewProductNotification(
+                                  _productName, productId);
                               Navigator.of(context)
                                   .pop(); // Close loading dialog
 
@@ -513,32 +505,139 @@ class _AddProductScreenState extends State<AddProductScreen> {
     );
   }
 
-  Widget _buildFormField({
-    required String label,
-    required String hint,
-    int maxLines = 1,
-    TextInputType keyboardType = TextInputType.text,
-    List<TextInputFormatter>? inputFormatters,
-    String? Function(String?)? validator,
-    void Function(String?)? onSaved,
-  }) {
+  Widget _buildProductNameField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        Text(label,
+        Text('Product Name',
             style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: Color(0xFF800000))),
         const SizedBox(height: 8),
         TextFormField(
-          decoration: _inputDecoration(hint: hint),
-          maxLines: maxLines,
-          keyboardType: keyboardType,
-          inputFormatters: inputFormatters,
-          validator: validator,
-          onSaved: onSaved,
+          decoration: _inputDecoration(hint: 'Enter product name'),
+          validator: (value) => value == null || value.isEmpty
+              ? 'Please enter product name'
+              : null,
+          onSaved: (value) => _productName = value!,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDescriptionField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        Text('Description',
+            style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF800000))),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: _descriptionController,
+          maxLines: 3,
+          maxLength: 500,
+          decoration:
+              _inputDecoration(hint: 'Enter product description').copyWith(
+            counterText: '${_descriptionController.text.length}/500',
+            suffix: Text(
+              '${_descriptionController.text.length}/500',
+              style: TextStyle(
+                color: _descriptionController.text.length > 500
+                    ? Colors.red
+                    : Colors.grey,
+              ),
+            ),
+          ),
+          onChanged: (value) {
+            setState(() {
+              _productDescription = value;
+            });
+          },
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter product description';
+            }
+            if (value.length < 20) {
+              return 'Description should be at least 20 characters';
+            }
+            if (value.length > 500) {
+              return 'Description cannot exceed 500 characters';
+            }
+            return null;
+          },
+          onSaved: (value) => _productDescription = value!,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPriceField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        Text('Price (PHP)',
+            style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF800000))),
+        const SizedBox(height: 8),
+        TextFormField(
+          decoration: _inputDecoration(hint: '0.00'),
+          keyboardType: TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+          ],
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Enter price';
+            }
+            final price = double.tryParse(value);
+            if (price == null || price <= 0) {
+              return 'Please enter a valid positive number';
+            }
+            return null;
+          },
+          onSaved: (value) => _productPrice = double.parse(value!),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStockField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        Text('Stock',
+            style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF800000))),
+        const SizedBox(height: 8),
+        TextFormField(
+          decoration: _inputDecoration(hint: '0'),
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+          ],
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Enter stock';
+            }
+            final stock = int.tryParse(value);
+            if (stock == null || stock < 0) {
+              return 'Please enter a valid positive number';
+            }
+            return null;
+          },
+          onSaved: (value) => _productStock = int.parse(value!),
         ),
       ],
     );

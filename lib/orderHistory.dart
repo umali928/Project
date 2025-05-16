@@ -1,6 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-void main() {
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'OrderDetails.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: FirebaseOptions(
+        apiKey: "AIzaSyBbSQOdsCh7ImLhewcIhHUTcj9-1xbShQk",
+        authDomain: "lspumart.firebaseapp.com",
+        databaseURL:
+            "https://lspumart-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "lspumart",
+        storageBucket: "lspumart.firebasestorage.app",
+        messagingSenderId: "533992551897",
+        appId: "1:533992551897:web:d04a482ad131a0700815c8",
+      ),
+    );
+  } else {
+    await Firebase.initializeApp();
+  }
+  await Supabase.initialize(
+    url: 'https://haoiqctsijynxwfoaspm.supabase.co',
+    anonKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhhb2lxY3RzaWp5bnh3Zm9hc3BtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxNzU3MDMsImV4cCI6MjA1OTc1MTcwM30.7kilmu9kxrABgg4ZMz9GIHm5Jv4LHLAIYR1_8q1eDEI',
+  );
   runApp(const MyApp());
 }
 
@@ -24,36 +53,24 @@ class MyApp extends StatelessWidget {
   }
 }
 
-
-
 class OrderHistoryScreen extends StatelessWidget {
   const OrderHistoryScreen({super.key});
 
-  final List<Map<String, dynamic>> orders = const [
-    {
-      "id": "#12345",
-      "date": "March 20, 2025",
-      "status": "Delivered",
-      "total": "150.00",
-    },
-    {
-      "id": "#12346",
-      "date": "March 18, 2025",
-      "status": "Shipped",
-      "total": "80.00",
-    },
-    {
-      "id": "#12347",
-      "date": "March 15, 2025",
-      "status": "Pending",
-      "total": "45.50",
-    }
-  ];
-
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double iconSize = screenWidth * 0.08;
+    final currentUser = FirebaseAuth.instance.currentUser;
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    if (currentUser == null) {
+      return Scaffold(
+        body: Center(
+          child: Text(
+        'Please log in to view order history',
+        style: GoogleFonts.poppins(fontSize: 18),
+      ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -61,131 +78,116 @@ class OrderHistoryScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
         title: Text("Order History",
             style: GoogleFonts.poppins(fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: ListView.builder(
-          itemCount: orders.length,
-          itemBuilder: (context, index) {
-            final order = orders[index];
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 5,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              margin: EdgeInsets.symmetric(vertical: screenWidth * 0.02),
-              padding: EdgeInsets.all(screenWidth * 0.04),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: screenWidth * 0.2,
-                    height: screenWidth * 0.2,
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('orders')
+            .where('userId', isEqualTo: currentUser.uid)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child:
+                  Text('Error: ${snapshot.error}', style: GoogleFonts.poppins()),
+            );
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(
+              child:
+                  Text('No orders found', style: GoogleFonts.poppins(fontSize: 18)),
+            );
+          }
+
+          // Sort orders by date (newest first)
+          final orders = snapshot.data!.docs;
+          orders.sort((a, b) {
+            final dateA = (a['orderDate'] as Timestamp).toDate();
+            final dateB = (b['orderDate'] as Timestamp).toDate();
+            return dateB.compareTo(dateA);
+          });
+
+          return Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: ListView.builder(
+              itemCount: orders.length,
+              itemBuilder: (context, index) {
+                final order = orders[index];
+                final data = order.data() as Map<String, dynamic>;
+                final orderDate = (data['orderDate'] as Timestamp).toDate();
+                final formattedDate =
+                    '${orderDate.day}/${orderDate.month}/${orderDate.year}';
+
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => OrderDetailsPage(
+                          orderId: order.id,
+                          orderData: data,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      color: Colors.grey[300],
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black12,
+                          blurRadius: 5,
+                          offset: const Offset(0, 3),
+                        )
+                      ],
                     ),
-                    child: Center(
-                      child:
-                          Icon(Icons.image, color: Colors.grey, size: iconSize),
-                    ),
-                  ),
-                  SizedBox(width: screenWidth * 0.04),
-                  Expanded(
+                    margin: EdgeInsets.symmetric(vertical: screenWidth * 0.02),
+                    padding: EdgeInsets.all(screenWidth * 0.04),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          order["id"],
+                          "Order #${order.id.substring(0, 8)}",
                           style: GoogleFonts.poppins(
                             fontSize: screenWidth * 0.05,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF800000),
+                            color: const Color(0xFF800000),
                           ),
                         ),
                         SizedBox(height: screenWidth * 0.02),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(order["date"],
-                                style: GoogleFonts.poppins(
-                                    color: Colors.grey[700],
-                                    fontSize: screenWidth * 0.04)),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: screenWidth * 0.02,
-                                  vertical: screenWidth * 0.01),
-                              decoration: BoxDecoration(
-                                color: _getStatusColor(order["status"]),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                order["status"],
-                                style: GoogleFonts.poppins(
-                                  color: Colors.white,
-                                  fontSize: screenWidth * 0.04,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
+                        Text(
+                          'Date: $formattedDate',
+                          style: GoogleFonts.poppins(
+                              color: Colors.grey[700],
+                              fontSize: screenWidth * 0.04),
                         ),
                         SizedBox(height: screenWidth * 0.02),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              "Total: \u20B1${order["total"]}",
-                              style: GoogleFonts.roboto(
-                                fontSize: screenWidth * 0.045,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF800000),
-                              ),
-                            ),
-                            if (order["status"] == "Delivered")
-                              IconButton(
-                                icon: Icon(Icons.delete,
-                                    color: Colors.red, size: iconSize),
-                                onPressed: () {},
-                              ),
-                          ],
+                        Text(
+                          'Tap to view details',
+                          style: GoogleFonts.poppins(
+                              color: Colors.grey,
+                              fontSize: screenWidth * 0.035,
+                              fontStyle: FontStyle.italic),
                         ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            );
-          },
-        ),
+                );
+              },
+            ),
+          );
+        },
       ),
     );
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case "Delivered":
-        return Colors.green;
-      case "Shipped":
-        return Colors.blue;
-      case "Pending":
-        return Colors.orange;
-      default:
-        return Colors.grey;
-    }
   }
 }

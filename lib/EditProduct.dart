@@ -29,6 +29,7 @@ class EditProductScreen extends StatefulWidget {
 
 class _EditProductScreenState extends State<EditProductScreen> {
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _descriptionController = TextEditingController();
 
   late String _productName;
   late String _productDescription;
@@ -46,10 +47,17 @@ class _EditProductScreenState extends State<EditProductScreen> {
     super.initState();
     _productName = widget.productData['productName'];
     _productDescription = widget.productData['description'];
+    _descriptionController.text = _productDescription;
     _productPrice = (widget.productData['price']).toDouble();
     _productStock = (widget.productData['stock']);
     _selectedCategory = widget.productData['category'];
     _productImageUrl = widget.productData['imageUrl'];
+  }
+
+  @override
+  void dispose() {
+    _descriptionController.dispose();
+    super.dispose();
   }
 
   // ignore: unused_element
@@ -173,8 +181,8 @@ class _EditProductScreenState extends State<EditProductScreen> {
           }
         }
 
-        final newFileName =
-            'products/${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+        // Use product ID as the filename
+        final newFileName = 'products/${widget.productId}.$fileExtension';
         final contentType = fileExtension == 'png' ? 'image/png' : 'image/jpeg';
 
         await supabase.storage.from('uploads').uploadBinary(
@@ -192,7 +200,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
             '$rawUrl?t=${DateTime.now().millisecondsSinceEpoch}'; // to avoid cache
       }
 
-      // 🔥 Update Firestore with new product data
+      // Update Firestore with new product data
       await FirebaseFirestore.instance
           .collection('products')
           .doc(widget.productId)
@@ -384,36 +392,13 @@ class _EditProductScreenState extends State<EditProductScreen> {
   Widget _buildFormFields() {
     return Column(
       children: [
-        _buildFormField(
-          label: 'Product Name',
-          initialValue: _productName,
-          onSaved: (val) => _productName = val!,
-        ),
-        _buildFormField(
-          label: 'Description',
-          initialValue: _productDescription,
-          maxLines: 3,
-          onSaved: (val) => _productDescription = val!,
-        ),
+        _buildProductNameField(),
+        _buildDescriptionField(),
         Row(
           children: [
-            Expanded(
-              child: _buildFormField(
-                label: 'Price (PHP)',
-                initialValue: _productPrice.toString(),
-                keyboardType: TextInputType.number,
-                onSaved: (val) => _productPrice = double.parse(val!),
-              ),
-            ),
+            Expanded(child: _buildPriceField()),
             const SizedBox(width: 16),
-            Expanded(
-              child: _buildFormField(
-                label: 'Stock',
-                initialValue: _productStock.toString(),
-                keyboardType: TextInputType.number,
-                onSaved: (val) => _productStock = int.parse(val!),
-              ),
-            ),
+            Expanded(child: _buildStockField()),
           ],
         ),
         _buildDropdownField(),
@@ -421,29 +406,144 @@ class _EditProductScreenState extends State<EditProductScreen> {
     );
   }
 
-  Widget _buildFormField({
-    required String label,
-    String? initialValue,
-    int maxLines = 1,
-    TextInputType keyboardType = TextInputType.text,
-    void Function(String?)? onSaved,
-  }) {
+  Widget _buildProductNameField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        Text(label,
+        Text('Product Name',
             style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
                 color: Color(0xFF800000))),
         const SizedBox(height: 8),
         TextFormField(
-          initialValue: initialValue,
-          decoration: _inputDecoration(hint: 'Enter $label'),
-          maxLines: maxLines,
-          keyboardType: keyboardType,
-          onSaved: onSaved,
+          initialValue: _productName,
+          decoration: _inputDecoration(hint: 'Enter Product Name'),
+          onSaved: (val) => _productName = val!,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter a product name';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDescriptionField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        Text('Description',
+            style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF800000))),
+        const SizedBox(height: 8),
+        TextFormField(
+          controller: _descriptionController,
+          maxLines: 3,
+          maxLength: 500,
+          decoration: _inputDecoration(hint: 'Enter Description').copyWith(
+            counterText: '${_descriptionController.text.length}/500',
+            suffix: Text(
+              '${_descriptionController.text.length}/500',
+              style: TextStyle(
+                color: _descriptionController.text.length > 500
+                    ? Colors.red
+                    : Colors.grey,
+              ),
+            ),
+          ),
+          onChanged: (value) {
+            setState(() {
+              _productDescription = value;
+            });
+          },
+          onSaved: (val) => _productDescription = val!,
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter a description';
+            }
+            if (value.length < 20) {
+              return 'Description must be at least 20 characters';
+            }
+            if (value.length > 500) {
+              return 'Description cannot exceed 500 characters';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPriceField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        Text('Price (PHP)',
+            style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF800000))),
+        const SizedBox(height: 8),
+        TextFormField(
+          initialValue: _productPrice.toString(),
+          decoration: _inputDecoration(hint: 'Enter Price'),
+          keyboardType: TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
+          ],
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter a price';
+            }
+            final price = double.tryParse(value);
+            if (price == null || price <= 0) {
+              return 'Please enter a valid positive number';
+            }
+            return null;
+          },
+          onSaved: (val) => _productPrice = double.parse(val!),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStockField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        Text('Stock',
+            style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF800000))),
+        const SizedBox(height: 8),
+        TextFormField(
+          initialValue: _productStock.toString(),
+          decoration: _inputDecoration(hint: 'Enter Stock'),
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+          ],
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Please enter stock quantity';
+            }
+            final stock = int.tryParse(value);
+            if (stock == null || stock < 0) {
+              return 'Please enter a valid positive number';
+            }
+            return null;
+          },
+          onSaved: (val) => _productStock = int.parse(val!),
         ),
       ],
     );

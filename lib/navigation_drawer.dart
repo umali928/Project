@@ -80,19 +80,6 @@ class _NavigationDrawerState extends State<NavigationDrawer> {
                     icon: Icons.bar_chart,
                     text: "View Sales",
                     destination: SellerViewSales()),
-                // DrawerItem(
-                //   icon: Icons.message,
-                //   text: "Message Users",
-                //   onTap: () {
-                //     Navigator.push(
-                //       context,
-                //       MaterialPageRoute(
-                //         builder: (context) =>
-                       
-                //       ),
-                //     );
-                //   },
-                // ),
                 DrawerItem(
                   icon: Icons.person,
                   text: "Profile",

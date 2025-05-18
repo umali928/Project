@@ -126,7 +126,8 @@ class WishlistScreen extends StatelessWidget {
     return validItems;
   }
 
-  Future<void> _showDeleteConfirmationDialog(BuildContext context, String docId, String productId, CollectionReference wishlistCollection) async {
+  Future<void> _showDeleteConfirmationDialog(BuildContext context, String docId,
+      String productId, CollectionReference wishlistCollection) async {
     return showDialog<void>(
       context: context,
       barrierDismissible: false, // user must tap button!
@@ -136,20 +137,23 @@ class WishlistScreen extends StatelessWidget {
           content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
-                Text('Are you sure you want to remove this item from your wishlist?', 
+                Text(
+                    'Are you sure you want to remove this item from your wishlist?',
                     style: GoogleFonts.poppins()),
               ],
             ),
           ),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel', style: GoogleFonts.poppins(color: Colors.grey[600])),
+              child: Text('Cancel',
+                  style: GoogleFonts.poppins(color: Colors.grey[600])),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text('Remove', style: GoogleFonts.poppins(color: Color(0xFF651D32))),
+              child: Text('Remove',
+                  style: GoogleFonts.poppins(color: Color(0xFF651D32))),
               onPressed: () async {
                 Navigator.of(context).pop();
                 await wishlistCollection.doc(docId).delete();
@@ -157,7 +161,7 @@ class WishlistScreen extends StatelessWidget {
                 if (WishlistButton.refreshCallback != null) {
                   WishlistButton.refreshCallback!();
                 }
-                
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text("Item removed from wishlist"),
@@ -423,11 +427,10 @@ class WishlistScreen extends StatelessWidget {
                                                   color: Color(0xFF651D32)),
                                               onPressed: () async {
                                                 await _showDeleteConfirmationDialog(
-                                                  context, 
-                                                  docId, 
-                                                  productId, 
-                                                  wishlistCollection
-                                                );
+                                                    context,
+                                                    docId,
+                                                    productId,
+                                                    wishlistCollection);
                                               },
                                             ),
                                             SizedBox(height: 20),
@@ -547,6 +550,23 @@ class WishlistScreen extends StatelessWidget {
               final wishlistDocs = wishlistSnapshot.docs;
               final validItems =
                   await _cleanAndGetValidWishlistItems(wishlistDocs);
+
+              // Check if there are no wishlist items
+              if (validItems.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    content: Text(
+                      "You have no wishlist items to add to cart",
+                      style: GoogleFonts.poppins(),
+                    ),
+                  ),
+                );
+                return;
+              }
 
               final cartRef = FirebaseFirestore.instance
                   .collection('users')

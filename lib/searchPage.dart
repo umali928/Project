@@ -800,6 +800,7 @@ class WishlistButton extends StatefulWidget {
 class _WishlistButtonState extends State<WishlistButton> {
   bool? isWishlisted;
   bool loading = true;
+  bool isAnimating = false;
 
   @override
   void initState() {
@@ -832,9 +833,32 @@ class _WishlistButtonState extends State<WishlistButton> {
     });
   }
 
-  void toggleWishlist() async {
+  Future<void> toggleWishlist() async {
+    if (loading) return;
+
+    setState(() {
+      isAnimating = true;
+    });
+
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      // Show login prompt if user is not logged in
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please login to manage your wishlist'),
+          action: SnackBarAction(
+            label: 'Login',
+            onPressed: () {
+              // Add your login navigation here
+            },
+          ),
+        ),
+      );
+      setState(() {
+        isAnimating = false;
+      });
+      return;
+    }
 
     final productId = widget.data['productId'];
     final wishlistRef = FirebaseFirestore.instance
@@ -842,49 +866,130 @@ class _WishlistButtonState extends State<WishlistButton> {
         .doc(user.uid)
         .collection('wishlist');
 
-    if (isWishlisted == false) {
-      await wishlistRef.add({
-        'productId': productId,
-        'productName': widget.data['productName'],
-        'price': widget.data['price'],
-        'imageUrl': widget.data['imageUrl'],
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-    } else {
-      final snapshot =
-          await wishlistRef.where('productId', isEqualTo: productId).get();
+    try {
+      if (isWishlisted == false) {
+        await wishlistRef.add({
+          'productId': productId,
+          'productName': widget.data['productName'],
+          'price': widget.data['price'],
+          'imageUrl': widget.data['imageUrl'],
+          'timestamp': FieldValue.serverTimestamp(),
+        });
 
-      for (var doc in snapshot.docs) {
-        await wishlistRef.doc(doc.id).delete();
+        // Show success feedback
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Added to wishlist'),
+            duration: Duration(seconds: 1),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      } else {
+        final snapshot =
+            await wishlistRef.where('productId', isEqualTo: productId).get();
+
+        for (var doc in snapshot.docs) {
+          await wishlistRef.doc(doc.id).delete();
+        }
+
+        // Show removal feedback
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Removed from wishlist'),
+            duration: Duration(seconds: 1),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
       }
-    }
 
-    setState(() {
-      isWishlisted = !isWishlisted!;
-      WishlistButton.updateWishlistState(productId, isWishlisted!);
-    });
+      setState(() {
+        isWishlisted = !isWishlisted!;
+        WishlistButton.updateWishlistState(productId, isWishlisted!);
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update wishlist'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        isAnimating = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     if (loading || isWishlisted == null) {
-      return const CircularProgressIndicator();
+      return SizedBox(
+        height: 36,
+        child: Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF651D32)),
+          ),
+        ),
+      );
     }
 
-    return ElevatedButton(
-      onPressed: toggleWishlist,
-      style: ElevatedButton.styleFrom(
-        backgroundColor:
-            isWishlisted! ? Colors.grey[300] : const Color(0xFF651D32),
-        foregroundColor: isWishlisted! ? Colors.black : Colors.white,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: isWishlisted! ? Colors.grey[100] : Color(0xFF651D32),
+        border: Border.all(
+          color: isWishlisted! ? Colors.grey[300]! : Color(0xFF651D32),
+          width: 1,
         ),
       ),
-      child: Text(
-        isWishlisted! ? 'Remove from Wishlist' : 'Add to Wishlist',
-        style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w500),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: toggleWishlist,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (isAnimating)
+                  SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                          isWishlisted! ? Colors.black : Colors.white),
+                    ),
+                  )
+                else
+                  Icon(
+                    isWishlisted! ? Icons.favorite : Icons.favorite_border,
+                    size: 16,
+                    color: isWishlisted! ? Colors.red : Colors.white,
+                  ),
+                SizedBox(width: 8),
+                Text(
+                  isWishlisted! ? 'Saved' : 'Save',
+                  style: GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: isWishlisted! ? Colors.black87 : Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -74,7 +74,12 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
   final List<String> _statusOptions = ['Pending', 'Shipped', 'Delivered'];
   Map<String, dynamic>? order;
   bool isLoading = true;
-  // Add this method to fetch customer name
+  bool _isProductCancelled(Map<String, dynamic> product) {
+    return product['status'] == 'cancelled' ||
+        (product['cancelled'] != null && product['cancelled'] == true) ||
+        (product['isCancelled'] != null && product['isCancelled'] == true);
+  }
+
   Future<String> _getCustomerName() async {
     try {
       if (order?['customerName'] != null) {
@@ -143,6 +148,8 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
         return Colors.blue;
       case 'Delivered':
         return Colors.green;
+      case 'cancelled':
+        return Colors.red;
       default:
         return Colors.grey;
     }
@@ -293,17 +300,22 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
               final productId = product['productId'];
               final currentStatus = product['status'] ?? 'Pending';
               final isDelivered = currentStatus == 'Delivered';
+              final isCancelled = _isProductCancelled(product);
+
+              // Force status to 'Cancelled' if product is cancelled
+              final displayStatus = isCancelled ? 'cancelled' : currentStatus;
+              final validStatus = _statusOptions.contains(displayStatus)
+                  ? displayStatus
+                  : 'Pending';
 
               return StatefulBuilder(
                 builder: (BuildContext context, StateSetter setState) {
-                  // Local state for the dropdown value
-                  String dropdownValue = currentStatus;
+                  String dropdownValue = validStatus;
 
                   return Padding(
                     padding: EdgeInsets.symmetric(vertical: 8.0),
                     child: Column(
                       children: [
-                        // Product display row (unchanged)
                         Row(
                           children: [
                             ClipRRect(
@@ -328,16 +340,31 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                                     style: GoogleFonts.poppins(
                                       fontWeight: FontWeight.bold,
                                       fontSize: isSmallScreen ? 14 : 16,
+                                      color: isCancelled ? Colors.grey : null,
                                     ),
                                   ),
                                   SizedBox(height: 4),
                                   Text(
                                     'Qty: ${product['quantity'] ?? 0}',
                                     style: GoogleFonts.poppins(
-                                      color: Colors.grey[600],
+                                      color: isCancelled
+                                          ? Colors.grey[400]
+                                          : Colors.grey[600],
                                       fontSize: isSmallScreen ? 12 : 14,
                                     ),
                                   ),
+                                  if (isCancelled)
+                                    Padding(
+                                      padding: EdgeInsets.only(top: 4),
+                                      child: Text(
+                                        'Cancelled',
+                                        style: GoogleFonts.poppins(
+                                          color: Colors.red,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
                                 ],
                               ),
                             ),
@@ -346,176 +373,207 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                               style: GoogleFonts.roboto(
                                 fontWeight: FontWeight.bold,
                                 fontSize: isSmallScreen ? 14 : 16,
+                                color: isCancelled ? Colors.grey : null,
                               ),
                             ),
                           ],
                         ),
                         SizedBox(height: 12),
-                        // Status dropdown
-                        AbsorbPointer(
-                          absorbing: isDelivered,
-                          child: DropdownButtonFormField<String>(
-                            value: dropdownValue,
-                            items: _statusOptions.map((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 10,
-                                      height: 10,
-                                      decoration: BoxDecoration(
-                                        color: _getStatusColor(value),
-                                        shape: BoxShape.circle,
-                                      ),
-                                    ),
-                                    SizedBox(width: 12),
-                                    Text(value),
-                                  ],
+                        // Show disabled text field if cancelled, otherwise show dropdown
+                        if (isCancelled)
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.grey[300]!),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey,
+                                    shape: BoxShape.circle,
+                                  ),
                                 ),
-                              );
-                            }).toList(),
-                            onChanged: isDelivered
-                                ? null
-                                : (newValue) async {
-                                    if (newValue == null ||
-                                        newValue == dropdownValue) {
-                                      return;
-                                    }
-
-                                    // Store the previous value
-                                    final previousValue = dropdownValue;
-
-                                    // Immediately update the UI to show the new selection
-                                    setState(() {
-                                      dropdownValue = newValue;
-                                    });
-
-                                    // Show confirmation dialog
-                                    final confirmed = await showDialog<bool>(
-                                      context: context,
-                                      builder: (context) => AlertDialog(
-                                        title: Text('Confirm Status Change'),
-                                        content: Text(
-                                            'Are you sure you want to change the status from $previousValue to $newValue?'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.of(context)
-                                                    .pop(false),
-                                            child: Text('Cancel'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.of(context).pop(true),
-                                            child: Text('Confirm'),
-                                          ),
-                                        ],
+                                SizedBox(width: 12),
+                                Text(
+                                  'Cancelled',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          AbsorbPointer(
+                            absorbing: isDelivered,
+                            child: DropdownButtonFormField<String>(
+                              value: dropdownValue,
+                              items: _statusOptions.map((String value) {
+                                return DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: BoxDecoration(
+                                          color: _getStatusColor(value),
+                                          shape: BoxShape.circle,
+                                        ),
                                       ),
-                                    );
+                                      SizedBox(width: 12),
+                                      Text(value),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (isDelivered || isCancelled)
+                                  ? null
+                                  : (newValue) async {
+                                      if (newValue == null ||
+                                          newValue == dropdownValue) {
+                                        return;
+                                      }
 
-                                    if (confirmed != true) {
-                                      // Revert to previous value if cancelled
+                                      final previousValue = dropdownValue;
                                       setState(() {
-                                        dropdownValue = previousValue;
+                                        dropdownValue = newValue;
                                       });
-                                      return;
-                                    }
 
-                                    try {
-                                      final items =
-                                          List.from(order?['items'] ?? []);
-                                      final index = items.indexWhere((item) =>
-                                          item['productId'] == productId &&
-                                          item['sellerId'] == widget.sellerId);
+                                      final confirmed = await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: Text('Confirm Status Change'),
+                                          content: Text(
+                                              'Are you sure you want to change the status from $previousValue to $newValue?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(context)
+                                                      .pop(false),
+                                              child: Text('Cancel'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.of(context)
+                                                      .pop(true),
+                                              child: Text('Confirm'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
 
-                                      if (index != -1) {
-                                        // Final validation - prevent changing delivered status
-                                        if (items[index]['status'] ==
-                                            'Delivered') {
-                                          setState(() {
-                                            dropdownValue = 'Delivered';
-                                          });
+                                      if (confirmed != true) {
+                                        setState(() {
+                                          dropdownValue = previousValue;
+                                        });
+                                        return;
+                                      }
+
+                                      try {
+                                        final items =
+                                            List.from(order?['items'] ?? []);
+                                        final index = items.indexWhere((item) =>
+                                            item['productId'] == productId &&
+                                            item['sellerId'] ==
+                                                widget.sellerId);
+
+                                        if (index != -1) {
+                                          if (items[index]['status'] ==
+                                                  'Delivered' ||
+                                              _isProductCancelled(
+                                                  items[index])) {
+                                            setState(() {
+                                              dropdownValue =
+                                                  items[index]['status'];
+                                            });
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                    'This product cannot be modified'),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                            return;
+                                          }
+
+                                          items[index]['status'] = newValue;
+                                          await FirebaseFirestore.instance
+                                              .collection('orders')
+                                              .doc(widget.orderId)
+                                              .update({'items': items});
+                                          await _sendStatusChangeNotification(
+                                            orderId: widget.orderId,
+                                            productName:
+                                                product['productName'] ??
+                                                    'product',
+                                            oldStatus: previousValue,
+                                            newStatus: newValue,
+                                            userId: order?['userId'],
+                                          );
+
+                                          if (mounted) {
+                                            setState(() {
+                                              order?['items'] = items;
+                                            });
+                                          }
+
                                           ScaffoldMessenger.of(context)
                                               .showSnackBar(
                                             SnackBar(
                                               content: Text(
-                                                  'Delivered products cannot be modified'),
-                                              backgroundColor: Colors.red,
+                                                  'Status updated to $newValue'),
                                             ),
                                           );
-                                          return;
                                         }
-
-                                        items[index]['status'] = newValue;
-                                        await FirebaseFirestore.instance
-                                            .collection('orders')
-                                            .doc(widget.orderId)
-                                            .update({'items': items});
-                                        // Send notification to user
-                                        await _sendStatusChangeNotification(
-                                          orderId: widget.orderId,
-                                          productName: product['productName'] ??
-                                              'product',
-                                          oldStatus: previousValue,
-                                          newStatus: newValue,
-                                          userId: order?['userId'],
-                                        );
-
-                                        if (mounted) {
-                                          setState(() {
-                                            order?['items'] = items;
-                                          });
-                                        }
-
+                                      } catch (e) {
+                                        setState(() {
+                                          dropdownValue = previousValue;
+                                        });
                                         ScaffoldMessenger.of(context)
                                             .showSnackBar(
                                           SnackBar(
                                             content: Text(
-                                                'Status updated to $newValue'),
+                                                'Failed to update status: $e'),
+                                            backgroundColor: Colors.red,
                                           ),
                                         );
                                       }
-                                    } catch (e) {
-                                      // Revert on error
-                                      setState(() {
-                                        dropdownValue = previousValue;
-                                      });
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                          content: Text(
-                                              'Failed to update status: $e'),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
-                                    }
-                                  },
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                borderSide:
-                                    BorderSide(color: Colors.grey[300]!),
+                                    },
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                  borderSide:
+                                      BorderSide(color: Colors.grey[300]!),
+                                ),
+                                contentPadding: EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
+                                filled: true,
+                                fillColor: (isDelivered || isCancelled)
+                                    ? Colors.grey[200]
+                                    : Colors.grey[50],
+                                labelText: 'Product Status',
+                                labelStyle: (isDelivered || isCancelled)
+                                    ? TextStyle(color: Colors.grey[600])
+                                    : null,
                               ),
-                              contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
-                              filled: true,
-                              fillColor: isDelivered
-                                  ? Colors.grey[200]
-                                  : Colors.grey[50],
-                              labelText: 'Product Status',
-                              labelStyle: isDelivered
-                                  ? TextStyle(color: Colors.grey[600])
-                                  : null,
-                            ),
-                            dropdownColor: Colors.white,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color:
-                                  isDelivered ? Colors.grey[600] : Colors.black,
+                              dropdownColor: Colors.white,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: (isDelivered || isCancelled)
+                                    ? Colors.grey[600]
+                                    : Colors.black,
+                              ),
                             ),
                           ),
-                        ),
                         Divider(),
                       ],
                     ),

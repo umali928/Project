@@ -260,7 +260,7 @@ class WishlistScreen extends StatelessWidget {
                       style: GoogleFonts.poppins(
                           fontSize: 18, color: Colors.grey[600])),
                   SizedBox(height: 10),
-                  Text('Start adding items you love!',
+                  Text('Gather your desired items here',
                       style: GoogleFonts.poppins(
                           fontSize: 14, color: Colors.grey[500])),
                 ],

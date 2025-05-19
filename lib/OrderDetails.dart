@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
-class OrderDetailsPage extends StatelessWidget {
+class OrderDetailsPage extends StatefulWidget {
   final String orderId;
   final Map<String, dynamic> orderData;
 
@@ -14,6 +14,113 @@ class OrderDetailsPage extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  _OrderDetailsPageState createState() => _OrderDetailsPageState();
+}
+
+class _OrderDetailsPageState extends State<OrderDetailsPage> {
+  late Map<String, dynamic> _orderData;
+
+  @override
+  void initState() {
+    super.initState();
+    _orderData = widget.orderData;
+  }
+
+  Future<void> _cancelProduct(dynamic item, int index) async {
+    final status = item['status']?.toString().toLowerCase() ?? '';
+
+    // Check if product can be cancelled
+    if (status == 'shipped' || status == 'delivered') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cannot cancel product that is already $status'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Check if already cancelled
+    if (status == 'cancelled') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('This product is already cancelled'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    // Confirm cancellation with user
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text('Confirm Cancellation'),
+            content: Text('Are you sure you want to cancel this product?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text('No'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text('Yes'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!confirmed) return;
+
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final batch = firestore.batch();
+
+      // 1. Update the product status in the order
+      final orderRef = firestore.collection('orders').doc(widget.orderId);
+      final items = List<dynamic>.from(_orderData['items']);
+      items[index] = {
+        ...item,
+        'status': 'cancelled',
+      };
+
+      batch.update(orderRef, {'items': items});
+
+      // 2. Return quantity to stock
+      final productRef =
+          firestore.collection('products').doc(item['productId']);
+      batch.update(productRef, {
+        'stock': FieldValue.increment(item['quantity']),
+      });
+
+      await batch.commit();
+
+      // Update local state to trigger UI rebuild
+      setState(() {
+        _orderData = {
+          ..._orderData,
+          'items': items,
+        };
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Product cancelled successfully'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to cancel product: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
@@ -21,15 +128,15 @@ class OrderDetailsPage extends StatelessWidget {
     final padding = isSmallScreen ? screenWidth * 0.04 : screenWidth * 0.06;
     final textScale = isSmallScreen ? screenWidth / 400 : screenWidth / 700;
 
-    final items = orderData['items'] as List<dynamic>;
+    final items = _orderData['items'] as List<dynamic>;
     final total = items.fold<double>(
         0, (sum, item) => sum + (item['price'] * item['quantity']));
-    final orderDate = (orderData['orderDate'] as Timestamp).toDate();
+    final orderDate = (_orderData['orderDate'] as Timestamp).toDate();
     final formattedDate =
         DateFormat('MMMM dd, yyyy - hh:mm a').format(orderDate);
     final shippingAddress =
-        orderData['shippingAddress'] as Map<String, dynamic>?;
-    final payment = orderData['payment'] as Map<String, dynamic>?;
+        _orderData['shippingAddress'] as Map<String, dynamic>?;
+    final payment = _orderData['payment'] as Map<String, dynamic>?;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -59,7 +166,7 @@ class OrderDetailsPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Order #${orderId.substring(0, 8)}",
+                    "Order #${widget.orderId.substring(0, 8)}",
                     style: GoogleFonts.poppins(
                       fontSize: 18 * textScale,
                       fontWeight: FontWeight.w600,
@@ -183,7 +290,7 @@ class OrderDetailsPage extends StatelessWidget {
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];
-                return _buildOrderItemCard(context, item, textScale);
+                return _buildOrderItemCard(context, item, textScale, index);
               },
             ),
             SizedBox(height: padding),
@@ -297,8 +404,9 @@ class OrderDetailsPage extends StatelessWidget {
   }
 
   Widget _buildOrderItemCard(
-      BuildContext context, dynamic item, double textScale) {
+      BuildContext context, dynamic item, double textScale, int index) {
     final theme = Theme.of(context);
+    final status = item['status']?.toString().toLowerCase() ?? '';
 
     return Card(
       elevation: 0,
@@ -399,6 +507,55 @@ class OrderDetailsPage extends StatelessWidget {
                   ),
                 ),
               ),
+            SizedBox(height: 8),
+            // Cancel button (only show if not shipped/delivered and not already cancelled)
+            if (status != 'shipped' &&
+                status != 'delivered' &&
+                status != 'cancelled')
+              SizedBox(
+                width: double.infinity,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Colors.red.shade400, Colors.red.shade700],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withOpacity(0.15),
+                        blurRadius: 8,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: BorderSide(color: Colors.red.shade700, width: 1.2),
+                      ),
+                    ),
+                    icon: Icon(Icons.cancel, color: Colors.white),
+                    label: Text(
+                      'Cancel Product',
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15 * textScale,
+                        letterSpacing: 0.2,
+                        color: Colors.white,
+                      ),
+                    ),
+                    onPressed: () => _cancelProduct(item, index),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -447,6 +604,8 @@ class OrderDetailsPage extends StatelessWidget {
         return Colors.blue;
       case "pending":
         return Colors.orange;
+      case "cancelled":
+        return Colors.red;
       default:
         return Colors.grey;
     }

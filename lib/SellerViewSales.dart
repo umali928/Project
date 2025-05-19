@@ -270,7 +270,7 @@ class SellerViewSales extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Weekly Sales (Last 7 Days)',
+                                  'Weekly Sales',
                                   style: GoogleFonts.poppins(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,

@@ -735,7 +735,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                 ),
                 Text(
                   '₱${total.toStringAsFixed(2)}',
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.roboto(
                     fontWeight: FontWeight.bold,
                     fontSize: 18,
                     color: Color(0xFF651D32),

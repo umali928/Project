@@ -15,7 +15,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'addressList.dart'; // Import AddressListScreen
 import 'package:image_picker/image_picker.dart';
-
+import 'paymentMethod.dart'; // Import PaymentMethodsScreen
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
@@ -435,6 +435,12 @@ class _SettingsPageState extends State<SettingsPage> {
                         builder: (context) => OrderHistoryScreen()),
                   );
                 }),
+               buildListTile(Icons.payment, "Payment methods", onTap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => PaymentMethodScreen()),
+  );
+}),
                 Divider(),
                 buildListTile(Icons.logout, "Log Out", color: Colors.red,
                     onTap: () async {

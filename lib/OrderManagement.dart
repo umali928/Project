@@ -34,6 +34,20 @@ class OrderManagementApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: Colors.grey[50],
+        appBarTheme: AppBarTheme(
+          elevation: 0,
+          backgroundColor: Colors.white,
+          iconTheme: IconThemeData(color: Colors.blue[800]),
+          titleTextStyle: GoogleFonts.poppins(
+            color: Colors.blue[800],
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
+          ),
+        ),
+      ),
       home: FirebaseAuth.instance.currentUser == null
           ? Center(child: Text('Please log in'))
           : OrderManagementPage(),
@@ -47,26 +61,31 @@ class OrderManagementPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userId = FirebaseAuth.instance.currentUser?.uid;
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
 
     if (userId == null) {
-      return Center(child: Text("User not logged in"));
+      return Scaffold(
+        body: Center(
+          child: Text(
+            "User not logged in",
+            style: textTheme.bodyLarge?.copyWith(color: Colors.grey[600]),
+          ),
+        ),
+      );
     }
-    final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
           "Order Management",
           style: GoogleFonts.poppins(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            fontSize: screenWidth * 0.045,
+            color: const Color.fromARGB(255, 0, 0, 0),
+            fontWeight: FontWeight.w600,
+            fontSize: 20,
           ),
         ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: IconThemeData(color: Colors.black),
+        centerTitle: true,
       ),
       drawer: custom.NavigationDrawer(),
       body: StreamBuilder<QuerySnapshot>(
@@ -78,24 +97,67 @@ class OrderManagementPage extends StatelessWidget {
             .snapshots(),
         builder: (context, sellerSnapshot) {
           if (sellerSnapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(theme.primaryColor),
+              ),
+            );
           }
           if (!sellerSnapshot.hasData || sellerSnapshot.data!.docs.isEmpty) {
-            return Center(child: Text("No seller info found."));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.store_mall_directory_outlined,
+                      size: 60, color: Colors.grey[400]),
+                  SizedBox(height: 16),
+                  Text(
+                    "No seller info found",
+                    style: textTheme.titleMedium
+                        ?.copyWith(color: Colors.grey[600]),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    "Please complete your seller profile",
+                    style:
+                        textTheme.bodyMedium?.copyWith(color: Colors.grey[500]),
+                  ),
+                ],
+              ),
+            );
           }
 
           final sellerId = sellerSnapshot.data!.docs.first.id;
-          print("Current seller ID: $sellerId");
 
           return StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance.collection('orders').snapshots(),
             builder: (context, orderSnapshot) {
               if (orderSnapshot.hasError) {
-                print("Error fetching orders: ${orderSnapshot.error}");
-                return Center(child: Text("Error loading orders"));
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline,
+                          size: 60, color: Colors.red[300]),
+                      SizedBox(height: 16),
+                      Text(
+                        "Error loading orders",
+                        style: textTheme.titleMedium
+                            ?.copyWith(color: Colors.red[400]),
+                      ),
+                    ],
+                  ),
+                );
               }
               if (orderSnapshot.connectionState == ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
+                return Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(theme.primaryColor),
+                  ),
+                );
               }
 
               // Filter orders locally to find those containing items from this seller
@@ -106,27 +168,32 @@ class OrderManagementPage extends StatelessWidget {
               }).toList();
 
               if (filteredOrders.isEmpty) {
-                print("No orders found for sellerId: $sellerId");
                 return Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text("No orders with your products found.", 
-                          style: GoogleFonts.poppins(
-                              fontSize: screenWidth * 0.04,
-                              fontWeight: FontWeight.bold)),
+                      Icon(Icons.shopping_bag_outlined,
+                          size: 60, color: Colors.grey[400]),
+                      SizedBox(height: 16),
+                      Text(
+                        "No orders yet",
+                        style: textTheme.titleMedium
+                            ?.copyWith(color: Colors.grey[600]),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        "Your products haven't been ordered yet",
+                        style: textTheme.bodyMedium
+                            ?.copyWith(color: Colors.grey[500]),
+                      ),
                     ],
                   ),
                 );
               }
 
-              print(
-                  "Found ${filteredOrders.length} orders for seller $sellerId");
-
               return FutureBuilder<List<OrderInfo>>(
                 future: Future.wait(filteredOrders.map((doc) async {
                   final data = doc.data() as Map<String, dynamic>;
-                  print("Order data: $data");
                   final orderUserId = data['userId'];
                   String customerName = "Unknown";
 
@@ -156,7 +223,13 @@ class OrderManagementPage extends StatelessWidget {
                 }).toList()),
                 builder: (context, asyncSnapshot) {
                   if (!asyncSnapshot.hasData) {
-                    return Center(child: CircularProgressIndicator());
+                    return Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(theme.primaryColor),
+                      ),
+                    );
                   }
 
                   // Sort orders by date (newest first)
@@ -164,94 +237,64 @@ class OrderManagementPage extends StatelessWidget {
                   orders.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
                   return Padding(
-                    
                     padding: const EdgeInsets.all(16.0),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        return SingleChildScrollView(
-                          child: ConstrainedBox(
-                            constraints:
-                                BoxConstraints(minWidth: constraints.maxWidth),
-                            child: Card(
-                              elevation: 3,
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text("Your Orders",
-                                        style: GoogleFonts.poppins(
-                                            fontSize: screenWidth * 0.045,
-                                            fontWeight: FontWeight.bold)),
-                                    SizedBox(height: 10),
-                                    ...orders.map((order) => InkWell(
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) =>
-                                                    OrderDetailsPage(
-                                                  orderId: order.orderId,
-                                                  sellerId: sellerId,
-                                                  orderData: filteredOrders
-                                                          .firstWhere((doc) =>
-                                                              doc.id ==
-                                                              order.orderId)
-                                                          .data()
-                                                      as Map<String, dynamic>,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                          child: Padding(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      vertical: 8.0),
-                                              child: Row(
-                                                children: [
-                                                  Expanded(
-                                                    flex: 2,
-                                                    child: Text(
-                                                      order.orderId,
-                                                      style:
-                                                          GoogleFonts.poppins(
-                                                              fontSize:
-                                                                  screenWidth *
-                                                                      0.035),
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                  SizedBox(width: 10),
-                                                  Expanded(
-                                                    flex: 3,
-                                                    child: Text(
-                                                      order.customerName,
-                                                      style:
-                                                          GoogleFonts.poppins(
-                                                        fontSize:
-                                                            screenWidth * 0.035,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                      ),
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    ),
-                                                  ),
-                                                  DateBadge(
-                                                      date: order.orderDate),
-                                                ],
-                                              )),
-                                        )),
-                                  ],
-                                ),
-                              ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                          child: Text(
+                            "Order History",
+                            style: textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue[800],
                             ),
                           ),
-                        );
-                      },
+                        ),
+                        SizedBox(height: 16),
+                        Card(
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: Colors.grey[200]!,
+                              width: 1,
+                            ),
+                          ),
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            physics: NeverScrollableScrollPhysics(),
+                            itemCount: orders.length,
+                            separatorBuilder: (context, index) => Divider(
+                              height: 1,
+                              color: Colors.grey[200],
+                              indent: 16,
+                              endIndent: 16,
+                            ),
+                            itemBuilder: (context, index) {
+                              final order = orders[index];
+                              return OrderListItem(
+                                order: order,
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => OrderDetailsPage(
+                                        orderId: order.orderId,
+                                        sellerId: sellerId,
+                                        orderData: filteredOrders
+                                            .firstWhere((doc) =>
+                                                doc.id == order.orderId)
+                                            .data() as Map<String, dynamic>,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 },
@@ -278,6 +321,76 @@ class OrderInfo {
   });
 }
 
+class OrderListItem extends StatelessWidget {
+  final OrderInfo order;
+  final VoidCallback onTap;
+
+  const OrderListItem({
+    required this.order,
+    required this.onTap,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: theme.primaryColor.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.shopping_bag_outlined,
+                color: theme.primaryColor,
+                size: 20,
+              ),
+            ),
+            SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Order #${order.orderId.substring(0, 8)}",
+                    style: textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    order.customerName,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            DateBadge(date: order.orderDate),
+            SizedBox(width: 8),
+            Icon(
+              Icons.chevron_right,
+              color: Colors.grey[400],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class DateBadge extends StatelessWidget {
   final String date;
 
@@ -285,20 +398,19 @@ class DateBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    final theme = Theme.of(context);
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(8),
+        color: theme.primaryColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         date,
-        style: GoogleFonts.poppins(
-          fontSize: screenWidth * 0.03,
-          fontWeight: FontWeight.bold,
-          color: Colors.blue,
-        ),
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w500,
+              color: theme.primaryColor,
+            ),
       ),
     );
   }

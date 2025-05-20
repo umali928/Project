@@ -26,6 +26,27 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     _orderData = widget.orderData;
   }
 
+  // Calculate subtotal from non-cancelled items
+  double _calculateSubtotal(List<dynamic> items) {
+    return items.fold<double>(0, (sum, item) {
+      // Only include non-cancelled items in the subtotal
+      if (item['status']?.toString().toLowerCase() != 'cancelled') {
+        return sum + (item['price'] * item['quantity']);
+      }
+      return sum;
+    });
+  }
+
+  // Calculate shipping as 5% of subtotal
+  double _calculateShipping(double subtotal) {
+    return subtotal * 0.05;
+  }
+
+  // Calculate total as subtotal + shipping
+  double _calculateTotal(double subtotal, double shipping) {
+    return subtotal + shipping;
+  }
+
   Future<void> _cancelProduct(dynamic item, int index) async {
     final status = item['status']?.toString().toLowerCase() ?? '';
 
@@ -129,8 +150,9 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     final textScale = isSmallScreen ? screenWidth / 400 : screenWidth / 700;
 
     final items = _orderData['items'] as List<dynamic>;
-    final total = items.fold<double>(
-        0, (sum, item) => sum + (item['price'] * item['quantity']));
+    final subtotal = _calculateSubtotal(items);
+    final shipping = _calculateShipping(subtotal);
+    final total = _calculateTotal(subtotal, shipping);
     final orderDate = (_orderData['orderDate'] as Timestamp).toDate();
     final formattedDate =
         DateFormat('MMMM dd, yyyy - hh:mm a').format(orderDate);
@@ -303,14 +325,13 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                   _buildSummaryRow(
                     context,
                     label: 'Subtotal',
-                    value: '\u20B1${total.toStringAsFixed(2)}',
+                    value: '\u20B1${subtotal.toStringAsFixed(2)}',
                   ),
                   SizedBox(height: 8 * textScale),
                   _buildSummaryRow(
                     context,
                     label: 'Shipping',
-                    value:
-                        '\u20B1${(total * 0.05).toStringAsFixed(2)}', // Changed to 5% of total
+                    value: '\u20B1${shipping.toStringAsFixed(2)}',
                   ),
                   Divider(
                     color: theme.dividerColor,
@@ -320,8 +341,7 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                   _buildSummaryRow(
                     context,
                     label: 'Total',
-                    value:
-                        '\u20B1${(total * 1.05).toStringAsFixed(2)}', // Changed to total + 5%
+                    value: '\u20B1${total.toStringAsFixed(2)}',
                     isTotal: true,
                   ),
                 ],
@@ -539,7 +559,8 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                       padding: EdgeInsets.symmetric(vertical: 14),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
-                        side: BorderSide(color: Colors.red.shade700, width: 1.2),
+                        side:
+                            BorderSide(color: Colors.red.shade700, width: 1.2),
                       ),
                     ),
                     icon: Icon(Icons.cancel, color: Colors.white),

@@ -61,19 +61,23 @@ class SellerViewSales extends StatelessWidget {
                 return Center(child: CircularProgressIndicator());
               }
 
-              // Filter orders for this seller
+              // Filter orders for this seller and exclude cancelled orders
               final filteredOrders = orderSnapshot.data!.docs.where((order) {
                 final items =
                     (order.data() as Map<String, dynamic>)['items'] as List;
-                return items.any((item) => item['sellerId'] == sellerId);
+                return items.any((item) =>
+                    item['sellerId'] == sellerId &&
+                    (item['status'] as String?)?.toLowerCase() != 'cancelled');
               }).toList();
 
               // Calculate total sales and orders
+              // Update the total sales calculation to:
               double totalSales = filteredOrders.fold(0.0, (sum, order) {
                 final items =
                     (order.data() as Map<String, dynamic>)['items'] as List;
-                final sellerItems =
-                    items.where((item) => item['sellerId'] == sellerId);
+                final sellerItems = items.where((item) =>
+                    item['sellerId'] == sellerId &&
+                    (item['status'] as String?)?.toLowerCase() != 'cancelled');
                 return sum +
                     sellerItems.fold(0.0, (itemSum, item) {
                       return itemSum + (item['price'] * item['quantity']);
@@ -91,7 +95,9 @@ class SellerViewSales extends StatelessWidget {
                 final items =
                     (order.data() as Map<String, dynamic>)['items'] as List;
                 for (var item in items) {
-                  if (item['sellerId'] == sellerId) {
+                  if (item['sellerId'] == sellerId &&
+                      (item['status'] as String?)?.toLowerCase() !=
+                          'cancelled') {
                     final productName =
                         item['productName'] ?? 'Unknown Product';
                     final quantity = item['quantity'] as int;
@@ -103,7 +109,6 @@ class SellerViewSales extends StatelessWidget {
                         productName, (existing) => existing + quantity,
                         ifAbsent: () => quantity);
                     productPrices[productName] = price;
-                    // Update image only if not already set or if we have a new image
                     if (!productImages.containsKey(productName)) {
                       productImages[productName] = imageUrl;
                     }
@@ -133,16 +138,16 @@ class SellerViewSales extends StatelessWidget {
                   if (date.isAfter(weekAgo)) {
                     final items =
                         (order.data() as Map<String, dynamic>)['items'] as List;
-                    final sellerItems =
-                        items.where((item) => item['sellerId'] == sellerId);
+                    final sellerItems = items.where((item) =>
+                        item['sellerId'] == sellerId &&
+                        (item['status'] as String?)?.toLowerCase() !=
+                            'cancelled');
                     final dayIndex = date.weekday - 1; // Monday = 0, Sunday = 6
 
-                    // Calculate sales amount
                     dailySales[dayIndex] += sellerItems.fold(0.0, (sum, item) {
                       return sum + (item['price'] * item['quantity']);
                     });
 
-                    // Calculate quantities
                     dailyQuantities[dayIndex] +=
                         sellerItems.fold(0, (sum, item) {
                       return sum + (item['quantity'] as int);

@@ -441,7 +441,9 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           itemCount: paymentMethods.length,
           itemBuilder: (context, index) {
             final method = paymentMethods[index].data() as Map<String, dynamic>;
-            return Card(
+          
+            return Card(  
+              color: Colors.white,
               margin: EdgeInsets.only(bottom: 10),
               child: ListTile(
                 leading: Icon(

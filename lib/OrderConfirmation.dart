@@ -10,6 +10,7 @@ class OrderConfirmationScreen extends StatefulWidget {
   final String? gcashPhone;
   final String? cardLast4;
   final double totalAmount;
+  final String? paymentMethodId;
 
   const OrderConfirmationScreen({
     super.key,
@@ -18,6 +19,7 @@ class OrderConfirmationScreen extends StatefulWidget {
     this.gcashPhone,
     this.cardLast4,
     required this.totalAmount,
+    this.paymentMethodId,
   });
 
   @override
@@ -29,6 +31,7 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
   final user = FirebaseAuth.instance.currentUser;
   late Future<List<Map<String, dynamic>>> cartItemsFuture;
   late Future<Map<String, dynamic>> addressFuture;
+  bool _isProcessing = false;
 
   @override
   void initState() {
@@ -80,6 +83,78 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
         .get();
 
     return doc.data()!;
+  }
+
+  Future<void> _processPaymentDeduction(String orderId) async {
+    if (widget.paymentMethod == 'Cash On Delivery') {
+      print('No deduction needed for Cash on Delivery');
+      return;
+    }
+    if (widget.paymentMethodId == null) {
+      print('Payment method ID is null - cannot process deduction');
+      throw Exception('Payment method not selected properly');
+    }
+    print('Starting payment deduction for method: ${widget.paymentMethodId}');
+    print('Amount to deduct: ${widget.totalAmount}');
+    try {
+      final paymentMethodRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user!.uid)
+          .collection('paymentMethods')
+          .doc(widget.paymentMethodId);
+      print('Payment method path: ${paymentMethodRef.path}');
+
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        // Get the current document
+        print('Transaction started');
+        final doc = await transaction.get(paymentMethodRef);
+        if (!doc.exists) {
+          print('Payment method document not found');
+          throw Exception('Payment method not found');
+        }
+        print('Document data: ${doc.data()}');
+        final currentAmount =
+            (doc.data()?['amount'] as num?)?.toDouble() ?? 0.0;
+        final newAmount = currentAmount - widget.totalAmount;
+        print('Current amount: $currentAmount');
+        print('New amount after deduction: $newAmount');
+        if (newAmount < 0) {
+          print('Insufficient funds');
+          throw Exception('Insufficient funds in payment method');
+        }
+
+        // Update the payment method amount
+        transaction.update(paymentMethodRef, {
+          'amount': newAmount.toDouble(),
+          'lastUsed': FieldValue.serverTimestamp(),
+        });
+
+        // Record transaction
+        final transactionRef = FirebaseFirestore.instance
+            .collection('users')
+            .doc(user!.uid)
+            .collection('transactions')
+            .doc();
+
+        transaction.set(transactionRef, {
+          'type': 'payment',
+          'amount': widget.totalAmount,
+          'paymentMethod': widget.paymentMethod,
+          'paymentMethodId': widget.paymentMethodId,
+          'date': FieldValue.serverTimestamp(),
+          'orderId': orderId,
+          'description': 'Payment for order',
+          'balanceAfter': newAmount,
+        });
+        print('Current amount: $currentAmount');
+        print('Deducting: ${widget.totalAmount}');
+        print('New amount: $newAmount');
+        return newAmount;
+      });
+    } catch (e) {
+      print('Error deducting payment: $e');
+      rethrow;
+    }
   }
 
   @override
@@ -232,148 +307,192 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton.icon(
-                      icon:
-                          Icon(Icons.check_circle_outline, color: Colors.white),
-                      label: Text("Place Order",
-                          style: GoogleFonts.poppins(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF651D32),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                    icon: Icon(Icons.check_circle_outline, color: Colors.white),
+                    label: _isProcessing
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text("Place Order",
+                            style: GoogleFonts.poppins(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF651D32),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      onPressed: () async {
-                        final uid = user!.uid;
-                        final timestamp = Timestamp.now();
+                    ),
+                    onPressed: _isProcessing
+                        ? null
+                        : () async {
+                            setState(() => _isProcessing = true);
+                            final uid = user!.uid;
+                            final timestamp = Timestamp.now();
 
-                        // Get cart items
-                        final cartSnapshot = await FirebaseFirestore.instance
-                            .collection('users')
-                            .doc(uid)
-                            .collection('cart')
-                            .get();
+                            try {
+                              // Get cart items first
+                              final cartSnapshot = await FirebaseFirestore
+                                  .instance
+                                  .collection('users')
+                                  .doc(uid)
+                                  .collection('cart')
+                                  .get();
 
-                        if (cartSnapshot.docs.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Your cart is empty.")),
-                          );
-                          return;
-                        }
+                              if (cartSnapshot.docs.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text("Your cart is empty.")),
+                                );
+                                return;
+                              }
 
-                        // Get full address details
-                        final addressDoc = await FirebaseFirestore.instance
-                            .collection('users')
-                            .doc(uid)
-                            .collection('addresses')
-                            .doc(widget.addressId)
-                            .get();
+                              // Create order
+                              final orderRef = FirebaseFirestore.instance
+                                  .collection('orders')
+                                  .doc();
+                              final orderId = orderRef.id;
+                              // Process payment if needed
+                              if (widget.paymentMethod != 'Cash On Delivery') {
+                                await _processPaymentDeduction(orderId);
+                              }
 
-                        if (!addressDoc.exists) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Address not found.")),
-                          );
-                          return;
-                        }
+                              // Prepare order items and check stock
+                              List<Map<String, dynamic>> orderItems = [];
+                              for (var doc in cartSnapshot.docs) {
+                                final cartData = doc.data();
+                                final productId = cartData['productId'];
+                                final productSnapshot = await FirebaseFirestore
+                                    .instance
+                                    .collection('products')
+                                    .doc(productId)
+                                    .get();
 
-                        final addressData = addressDoc.data()!;
+                                if (productSnapshot.exists) {
+                                  final productData = productSnapshot.data()!;
+                                  final currentStock =
+                                      productData['stock'] ?? 0;
+                                  final quantityOrdered = cartData['quantity'];
 
-                        // Prepare cart items with product info
-                        List<Map<String, dynamic>> orderItems = [];
+                                  if (currentStock < quantityOrdered) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text(
+                                              "Not enough stock for ${productData['productName']}.")),
+                                    );
+                                    return;
+                                  }
 
-                        for (var doc in cartSnapshot.docs) {
-                          final cartData = doc.data();
-                          final productId = cartData['productId'];
+                                  // Decrease stock
+                                  await FirebaseFirestore.instance
+                                      .collection('products')
+                                      .doc(productId)
+                                      .update({
+                                    'stock': currentStock - quantityOrdered
+                                  });
 
-                          final productSnapshot = await FirebaseFirestore
-                              .instance
-                              .collection('products')
-                              .doc(productId)
-                              .get();
+                                  orderItems.add({
+                                    'productId': productId,
+                                    'productName': productData['productName'],
+                                    'imageUrl': productData['imageUrl'],
+                                    'price': productData['price'],
+                                    'quantity': quantityOrdered,
+                                    'sellerId': productData['sellerId'],
+                                    'status': 'Pending',
+                                  });
+                                }
+                              }
 
-                          if (productSnapshot.exists) {
-                            final productData = productSnapshot.data()!;
-                            final currentStock = productData['stock'] ?? 0;
-                            final quantityOrdered = cartData['quantity'];
+                              await orderRef.set({
+                                'orderId': orderId,
+                                'userId': uid,
+                                'items': orderItems,
+                                'totalAmount': widget.totalAmount,
+                                'orderDate': timestamp,
+                                'shippingAddress': {
+                                  'addressType': address['addressType'],
+                                  'street': address['street'],
+                                  'barangay': address['barangay'],
+                                  'cityOrMunicipality':
+                                      address['cityOrMunicipality'],
+                                  'province': address['province'],
+                                  'phone': address['phone'],
+                                },
+                                'payment': {
+                                  'method': widget.paymentMethod,
+                                  'paymentMethodId': widget.paymentMethodId,
+                                  if (widget.paymentMethod == "G-Cash")
+                                    'gcashPhone': widget.gcashPhone,
+                                  if (widget.paymentMethod ==
+                                      "Credit/Debit Card")
+                                    'cardLast4': widget.cardLast4,
+                                }
+                              });
 
-                            // Check if stock is sufficient
-                            if (currentStock < quantityOrdered) {
+                              // Update transaction with order ID if not COD
+                              if (widget.paymentMethod != 'Cash On Delivery') {
+                                try {
+                                  final transactions = await FirebaseFirestore
+                                      .instance
+                                      .collection('users')
+                                      .doc(uid)
+                                      .collection('transactions')
+                                      .where('paymentMethodId',
+                                          isEqualTo: widget.paymentMethodId)
+                                      .where('orderId', isEqualTo: '')
+                                      .orderBy('date', descending: true)
+                                      .limit(1)
+                                      .get();
+
+                                  if (transactions.docs.isNotEmpty) {
+                                    await transactions.docs.first.reference
+                                        .update({
+                                      'orderId': orderId,
+                                    });
+                                  }
+                                } catch (e) {
+                                  print(
+                                      'Error updating transaction with orderId: $e');
+                                  // Don't fail the whole order if this fails
+                                }
+                              }
+
+                              // Clear cart
+                              for (var doc in cartSnapshot.docs) {
+                                await doc.reference.delete();
+                              }
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content:
+                                        Text("Order placed successfully!")),
+                              );
+
+                              // Navigate to dashboard and remove all previous routes
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => Dashboard()),
+                                (route) => false,
+                              );
+                            } catch (e) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                     content: Text(
-                                        "Not enough stock for ${productData['productName']}.")),
+                                        "Error processing order: ${e.toString()}")),
                               );
-                              return;
+                            } finally {
+                              if (mounted) {
+                                setState(() => _isProcessing = false);
+                              }
                             }
-
-                            // Decrease the stock
-                            await FirebaseFirestore.instance
-                                .collection('products')
-                                .doc(productId)
-                                .update(
-                                    {'stock': currentStock - quantityOrdered});
-
-                            orderItems.add({
-                              'productId': productId,
-                              'productName': productData['productName'],
-                              'imageUrl': productData['imageUrl'],
-                              'price': productData['price'],
-                              'quantity': quantityOrdered,
-                              'sellerId': productData['sellerId'],
-                              'status': 'Pending',
-                            });
-                          }
-                        }
-
-                        // Create the order document
-                        final orderRef = FirebaseFirestore.instance
-                            .collection('orders')
-                            .doc();
-
-                        await orderRef.set({
-                          'orderId': orderRef.id,
-                          'userId': uid,
-                          'items': orderItems,
-                          'totalAmount': widget.totalAmount,
-                          'orderDate': timestamp,
-
-                          // Full address info for seller
-                          'shippingAddress': {
-                            'addressType': addressData['addressType'],
-                            'street': addressData['street'],
-                            'barangay': addressData['barangay'],
-                            'cityOrMunicipality':
-                                addressData['cityOrMunicipality'],
-                            'province': addressData['province'],
-                            'phone': addressData['phone'],
                           },
-
-                          // Full payment info
-                          'payment': {
-                            'method': widget.paymentMethod,
-                            if (widget.paymentMethod == "G-Cash")
-                              'gcashPhone': widget.gcashPhone,
-                            if (widget.paymentMethod == "Credit/Debit Card")
-                              'cardLast4': widget.cardLast4,
-                          }
-                        });
-
-                        // Clear the user's cart
-                        for (var doc in cartSnapshot.docs) {
-                          await doc.reference.delete();
-                        }
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Order placed successfully!")),
-                        );
-
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => Dashboard()),
-                        ); // Navigate away or show success
-                      }),
+                  ),
                 ),
               ],
             ),

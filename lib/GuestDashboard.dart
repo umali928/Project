@@ -64,7 +64,7 @@ class _GuestDashboardState extends State<GuestDashboard> {
     _pages = [
       GuestHomeScreen(),
       GuestPlaceholderScreen(title: "Wishlist"),
-      GuestPlaceholderScreen(title: "Shop"), // Changed to require login
+      GuestPlaceholderScreen(title: "Shop"), 
       GuestPlaceholderScreen(title: "Login"),
     ];
   }

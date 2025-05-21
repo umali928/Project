@@ -41,6 +41,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text(
           'Payment Methods',
@@ -512,20 +513,47 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
           .collection('paymentMethods');
 
       if (_selectedTab == 0) {
-        // GCash
+        // GCash validation - check if number already exists
+        final gcashNumber = '09${_gcashNumberController.text.substring(2)}';
+        final existingGcash = await paymentMethodsRef
+            .where('type', isEqualTo: 'gcash')
+            .where('number', isEqualTo: gcashNumber)
+            .get();
+
+        if (existingGcash.docs.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('This GCash number is already registered')),
+          );
+          setState(() => _isLoading = false);
+          return;
+        }
+
         await paymentMethodsRef.add({
           'type': 'gcash',
-          'number':
-              '09${_gcashNumberController.text.substring(2)}', // Ensure proper format
+          'number': gcashNumber,
           'name': _gcashName,
           'amount': _gcashAmount,
           'createdAt': FieldValue.serverTimestamp(),
         });
       } else {
-        // Credit Card
+        // Credit Card validation - check if card number already exists
+        final cardNumber = _cardNumberController.text.replaceAll(' ', '');
+        final existingCard = await paymentMethodsRef
+            .where('type', isEqualTo: 'credit_card')
+            .where('number', isEqualTo: cardNumber)
+            .get();
+
+        if (existingCard.docs.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('This credit card is already registered')),
+          );
+          setState(() => _isLoading = false);
+          return;
+        }
+
         await paymentMethodsRef.add({
           'type': 'credit_card',
-          'number': _cardNumberController.text.replaceAll(' ', ''),
+          'number': cardNumber,
           'expiry': _expiryDate,
           'cvv': _cvv,
           'name': _cardHolderName,
@@ -539,6 +567,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
       );
 
       _formKey.currentState!.reset();
+      _clearAllInputs();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to save payment method: $e')),
@@ -546,6 +575,22 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  void _clearAllInputs() {
+    _gcashNumberController.clear();
+    _cardNumberController.clear();
+    _expiryDateController.clear();
+    _cvvController.clear();
+    _formKey.currentState?.reset();
+    setState(() {
+      _gcashName = '';
+      _cardHolderName = '';
+      _expiryDate = '';
+      _cvv = '';
+      _gcashAmount = 0.0;
+      _cardAmount = 0.0;
+    });
   }
 
   Future<void> _addAmountToMethod(String methodId) async {

@@ -114,6 +114,81 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
       batch.update(productRef, {
         'stock': FieldValue.increment(item['quantity']),
       });
+      // 3. Process refund if payment wasn't Cash on Delivery
+      final payment = _orderData['payment'] as Map<String, dynamic>?;
+      final paymentMethod = payment?['method'] as String?;
+      final paymentMethodId = payment?['paymentMethodId'] as String?;
+      final amountToRefund =
+          (item['price'] as num).toDouble() * (item['quantity'] as int);
+      final shippingFee = _calculateShipping(item['price'] * item['quantity']);
+      final totalRefundAmount = amountToRefund + shippingFee;
+
+      if (paymentMethod != null &&
+          paymentMethod != 'Cash On Delivery' &&
+          paymentMethodId != null) {
+        // Refund to payment method
+        final paymentMethodRef = firestore
+            .collection('users')
+            .doc(_orderData['userId'])
+            .collection('paymentMethods')
+            .doc(paymentMethodId);
+
+        // Get current amount - use transaction to ensure atomic update
+        await firestore.runTransaction((transaction) async {
+          final paymentDoc = await transaction.get(paymentMethodRef);
+          if (!paymentDoc.exists) {
+            throw Exception('Payment method not found');
+          }
+
+          final currentAmount = (paymentDoc['amount'] as num).toDouble();
+          final newAmount = currentAmount + totalRefundAmount;
+
+          // Update payment method with refund
+          transaction.update(paymentMethodRef, {
+            'amount': newAmount,
+            'lastUsed': FieldValue.serverTimestamp(),
+          });
+
+          // Record refund transaction for product
+          final productTransactionRef = firestore
+              .collection('users')
+              .doc(_orderData['userId'])
+              .collection('transactions')
+              .doc();
+
+          transaction.set(productTransactionRef, {
+            'type': 'refund',
+            'amount': amountToRefund,
+            'paymentMethod': paymentMethod,
+            'paymentMethodId': paymentMethodId,
+            'date': FieldValue.serverTimestamp(),
+            'orderId': widget.orderId,
+            'productId': item['productId'],
+            'description':
+                'Refund for cancelled product: ${item['productName']}',
+            'balanceAfter': newAmount,
+          });
+
+          // Record refund transaction for shipping fee
+          final shippingTransactionRef = firestore
+              .collection('users')
+              .doc(_orderData['userId'])
+              .collection('transactions')
+              .doc();
+
+          transaction.set(shippingTransactionRef, {
+            'type': 'refund',
+            'amount': shippingFee,
+            'paymentMethod': paymentMethod,
+            'paymentMethodId': paymentMethodId,
+            'date': FieldValue.serverTimestamp(),
+            'orderId': widget.orderId,
+            'description':
+                'Refund of shipping fee for cancelled product: ${item['productName']}',
+            'balanceAfter': newAmount,
+          });
+        });
+      }
 
       await batch.commit();
 
@@ -127,7 +202,8 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Product cancelled successfully'),
+          content: Text(
+              'Product cancelled successfully${paymentMethod != 'Cash On Delivery' ? ' and amount refunded' : ''}'),
           backgroundColor: Colors.green,
         ),
       );

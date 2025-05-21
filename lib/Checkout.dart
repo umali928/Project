@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'cart.dart';
 import 'OrderConfirmation.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (kIsWeb) {
@@ -52,14 +53,14 @@ class CheckoutPage extends StatefulWidget {
 class _CheckoutPageState extends State<CheckoutPage> {
   String? selectedAddressId;
   String selectedPaymentMethod = 'Credit/Debit Card';
+  String? selectedGcashMethodId;
+  String? selectedCardMethodId;
 
   List<Map<String, dynamic>> userAddresses = [];
+  List<Map<String, dynamic>> paymentMethods = [];
   bool isLoading = true;
+  bool isPaymentMethodsLoading = false;
 
-  final cardNumberController = TextEditingController();
-  final expiryController = TextEditingController();
-  final cvvController = TextEditingController();
-  final phonenumberController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   final paymentOptions = {
@@ -72,7 +73,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
   void initState() {
     super.initState();
     fetchUserAddresses();
-    phonenumberController.text = '09'; // Set default GCash prefix
+    fetchPaymentMethods();
   }
 
   Future<void> fetchUserAddresses() async {
@@ -87,16 +88,177 @@ class _CheckoutPageState extends State<CheckoutPage> {
         userAddresses = snapshot.docs.map((doc) {
           final data = doc.data();
           data['id'] = doc.id;
-          data['name'] = data['name'] ?? 'Unnamed'; // ensure fallback
+          data['name'] = data['name'] ?? 'Unnamed';
           return data;
         }).toList();
-        isLoading = false;
       });
     } catch (e) {
       print("Error fetching addresses: $e");
+    }
+  }
+
+  Future<void> fetchPaymentMethods() async {
+    setState(() => isPaymentMethodsLoading = true);
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.userId)
+          .collection('paymentMethods')
+          .get();
+
+      setState(() {
+        paymentMethods = snapshot.docs.map((doc) {
+          final data = doc.data();
+          data['id'] = doc.id;
+
+          // Handle missing fields with default values
+          data['amount'] = data['amount'] ?? 0.0;
+          data['number'] = data['number'] ?? '';
+          data['name'] = data['name'] ?? '';
+          data['type'] = data['type'] ?? '';
+
+          // Only set expiry if it exists (for credit cards)
+          if (data['type'] == 'credit_card' && data['expiry'] == null) {
+            data['expiry'] = '01/30'; // Default expiry if missing
+          }
+
+          return data;
+        }).toList();
+        isLoading = false;
+        isPaymentMethodsLoading = false;
+      });
+    } catch (e) {
+      print("Error fetching payment methods: $e");
       setState(() {
         isLoading = false;
+        isPaymentMethodsLoading = false;
       });
+    }
+  }
+
+  Future<void> _processCheckout() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    if (userAddresses.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Please add a delivery address before checkout.'),
+      ));
+      return;
+    }
+
+    if (selectedPaymentMethod == 'G-Cash' && selectedGcashMethodId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Please select a GCash payment method.'),
+      ));
+      return;
+    }
+
+    if (selectedPaymentMethod == 'Credit/Debit Card' &&
+        selectedCardMethodId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Please select a card payment method.'),
+      ));
+      return;
+    }
+
+    // Validate payment method balance/expiry
+    try {
+      if (selectedPaymentMethod == 'G-Cash') {
+        final gcashMethod = paymentMethods.firstWhere(
+          (method) => method['id'] == selectedGcashMethodId,
+        );
+
+        if (gcashMethod['amount'] < widget.totalPrice) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Insufficient GCash balance. Please add funds.'),
+          ));
+          return;
+        }
+      } else if (selectedPaymentMethod == 'Credit/Debit Card') {
+        final cardMethod = paymentMethods.firstWhere(
+          (method) => method['id'] == selectedCardMethodId,
+        );
+
+        // Check card expiry
+        final expiryParts = (cardMethod['expiry'] as String).split('/');
+        final month = int.parse(expiryParts[0]);
+        final year = 2000 + int.parse(expiryParts[1]);
+        final now = DateTime.now();
+
+        if (year < now.year || (year == now.year && month < now.month)) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Card has expired. Please use a different card.'),
+          ));
+          return;
+        }
+
+        // Check card balance
+        if (cardMethod['amount'] < widget.totalPrice) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+                'Insufficient card balance. Please use a different payment method.'),
+          ));
+          return;
+        }
+      }
+// Determine the payment method ID based on the selected payment method
+      // ignore: unused_local_variable
+      String? paymentMethodId;
+      if (selectedPaymentMethod == 'G-Cash') {
+        if (selectedGcashMethodId == null) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Please select a GCash payment method'),
+          ));
+          return;
+        }
+        paymentMethodId = selectedGcashMethodId;
+      } else if (selectedPaymentMethod == 'Credit/Debit Card') {
+        if (selectedCardMethodId == null) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Please select a card payment method'),
+          ));
+          return;
+        }
+        paymentMethodId = selectedCardMethodId;
+      } else {
+        // For Cash On Delivery, paymentMethodId can be null
+        paymentMethodId = null;
+      }
+      // Proceed to confirmation if all validations pass
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OrderConfirmationScreen(
+            addressId: selectedAddressId!,
+            paymentMethod: selectedPaymentMethod,
+            // Add this line to pass the payment method ID:
+            paymentMethodId: selectedPaymentMethod == 'G-Cash'
+                ? selectedGcashMethodId
+                : selectedPaymentMethod == 'Credit/Debit Card'
+                    ? selectedCardMethodId
+                    : null,
+            gcashPhone: selectedPaymentMethod == 'G-Cash'
+                ? paymentMethods.firstWhere(
+                    (m) => m['id'] == selectedGcashMethodId)['number']
+                : null,
+            cardLast4: selectedPaymentMethod == 'Credit/Debit Card'
+                ? (paymentMethods.firstWhere(
+                            (m) => m['id'] == selectedCardMethodId)['number']
+                        as String)
+                    .substring((paymentMethods.firstWhere((m) =>
+                                    m['id'] == selectedCardMethodId)['number']
+                                as String)
+                            .length -
+                        4)
+                : null,
+            totalAmount: widget.totalPrice,
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Error processing payment: $e'),
+      ));
     }
   }
 
@@ -110,7 +272,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
           style: GoogleFonts.poppins(
               fontSize: 20, fontWeight: FontWeight.w600, color: Colors.black),
         ),
-      
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 1,
@@ -128,6 +289,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Address Selection
                     DropdownButtonFormField<String>(
                       decoration: InputDecoration(
                         labelText: 'Select Address',
@@ -163,6 +325,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
                             (addr) => addr['id'] == selectedAddressId),
                       ),
                     SizedBox(height: 10),
+
+                    // Payment Method Selection
                     Text('Payment Method',
                         style: GoogleFonts.poppins(
                             fontSize: 18, fontWeight: FontWeight.bold)),
@@ -204,7 +368,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
                                 },
                               ),
                             ),
-                            if (isSelected) buildPaymentInputForm(entry.key),
+                            if (isSelected)
+                              buildPaymentMethodSelection(entry.key),
                           ],
                         ),
                       );
@@ -241,36 +406,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
             SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: () {
-                  if (userAddresses.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(
-                          'Please add a delivery address before checkout.'),
-                    ));
-                    return;
-                  }
-
-                  if (_formKey.currentState!.validate()) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => OrderConfirmationScreen(
-                          addressId: selectedAddressId!,
-                          paymentMethod: selectedPaymentMethod,
-                          gcashPhone: selectedPaymentMethod == 'G-Cash'
-                              ? phonenumberController.text
-                              : null,
-                          cardLast4:
-                              selectedPaymentMethod == 'Credit/Debit Card'
-                                  ? cardNumberController.text.substring(
-                                      cardNumberController.text.length - 4)
-                                  : null,
-                          totalAmount: widget.totalPrice,
-                        ),
-                      ),
-                    );
-                  }
-                },
+                onPressed: _processCheckout,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFF651D32),
                   minimumSize: Size(0, 50),
@@ -290,6 +426,169 @@ class _CheckoutPageState extends State<CheckoutPage> {
     );
   }
 
+  Widget buildPaymentMethodSelection(String method) {
+    if (method == 'Cash On Delivery') {
+      return SizedBox(); // No payment method selection for COD
+    }
+    if (isPaymentMethodsLoading) {
+      return Padding(
+        padding: EdgeInsets.all(16),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final typeToMatch = method == 'G-Cash' ? 'gcash' : 'credit_card';
+    final filteredMethods = paymentMethods
+        .where((m) => m['type']?.toLowerCase() == typeToMatch.toLowerCase())
+        .toList();
+
+    if (filteredMethods.isEmpty) {
+      return Padding(
+        padding: EdgeInsets.all(16),
+        child: Text(
+          'No ${method == 'G-Cash' ? 'GCash' : 'card'} methods saved. '
+          'Please add one in your payment methods.',
+          style: GoogleFonts.poppins(color: Colors.grey),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        children: [
+          DropdownButtonFormField<String>(
+            decoration: InputDecoration(
+              labelText: 'Select ${method == 'G-Cash' ? 'GCash' : 'Card'}',
+              border: OutlineInputBorder(),
+            ),
+            value: method == 'G-Cash'
+                ? selectedGcashMethodId
+                : selectedCardMethodId,
+            validator: (value) => value == null
+                ? 'Please select a ${method == 'G-Cash' ? 'GCash' : 'card'} method'
+                : null,
+            items: filteredMethods.map((paymentMethod) {
+              try {
+                final number = paymentMethod['number']?.toString() ?? '';
+                final amount =
+                    (paymentMethod['amount'] as num?)?.toDouble() ?? 0.0;
+                final name = paymentMethod['name']?.toString() ?? '';
+                final expiry = paymentMethod['expiry']?.toString();
+
+                final displayText = method == 'G-Cash'
+                    ? '$number (₱${amount.toStringAsFixed(2)})'
+                    : '$name •••• ${number.length >= 4 ? number.substring(number.length - 4) : number} '
+                        '${expiry != null ? 'Exp $expiry' : ''} '
+                        '(₱${amount.toStringAsFixed(2)})';
+
+                return DropdownMenuItem<String>(
+                  value: paymentMethod['id']?.toString(),
+                  child: Text(displayText),
+                );
+              } catch (e) {
+                print('Error formatting payment method: $e');
+                return DropdownMenuItem<String>(
+                  value: paymentMethod['id']?.toString(),
+                  child: Text('Invalid payment method'),
+                );
+              }
+            }).toList(),
+            onChanged: (value) {
+              setState(() {
+                if (method == 'G-Cash') {
+                  selectedGcashMethodId = value;
+                } else {
+                  selectedCardMethodId = value;
+                }
+              });
+            },
+          ),
+          SizedBox(height: 8),
+          if (method == 'G-Cash' && selectedGcashMethodId != null)
+            _buildBalanceWarning(
+                widget.totalPrice,
+                filteredMethods.firstWhere(
+                    (m) => m['id'] == selectedGcashMethodId)['amount']),
+          if (method == 'Credit/Debit Card' && selectedCardMethodId != null)
+            _buildCardWarning(
+                widget.totalPrice,
+                filteredMethods
+                    .firstWhere((m) => m['id'] == selectedCardMethodId)),
+          if (method == 'Credit/Debit Card' && selectedCardMethodId != null)
+            _buildBalanceWarning(
+                widget.totalPrice,
+                filteredMethods.firstWhere(
+                    (m) => m['id'] == selectedCardMethodId)['amount']),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBalanceWarning(double total, double balance) {
+    if (balance >= total) return SizedBox();
+
+    return Padding(
+      padding: EdgeInsets.only(top: 8),
+      child: Row(
+        children: [
+          Icon(Icons.warning, color: Colors.orange),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Insufficient balance (₱${(total - balance).toStringAsFixed(2)} needed)',
+              style: GoogleFonts.roboto(color: Colors.orange),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardWarning(double total, Map<String, dynamic> card) {
+    final expiryParts = (card['expiry'] as String).split('/');
+    final month = int.parse(expiryParts[0]);
+    final year = 2000 + int.parse(expiryParts[1]);
+    final now = DateTime.now();
+    final isExpired =
+        year < now.year || (year == now.year && month < now.month);
+    final hasInsufficientFunds = card['amount'] < total;
+
+    if (!isExpired && !hasInsufficientFunds) return SizedBox();
+
+    return Padding(
+      padding: EdgeInsets.only(top: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (isExpired)
+            Row(
+              children: [
+                Icon(Icons.warning, color: Colors.orange),
+                SizedBox(width: 8),
+                Text(
+                  'Card expired',
+                  style: GoogleFonts.poppins(color: Colors.orange),
+                ),
+              ],
+            ),
+          if (hasInsufficientFunds)
+            Row(
+                // children: [
+                //   Icon(Icons.warning, color: Colors.orange),
+                //   SizedBox(width: 8),
+                //   // Text(
+                //   //   'Insufficient funds (₱${(total - card['amount']).toStringAsFixed(2)} needed)',
+                //   //   style: GoogleFonts.poppins(color: Colors.orange),
+                //   // ),
+                // ],
+                ),
+        ],
+      ),
+    );
+  }
+
+  // Keep your existing buildAddressCard and addressFieldRow methods
   Widget buildAddressCard(Map<String, dynamic> address) {
     return Card(
       color: Colors.white,
@@ -329,84 +628,5 @@ class _CheckoutPageState extends State<CheckoutPage> {
         Expanded(child: Text(text)),
       ],
     );
-  }
-
-  Widget buildPaymentInputForm(String method) {
-    switch (method) {
-      case 'Credit/Debit Card':
-        return Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-          child: Column(
-            children: [
-              TextFormField(
-                controller: cardNumberController,
-                keyboardType: TextInputType.number,
-                maxLength: 16,
-                decoration: InputDecoration(labelText: 'Card Number'),
-                validator: (value) {
-                  if (value == null || value.isEmpty)
-                    return 'Enter card number';
-                  if (value.length != 16)
-                    return 'Card number must be 16 digits';
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: expiryController,
-                decoration: InputDecoration(labelText: 'Expiry Date (MM/YY)'),
-                keyboardType: TextInputType.datetime,
-                validator: (value) {
-                  if (value == null || value.isEmpty)
-                    return 'Enter expiry date';
-                  if (!RegExp(r'^(0[1-9]|1[0-2])\/\d{2}$').hasMatch(value))
-                    return 'Invalid date format';
-                  return null;
-                },
-              ),
-              TextFormField(
-                controller: cvvController,
-                keyboardType: TextInputType.number,
-                maxLength: 3,
-                decoration: InputDecoration(labelText: 'CVV'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) return 'Enter CVV';
-                  if (value.length != 3) return 'CVV must be 3 digits';
-                  return null;
-                },
-              ),
-            ],
-          ),
-        );
-      case 'G-Cash':
-        return Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-          child: TextFormField(
-            controller: phonenumberController,
-            keyboardType: TextInputType.phone,
-            maxLength: 11,
-            decoration: InputDecoration(labelText: 'Phone number'),
-            validator: (value) {
-              if (value == null || value.isEmpty) return 'Enter GCash number';
-              if (!RegExp(r'^09\d{9}$').hasMatch(value))
-                return 'Invalid phone number';
-              return null;
-            },
-            onChanged: (value) {
-              // Automatically prepend 09 if not already present
-              if (!value.startsWith('09')) {
-                phonenumberController.text = '09';
-                phonenumberController.selection = TextSelection.fromPosition(
-                  TextPosition(offset: phonenumberController.text.length),
-                );
-              }
-            },
-          ),
-        );
-      default:
-        return Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Text('No additional info required.'),
-        );
-    }
   }
 }

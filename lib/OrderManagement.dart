@@ -252,46 +252,47 @@ class OrderManagementPage extends StatelessWidget {
                           ),
                         ),
                         SizedBox(height: 16),
-                        Card(
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: Colors.grey[200]!,
-                              width: 1,
+                        Expanded(
+                          // Added Expanded widget here
+                          child: Card(
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(
+                                color: Colors.grey[200]!,
+                                width: 1,
+                              ),
                             ),
-                          ),
-                          child: ListView.separated(
-                            shrinkWrap: true,
-                            physics: NeverScrollableScrollPhysics(),
-                            itemCount: orders.length,
-                            separatorBuilder: (context, index) => Divider(
-                              height: 1,
-                              color: Colors.grey[200],
-                              indent: 16,
-                              endIndent: 16,
-                            ),
-                            itemBuilder: (context, index) {
-                              final order = orders[index];
-                              return OrderListItem(
-                                order: order,
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => OrderDetailsPage(
-                                        orderId: order.orderId,
-                                        sellerId: sellerId,
-                                        orderData: filteredOrders
-                                            .firstWhere((doc) =>
-                                                doc.id == order.orderId)
-                                            .data() as Map<String, dynamic>,
+                            child: ListView.separated(
+                              itemCount: orders.length,
+                              separatorBuilder: (context, index) => Divider(
+                                height: 1,
+                                color: Colors.grey[200],
+                                indent: 16,
+                                endIndent: 16,
+                              ),
+                              itemBuilder: (context, index) {
+                                final order = orders[index];
+                                return OrderListItem(
+                                  order: order,
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => OrderDetailsPage(
+                                          orderId: order.orderId,
+                                          sellerId: sellerId,
+                                          orderData: filteredOrders
+                                              .firstWhere((doc) =>
+                                                  doc.id == order.orderId)
+                                              .data() as Map<String, dynamic>,
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                },
-                              );
-                            },
+                                    );
+                                  },
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ],

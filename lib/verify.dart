@@ -2,21 +2,20 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'login.dart'; // Make sure this file exists and points to your login screen
-// import 'dart:typed_data';
-import 'package:flutter/services.dart';
+import 'login.dart';
+
 class VerifyScreen extends StatefulWidget {
   final User user;
   final String fullName;
   final String email;
   final String profilePicUrl;
-   VerifyScreen({
+  
+  VerifyScreen({
     required this.user,
     required this.fullName,
     required this.email,
     required this.profilePicUrl,
   });
-
 
   @override
   State<VerifyScreen> createState() => _VerifyScreenState();
@@ -27,7 +26,10 @@ class _VerifyScreenState extends State<VerifyScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   late Timer _timer;
   bool _resent = false;
-  // bool _isInserted = false;
+  DateTime? _lastVerificationRequestTime;
+  int _cooldownSeconds = 0;
+  Timer? _cooldownTimer;
+
   @override
   void initState() {
     super.initState();
@@ -36,55 +38,106 @@ class _VerifyScreenState extends State<VerifyScreen> {
 
   void _startVerificationCheck() {
     _timer = Timer.periodic(const Duration(seconds: 3), (timer) async {
-      await widget.user.reload();
-      var refreshedUser = _auth.currentUser;
+      try {
+        await widget.user.reload();
+        var refreshedUser = _auth.currentUser;
 
-      if (refreshedUser != null && refreshedUser.emailVerified) {
-        // _isInserted = true; // Prevent multiple inserts
-        // Insert user data into Firestore
-        await _firestore.collection('users').doc(refreshedUser.uid).set({
-        'fullName': widget.fullName,
-        'email': widget.email,
-        'profilePicUrl': widget.profilePicUrl,
-        'createdAt': Timestamp.now(),
-      });
-        timer.cancel();
-         // Now that the email is verified, store the data in Firestore
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Verification successful!')));
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-        );
+        if (refreshedUser != null && refreshedUser.emailVerified) {
+          try {
+            await _firestore.collection('users').doc(refreshedUser.uid).set({
+              'fullName': widget.fullName,
+              'email': widget.email,
+              'profilePicUrl': widget.profilePicUrl,
+              'createdAt': Timestamp.now(),
+            });
+            timer.cancel();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Verification successful!')),
+            );
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+            );
+          } catch (e) {
+            debugPrint('Firestore error: $e');
+            timer.cancel();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Verification successful!')),
+            );
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const LoginScreen()),
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint('Verification check error: $e');
       }
     });
   }
 
-  DateTime? _lastVerificationRequestTime;
-  Future<void> _resendVerification() async {
-  // Check if it's too soon to resend the verification email
-  if (_lastVerificationRequestTime != null &&
-      DateTime.now().difference(_lastVerificationRequestTime!).inMinutes < 5) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please wait a few minutes before requesting again')));
-    return;
+  bool get _canResend {
+    if (_lastVerificationRequestTime == null) return true;
+    return DateTime.now().difference(_lastVerificationRequestTime!).inSeconds >= 60;
   }
 
-  try {
-    if (!widget.user.emailVerified) {
-      await widget.user.sendEmailVerification();
-      setState(() => _resent = true);
-      _lastVerificationRequestTime = DateTime.now();  // Update last request time
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Verification email sent again')));
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Email is already verified')));
-    }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error resending email: $e")));
+  String get _cooldownText {
+    if (_cooldownSeconds <= 0) return '';
+    return ' (try again in $_cooldownSeconds seconds)';
   }
-}
+
+  void _startCooldownTimer() {
+    _cooldownSeconds = 60;
+    _cooldownTimer?.cancel();
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_cooldownSeconds > 0) {
+        setState(() => _cooldownSeconds--);
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  Future<void> _resendVerification() async {
+    if (!_canResend) return;
+
+    try {
+      if (!widget.user.emailVerified) {
+        await widget.user.sendEmailVerification();
+        setState(() {
+          _resent = true;
+          _lastVerificationRequestTime = DateTime.now();
+        });
+        _startCooldownTimer();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Verification email sent successfully')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Email is already verified')),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      String message = 'Failed to send verification email';
+      if (e.code == 'too-many-requests') {
+        message = 'Too many attempts. Please try again later.';
+        _cooldownSeconds = 300; // 5 minutes
+        _startCooldownTimer();
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not send verification email')),
+      );
+    }
+  }
 
   @override
   void dispose() {
     _timer.cancel();
+    _cooldownTimer?.cancel();
     super.dispose();
   }
 
@@ -120,7 +173,7 @@ class _VerifyScreenState extends State<VerifyScreen> {
                 ),
                 const SizedBox(height: 10),
                 const Text(
-                  "We’ve sent an email to:",
+                  "We've sent an email to:",
                   style: TextStyle(fontSize: 16),
                   textAlign: TextAlign.center,
                 ),
@@ -144,9 +197,9 @@ class _VerifyScreenState extends State<VerifyScreen> {
                 CircularProgressIndicator(color: themeColor),
                 const SizedBox(height: 30),
                 ElevatedButton.icon(
-                  onPressed: _resendVerification,
+                  onPressed: _canResend ? _resendVerification : null,
                   icon: const Icon(Icons.refresh),
-                  label: const Text("Resend Email"),
+                  label: Text("Resend Email$_cooldownText"),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: themeColor,
                     foregroundColor: Colors.white,

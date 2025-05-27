@@ -31,7 +31,9 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     return items.fold<double>(0, (sum, item) {
       // Only include non-cancelled items in the subtotal
       if (item['status']?.toString().toLowerCase() != 'cancelled') {
-        return sum + (item['price'] * item['quantity']);
+        final price = (item['price'] as num).toDouble();
+        final quantity = (item['quantity'] as num).toDouble();
+        return sum + (price * quantity);
       }
       return sum;
     });
@@ -118,9 +120,11 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
       final payment = _orderData['payment'] as Map<String, dynamic>?;
       final paymentMethod = payment?['method'] as String?;
       final paymentMethodId = payment?['paymentMethodId'] as String?;
-      final amountToRefund =
-          (item['price'] as num).toDouble() * (item['quantity'] as int);
-      final shippingFee = _calculateShipping(item['price'] * item['quantity']);
+      final amountToRefund = (item['price'] as num).toDouble() *
+          (item['quantity'] as num).toDouble();
+      final shippingFee = _calculateShipping((item['price'] as num).toDouble() *
+          (item['quantity'] as num).toDouble());
+
       final totalRefundAmount = amountToRefund + shippingFee;
 
       if (paymentMethod != null &&

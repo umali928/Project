@@ -15,3 +15,6 @@ Prince Genel Umali
 
 APK
 https://drive.google.com/file/d/1WCy4PLW2OoOJoNQOiN0sKA1y9-AkKdWj/view?usp=sharing
+
+PPT
+https://www.canva.com/design/DAGoXMM16Y4/o7F9DUAMsHs2LVoCm-soSw/edit
